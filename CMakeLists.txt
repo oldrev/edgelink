@@ -16,8 +16,7 @@ endif()
 
 
 find_package(PahoMqttCpp REQUIRED)
-
-include(libmodbus.cmake)
+find_library(LIBMODBUS NAMES modbus REQUIRED)
 
 include_directories(
     ./include
@@ -37,7 +36,7 @@ add_executable(${PROJECT_NAME} ${SOURCES})
 target_link_libraries(
     ${PROJECT_NAME}
     PRIVATE ${Boost_LIBRARIES}
-    PRIVATE modbus
+    PRIVATE ${LIBMODBUS}
     PRIVATE PahoMqttCpp::paho-mqttpp3
 )
 #add_definitions(-DBOOST_LOG_DYN_LINK)
