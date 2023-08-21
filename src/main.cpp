@@ -23,40 +23,6 @@ using namespace boost;
 
 namespace edgelink {
 
-struct IGreeter {
-    virtual ~IGreeter() noexcept = default;
-    virtual void say() = 0;
-};
-
-class GreeterImpl : public virtual IGreeter {
-  public:
-    virtual void say() override {
-        //
-        cout << "Hello!\n";
-    }
-
-    virtual ~GreeterImpl() {
-        //
-        cout << "i'm dead!\n";
-    }
-};
-
-class Example {
-  public:
-    Example(std::shared_ptr<IGreeter> greeter) {
-        //
-        _greeter = greeter;
-    }
-
-    void greet() { _greeter->say(); }
-
-  private:
-    std::shared_ptr<IGreeter> _greeter;
-};
-
-const string CLIENT_ID("33f1c750-01a6-4a26-9057-6a5adf0f80f5");
-const int QOS = 2;
-
 class user_callback : public virtual mqtt::callback {
     void connection_lost(const string& cause) override {
         cout << "\nConnection lost" << endl;
@@ -157,6 +123,7 @@ int main(int argc, char* argv[]) {
     // 初始化日志系统
     init_logging();
 
+    BOOST_LOG_TRIVIAL(info) << "EdgeLink 物联网边缘数据采集系统";
     BOOST_LOG_TRIVIAL(info) << "日志子系统已初始化";
 
     auto settings_result = load_settings();
@@ -166,15 +133,15 @@ int main(int argc, char* argv[]) {
     }
     di::aux::owner<EdgeLinkSettings*> settings_owner{settings_result.value()};
 
-    const auto injector = di::make_injector(                           //
-        di::bind<App>().in(di::singleton),                       // App
-        di::bind<EdgeLinkSettings>().to(*settings_owner),        // 系统配置
-        di::bind<MqttClient>().in(di::singleton),                //
-        di::bind<IGreeter>().to<GreeterImpl>().in(di::singleton) // 测试用
+    const auto injector = di::make_injector(              //
+        di::bind<App>().in(di::singleton),                // App
+        di::bind<EdgeLinkSettings>().to(*settings_owner), // 注册系统配置
+        di::bind<MqttClient>().in(di::singleton)          // 注册 MQTT 客户端单体
     );
 
     auto app = injector.create<App>();
 
+    // 启动主程序
     auto result = app.run();
 
     if (result.has_error()) {
