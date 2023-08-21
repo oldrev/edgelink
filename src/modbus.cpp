@@ -1,10 +1,10 @@
 #include <iostream>
-#include <string>
 #include <span>
+#include <string>
 
 #include <boost/url.hpp>
-
 #include <edgelink/edgelink.hpp>
+
 #include <edgelink/modbus.hpp>
 
 namespace edgelink {
@@ -13,63 +13,60 @@ ModbusClient::ModbusClient(const std::string_view& url, int baud, char parity, i
     : _modbus(nullptr), baud(baud), parity(parity), dataBits(data_bits), stopBits(stop_bits) {
     auto uri = boost::urls::parse_uri(url).value();
 
-    if(uri.scheme() == "tcp") {
+    if (uri.scheme() == "tcp") {
         _transport = ModbusTransport::TCP;
         _device = uri.host_address();
-    }
-    else if(uri.scheme() == "rtu") {
+    } else if (uri.scheme() == "rtu") {
         _transport = ModbusTransport::RTU;
         _device = uri.host_address();
-    }
-    else {
+    } else {
         throw std::exception();
     }
-    
 }
 
-ModbusClient::~ModbusClient() { disconnect(); }
+ModbusClient::~ModbusClient() {
+    //
+    this->close();
+}
 
-bool ModbusClient::connect() {
+Result<> ModbusClient::connect() noexcept {
     _modbus = modbus_new_rtu(_device.c_str(), baud, parity, dataBits, stopBits);
     if (_modbus == nullptr) {
-        std::cerr << "Failed to create modbus context" << std::endl;
-        return false;
+        BOOST_LOG_TRIVIAL(error) << "创建 modbus 上下文失败";
+        return Result<>(std::error_code(errno, std::system_category()));
     }
 
     if (modbus_connect(_modbus) == -1) {
-        std::cerr << "Modbus connection failed: " << modbus_strerror(errno) << std::endl;
+        BOOST_LOG_TRIVIAL(error) << "ModBus 连接失败！错误消息：" << modbus_strerror(errno);
         modbus_free(_modbus);
         _modbus = nullptr;
-        return false;
+        return Result<>(std::error_code(errno, std::system_category()));
     }
-
-    return true;
+    return {};
 }
 
-bool ModbusClient::disconnect() {
+void ModbusClient::close() noexcept {
     if (_modbus != nullptr) {
         modbus_close(_modbus);
         modbus_free(_modbus);
         _modbus = nullptr;
-        return true;
     }
-    return false;
 }
 
-bool ModbusClient::read_input_registers(int address, std::span<uint16_t> data) {
+Result<> ModbusClient::read_input_registers(int address, std::span<uint16_t> data) noexcept {
     if (modbus_read_input_registers(_modbus, address, data.size(), data.data()) == -1) {
-        std::cerr << "Modbus read input registers failed: " << modbus_strerror(errno) << std::endl;
-        return false;
+        BOOST_LOG_TRIVIAL(error) << "ModBus 读取寄存器失败！错误消息：" << modbus_strerror(errno);
+        return Result<>(std::error_code(errno, std::system_category()));
     }
-    return true;
+    return {};
 }
 
-bool ModbusClient::write_single_register(int address, uint16_t value) {
+Result<> ModbusClient::write_single_register(int address, uint16_t value) noexcept {
     if (modbus_write_register(_modbus, address, value) == -1) {
-        std::cerr << "Modbus write single register failed: " << modbus_strerror(errno) << std::endl;
-        return false;
+        BOOST_LOG_TRIVIAL(error) << "ModBus 写入寄存器失败！错误消息：" << modbus_strerror(errno);
+        return Result<>(std::error_code(errno, std::system_category()));
     }
-    return true;
+    return {};
 }
 
 }; // namespace edgelink

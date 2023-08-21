@@ -14,10 +14,10 @@ class ModbusClient {
     ModbusClient(const std::string_view& url, int baud, char parity, int data_bits, int stop_bits);
     ~ModbusClient();
 
-    bool connect();
-    bool disconnect();
-    bool read_input_registers(int address, std::span<uint16_t> data);
-    bool write_single_register(int address, uint16_t value);
+    Result<> connect() noexcept;
+    void close() noexcept;
+    Result<> read_input_registers(int address, std::span<uint16_t> data) noexcept;
+    Result<> write_single_register(int address, uint16_t value) noexcept;
 
   private:
     modbus_t* _modbus;

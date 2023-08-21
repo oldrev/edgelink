@@ -1,6 +1,11 @@
 {
     "files.associations": {
-        "*.ipp": "cpp"
+        "*.ipp": "cpp",
+        "system_error": "cpp",
+        "memory": "cpp",
+        "array": "cpp",
+        "*.tcc": "cpp",
+        "future": "cpp"
     },
     "[python]": {
         "editor.defaultFormatter": "ms-python.black-formatter"

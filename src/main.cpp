@@ -18,7 +18,6 @@
 
 using namespace std;
 using namespace boost;
-using json = nlohmann::json;
 
 // paho.mqtt.cpp 库客户端是线程安全的，可以多个线程同时访问，但是 set_xxx_callback() 设置的回调禁止阻塞
 
@@ -72,9 +71,9 @@ class user_callback : public virtual mqtt::callback {
   public:
 };
 
-EdgeLinkSettings* load_settings() {
+Result<EdgeLinkSettings*> load_settings() {
     std::ifstream config_file("./edgelink-conf.json");
-    auto json_config = json::parse(config_file);
+    auto json_config = nlohmann::json::parse(config_file);
     // auto settings = std::make_shared<EdgeLinkSettings>();
     auto settings = new EdgeLinkSettings;
     settings->project_id = json_config["projectID"];
@@ -90,13 +89,13 @@ class App {
         _client = client;
     }
 
-    int run() {
+    Result<> run() {
 
-        _client->connect();
+        TRY(_client->connect());
 
         string TOPIC("/" + _settings.project_id + "/data/test1");
 
-        _client->publish(TOPIC, "Hello!!! Love from EdgeLink!", 1);
+        TRY(_client->publish(TOPIC, "Hello!!! Love from EdgeLink!", 1));
 
         /*
             cout << "Initialzing..." << endl;
@@ -141,7 +140,7 @@ class App {
 
         cout << "\nExiting" << endl;
 
-        return 0;
+        return {};
     }
 
   private:
@@ -160,15 +159,27 @@ int main(int argc, char* argv[]) {
 
     BOOST_LOG_TRIVIAL(info) << "日志子系统已初始化";
 
-    di::aux::owner<EdgeLinkSettings*> settings{load_settings()};
+    auto settings_result = load_settings();
+    if (settings_result.has_error()) {
+        BOOST_LOG_TRIVIAL(error) << "读取配置文件错误";
+        return -1;
+    }
+    di::aux::owner<EdgeLinkSettings*> settings_owner{settings_result.value()};
 
-    const auto sp = di::make_injector(                           //
+    const auto injector = di::make_injector(                           //
         di::bind<App>().in(di::singleton),                       // App
-        di::bind<EdgeLinkSettings>().to(*settings),              // 系统配置
+        di::bind<EdgeLinkSettings>().to(*settings_owner),        // 系统配置
         di::bind<MqttClient>().in(di::singleton),                //
         di::bind<IGreeter>().to<GreeterImpl>().in(di::singleton) // 测试用
     );
 
-    auto app = sp.create<App>();
-    return app.run();
+    auto app = injector.create<App>();
+
+    auto result = app.run();
+
+    if (result.has_error()) {
+        return -1;
+    } else {
+        return 0;
+    }
 }

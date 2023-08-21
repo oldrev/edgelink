@@ -1,5 +1,6 @@
 #pragma once
 
+#include "result.hpp"
 #include "logging.hpp"
 
 namespace edgelink {
@@ -18,6 +19,5 @@ struct EdgeLinkSettings {
     std::string server_url;
 };
 
-;
 
 }; // namespace edgelink
