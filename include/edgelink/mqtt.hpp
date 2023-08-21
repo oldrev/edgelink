@@ -7,7 +7,7 @@ namespace edgelink {
 /**
  * 同步的简单 MQTT 客户端接口实现
  */
-class MqttClient : public virtual mqtt::callback, virtual public IClosable {
+class MqttClient : public virtual mqtt::callback, public virtual IClosable {
   public:
     MqttClient(const EdgeLinkSettings& settings);
     virtual ~MqttClient();
