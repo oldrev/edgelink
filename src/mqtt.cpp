@@ -14,7 +14,7 @@
 
 #include "edgelink/edgelink.hpp"
 #include "edgelink/logging.hpp"
-#include "edgelink/mqtt.hpp"
+#include "edgelink/transport/mqtt.hpp"
 
 using namespace std;
 using namespace boost;

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "edgelink.hpp"
+#include "edgelink/edgelink.hpp"
 
 namespace edgelink {
 

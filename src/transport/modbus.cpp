@@ -1,11 +1,12 @@
 #include <iostream>
 #include <span>
 #include <string>
+#include <nlohmann/json.hpp>
 
 #include <boost/url.hpp>
 #include <edgelink/edgelink.hpp>
 
-#include <edgelink/modbus.hpp>
+#include <edgelink/transport/modbus.hpp>
 
 namespace edgelink {
 

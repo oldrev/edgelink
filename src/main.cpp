@@ -13,8 +13,9 @@
 #include <nlohmann/json.hpp>
 
 #include "edgelink/logging.hpp"
+#include "edgelink/engine.hpp"
 #include "edgelink/edgelink.hpp"
-#include "edgelink/mqtt.hpp"
+#include "edgelink/transport/mqtt.hpp"
 
 using namespace std;
 using namespace boost;
@@ -63,47 +64,6 @@ class App {
 
         TRY(_client->publish(TOPIC, "Hello!!! Love from EdgeLink!", 1));
 
-        /*
-            cout << "Initialzing..." << endl;
-            mqtt::client client(settings->server_url, settings->device_id);
-
-            user_callback cb;
-            client.set_callback(cb);
-
-            mqtt::connect_options connOpts;
-            connOpts.set_keep_alive_interval(20);
-            connOpts.set_clean_session(true);
-            cout << "...OK" << endl;
-
-            try {
-                cout << "\nConnecting..." << endl;
-                client.connect(connOpts);
-                cout << "...OK" << endl;
-
-                // First use a message pointer.
-
-                for (int i = 0; i < 1000; i++) {
-                    cout << "\nSending message..." << endl;
-                    auto pubmsg = mqtt::make_message(TOPIC, "Hello World,This is a message...");
-                    pubmsg->set_qos(QOS);
-                    client.publish(pubmsg);
-                    cout << "...OK" << endl;
-                    std::this_thread::sleep_for(1000ms);
-                }
-
-                // Disconnect
-                cout << "\nDisconnecting..." << endl;
-                client.disconnect();
-                cout << "...OK" << endl;
-            } catch (const mqtt::persistence_exception& exc) {
-                cerr << "Persistence Error: " << exc.what() << " [" << exc.get_reason_code() << "]" << endl;
-                return 1;
-            } catch (const mqtt::exception& exc) {
-                cerr << exc.what() << endl;
-                return 1;
-            }
-            */
-
         cout << "\nExiting" << endl;
 
         return {};
@@ -112,6 +72,7 @@ class App {
   private:
     const EdgeLinkSettings& _settings;
     std::shared_ptr<MqttClient> _client;
+    Engine _engine;
 };
 
 }; // namespace edgelink
