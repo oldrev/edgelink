@@ -1,32 +1,40 @@
 #include <iostream>
 #include <string>
 
-#include <boost/format.hpp>
-#include <boost/log/core.hpp>
-#include <boost/log/expressions.hpp>
-#include <boost/log/trivial.hpp>
-#include <boost/log/utility/setup/console.hpp>
-#include <boost/log/utility/setup/file.hpp>
-
 #include "edgelink/logging.hpp"
 
-namespace logging = boost::log;
-namespace keywords = boost::log::keywords;
+#include "spdlog/async.h"
+#include "spdlog/sinks/rotating_file_sink.h"
+#include "spdlog/sinks/stdout_color_sinks.h"
 
 namespace edgelink {
 
 void init_logging() {
 
-    // 设置日志记录级别为DEBUG
-    logging::core::get()->set_filter(logging::trivial::severity >= logging::trivial::info);
+    const std::string filename;
+    int size = 20 * 1024 * 1024; // 10M
+    int backcount = 5;           // 5
 
-    // 创建控制台输出器，并设置格式
-    logging::add_console_log(std::cout, keywords::format = "[%TimeStamp%] [%Severity%]: %Message%");
+    // create console_sink
+    auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+    console_sink->set_level(spdlog::level::info);
 
-    // 创建文件输出器，并设置格式
-    logging::add_file_log(keywords::file_name = "edgelink.log",
-                          keywords::format = "[%TimeStamp%] [%Severity%]: %Message%");
+    // create rotating file sink
+    auto file_sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>("logs/log.txt", size, backcount, true);
+    file_sink->set_level(spdlog::level::info);
+
+    // sink's bucket
+    spdlog::sinks_init_list sinks{console_sink, file_sink};
+
+    // create async logger, and use global threadpool
+    spdlog::init_thread_pool(1024 * 8, 1);
+    auto logger = std::make_shared<spdlog::async_logger>("aslogger", sinks, spdlog::thread_pool());
+    spdlog::initialize_logger(logger);
+    // set default logger
+    spdlog::set_default_logger(logger);
+    
+    // not work...
+    spdlog::set_level(spdlog::level::info);
 }
-
 
 }; // namespace edgelink

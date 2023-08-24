@@ -123,12 +123,12 @@ int main(int argc, char* argv[]) {
     // 初始化日志系统
     init_logging();
 
-    BOOST_LOG_TRIVIAL(info) << "EdgeLink 物联网边缘数据采集系统";
-    BOOST_LOG_TRIVIAL(info) << "日志子系统已初始化";
+    spdlog::info("EdgeLink 物联网边缘数据采集系统");
+    spdlog::info("日志子系统已初始化");
 
     auto settings_result = load_settings();
     if (settings_result.has_error()) {
-        BOOST_LOG_TRIVIAL(error) << "读取配置文件错误";
+        spdlog::critical("读取配置文件错误");
         return -1;
     }
     di::aux::owner<EdgeLinkSettings*> settings_owner{settings_result.value()};

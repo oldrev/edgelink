@@ -35,7 +35,7 @@ MqttClient::~MqttClient() {
 }
 
 Result<> MqttClient::connect() noexcept {
-    BOOST_LOG_TRIVIAL(info) << "开始连接 MQTT" << _address;
+    spdlog::info("开始连接 MQTT：{0}", _address);
 
     try {
         mqtt::connect_options connOpts;
@@ -46,7 +46,7 @@ Result<> MqttClient::connect() noexcept {
         return Result<>(std::error_code(ex.get_reason_code(), std::system_category()));
     }
 
-    BOOST_LOG_TRIVIAL(info) << "MQTT 已连接：" << _address;
+    spdlog::info("MQTT 已连接：{0}", _address);
 
     return {};
 }
@@ -54,7 +54,7 @@ Result<> MqttClient::connect() noexcept {
 void MqttClient::close() noexcept {
     if (this->is_connected()) {
         _mqtt->disconnect();
-        BOOST_LOG_TRIVIAL(info) << "MQTT 连接已断开，主机：" << _address;
+        spdlog::info("MQTT 连接已断开，主机：", _address);
     }
 }
 

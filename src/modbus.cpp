@@ -32,12 +32,12 @@ ModbusClient::~ModbusClient() {
 Result<> ModbusClient::connect() noexcept {
     _modbus = modbus_new_rtu(_device.c_str(), baud, parity, dataBits, stopBits);
     if (_modbus == nullptr) {
-        BOOST_LOG_TRIVIAL(error) << "创建 modbus 上下文失败";
+        spdlog::error("创建 modbus 上下文失败");
         return Result<>(std::error_code(errno, std::system_category()));
     }
 
     if (modbus_connect(_modbus) == -1) {
-        BOOST_LOG_TRIVIAL(error) << "ModBus 连接失败！错误消息：" << modbus_strerror(errno);
+        spdlog::error("ModBus 连接失败！错误消息：{0}", modbus_strerror(errno));
         modbus_free(_modbus);
         _modbus = nullptr;
         return Result<>(std::error_code(errno, std::system_category()));
@@ -55,7 +55,7 @@ void ModbusClient::close() noexcept {
 
 Result<> ModbusClient::read_input_registers(int address, std::span<uint16_t> data) noexcept {
     if (modbus_read_input_registers(_modbus, address, data.size(), data.data()) == -1) {
-        BOOST_LOG_TRIVIAL(error) << "ModBus 读取寄存器失败！错误消息：" << modbus_strerror(errno);
+        spdlog::error("ModBus 读取寄存器失败！错误消息：{0}", modbus_strerror(errno));
         return Result<>(std::error_code(errno, std::system_category()));
     }
     return {};
@@ -63,7 +63,7 @@ Result<> ModbusClient::read_input_registers(int address, std::span<uint16_t> dat
 
 Result<> ModbusClient::write_single_register(int address, uint16_t value) noexcept {
     if (modbus_write_register(_modbus, address, value) == -1) {
-        BOOST_LOG_TRIVIAL(error) << "ModBus 写入寄存器失败！错误消息：" << modbus_strerror(errno);
+        spdlog::error("ModBus 写入寄存器失败！错误消息：{0}", modbus_strerror(errno));
         return Result<>(std::error_code(errno, std::system_category()));
     }
     return {};

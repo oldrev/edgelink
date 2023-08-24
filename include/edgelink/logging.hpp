@@ -1,7 +1,7 @@
 #pragma once
 
-#include <boost/log/core.hpp>
-#include <boost/log/trivial.hpp>
+#include <spdlog/spdlog.h>
+
 
 namespace edgelink {
 

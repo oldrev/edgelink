@@ -1,7 +1,9 @@
 #pragma once
 
+
 #include "result.hpp"
 #include "logging.hpp"
+
 
 namespace edgelink {
 
