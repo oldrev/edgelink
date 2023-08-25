@@ -8,6 +8,11 @@ class Engine {
   public:
     static void register_source(const std::string& type, const SourceNodeFactory& factory);
 
+  public:
+    void emit(uint32_t tag, int64_t timestamp, const void* record);
+    void match(uint32_t tag);
+    void run();
+
   private:
     std::map<std::string, IFilter*> _filters;
     std::map<std::string, ISourceNode*> _sources;

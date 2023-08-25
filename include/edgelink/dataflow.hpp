@@ -2,6 +2,7 @@
 
 namespace edgelink {
 
+
 /// @brief 数据流处理基础元素
 struct IDataFlowElement {
     virtual void start() = 0;
@@ -33,6 +34,8 @@ class AbstractFilter : public virtual IFilter {
     ISourceNode& _source;
     ISinkNode& _sink;
 };
+
+class AbstractQueuedSourceNode : public virtual ISourceNode {};
 
 using SourceNodeFactory = std::function<ISourceNode*(const ::nlohmann::json::object_t&)>;
 

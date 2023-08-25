@@ -1,19 +1,10 @@
-#include <iostream>
-#include <map>
-#include <string>
-#include <vector>
+#include "pch.h"
 
-#include <boost/log/trivial.hpp>
-#include <boost/format.hpp>
-#include <boost/di.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <mqtt/client.h>
-#include <nlohmann/json.hpp>
 
-#include "edgelink/edgelink.hpp"
-#include "edgelink/logging.hpp"
 #include "edgelink/transport/mqtt.hpp"
 
 using namespace std;

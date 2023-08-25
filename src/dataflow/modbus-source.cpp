@@ -1,11 +1,5 @@
-#include <map>
-#include <memory>
-#include <nlohmann/json.hpp>
-#include <span>
-#include <string>
+#include "../pch.h"
 
-#include "edgelink/edgelink.hpp"
-#include "edgelink/engine.hpp"
 #include "edgelink/transport/modbus.hpp"
 
 namespace edgelink {

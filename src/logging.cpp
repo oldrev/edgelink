@@ -1,7 +1,4 @@
-#include <iostream>
-#include <string>
-
-#include "edgelink/logging.hpp"
+#include "pch.h"
 
 #include "spdlog/async.h"
 #include "spdlog/sinks/rotating_file_sink.h"

@@ -1,10 +1,4 @@
-#include <iostream>
-#include <span>
-#include <string>
-#include <nlohmann/json.hpp>
-
-#include <boost/url.hpp>
-#include <edgelink/edgelink.hpp>
+#include "../pch.h"
 
 #include <edgelink/transport/modbus.hpp>
 

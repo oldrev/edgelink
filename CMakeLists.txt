@@ -46,5 +46,8 @@ target_link_libraries(
 )
 #add_definitions(-DBOOST_LOG_DYN_LINK)
 
+
+target_precompile_headers(${PROJECT_NAME} PRIVATE src/pch.h)
+
 # 添加复制操作，将配置文件复制到输出目录
 configure_file(./edgelink-conf.json ${EXECUTABLE_OUTPUT_PATH}/edgelink-conf.json COPYONLY)
