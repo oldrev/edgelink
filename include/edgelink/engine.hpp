@@ -6,11 +6,12 @@ namespace edgelink {
 
 class Engine {
   public:
-    static void register_source(const std::string& type, const SourceNodeFactory& factory);
+    static void register_source(const ISourceProvider* provider);
+    static void register_sink(const ISinkProvider* sink);
+    static void register_filter(const IFilterProvider* filter);
 
   public:
-    void emit(uint32_t tag, int64_t timestamp, const void* record);
-    void match(uint32_t tag);
+    Engine();
     void run();
 
   private:
@@ -18,7 +19,9 @@ class Engine {
     std::map<std::string, ISourceNode*> _sources;
     std::map<std::string, ISinkNode*> _sinks;
 
-    static std::unordered_map<std::string, SourceNodeFactory> s_source_descriptors;
+    static std::vector<const ISourceProvider*> s_source_providers;
+    static std::vector<const IFilterProvider*> s_filter_providers;
+    static std::vector<const ISinkProvider*> s_sink_providers;
 };
 
 }; // namespace edgelink

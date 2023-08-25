@@ -5,7 +5,11 @@
         "memory": "cpp",
         "array": "cpp",
         "*.tcc": "cpp",
-        "future": "cpp"
+        "future": "cpp",
+        "thread": "cpp",
+        "stop_token": "cpp",
+        "version": "cpp",
+        "type_traits": "cpp"
     },
     "[python]": {
         "editor.defaultFormatter": "ms-python.black-formatter"

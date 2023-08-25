@@ -1,11 +1,8 @@
 #pragma once
 
-
-
-#include "result.hpp"
-#include "logging.hpp"
 #include "dataflow.hpp"
-
+#include "logging.hpp"
+#include "result.hpp"
 
 namespace edgelink {
 
@@ -22,6 +19,5 @@ struct EdgeLinkSettings {
     std::string device_id;
     std::string server_url;
 };
-
 
 }; // namespace edgelink

@@ -36,16 +36,13 @@ Result<EdgeLinkSettings*> load_settings() {
 
 class App {
   public:
-    App(const EdgeLinkSettings& settings, std::shared_ptr<MqttClient> client) : _settings(settings) {
-        _client = client;
+    App(const EdgeLinkSettings& settings) : _settings(settings) {
     }
 
     Result<> run() {
 
-        TRY(_client->connect());
-        string TOPIC("/" + _settings.project_id + "/data/test1");
-        TRY(_client->publish(TOPIC, "Hello!!! Love from EdgeLink!", 1));
-        cout << "\nExiting" << endl;
+        _engine.run();
+
         return {};
     }
 
@@ -61,10 +58,12 @@ using namespace edgelink;
 
 int main(int argc, char* argv[]) {
 
+    std::cout << "EdgeLink 物联网边缘数据采集系统" << std::endl;
+    std::cout << std::endl;
+
     // 初始化日志系统
     init_logging();
 
-    spdlog::info("EdgeLink 物联网边缘数据采集系统");
     spdlog::info("日志子系统已初始化");
 
     auto settings_result = load_settings();
