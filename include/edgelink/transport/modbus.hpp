@@ -1,12 +1,22 @@
 #pragma once
 
-namespace edgelink {
-
 #include <modbus/modbus.h>
+
+namespace edgelink {
 
 enum class ModbusTransport {
     RTU = 0,
     TCP = 1,
+};
+
+class ModbusException : public IOException {
+  public:
+    ModbusException(const std::string& message, int error_code) : IOException(message), _error_code(error_code) {}
+    ModbusException(const char* message, int error_code) : IOException(message), _error_code(error_code) {}
+    int error_code() const { return _error_code; }
+
+  private:
+    int _error_code;
 };
 
 class ModbusClient : public virtual IClosable {
@@ -14,10 +24,10 @@ class ModbusClient : public virtual IClosable {
     ModbusClient(const std::string_view& url, int baud, char parity, int data_bits, int stop_bits);
     ~ModbusClient();
 
-    Result<> connect() noexcept;
+    void connect();
     void close() noexcept override;
-    Result<> read_input_registers(int address, std::span<uint16_t> data) noexcept;
-    Result<> write_single_register(int address, uint16_t value) noexcept;
+    void read_input_registers(int address, std::span<uint16_t> data);
+    void write_single_register(int address, uint16_t value);
 
   private:
     modbus_t* _modbus;

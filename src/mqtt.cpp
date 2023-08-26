@@ -25,21 +25,15 @@ MqttClient::~MqttClient() {
     }
 }
 
-Result<> MqttClient::connect() noexcept {
+void MqttClient::connect() {
     spdlog::info("开始连接 MQTT：{0}", _address);
 
-    try {
-        mqtt::connect_options connOpts;
-        connOpts.set_keep_alive_interval(20);
-        connOpts.set_clean_session(true);
-        _mqtt->connect(connOpts);
-    } catch (const mqtt::exception& ex) {
-        return Result<>(std::error_code(ex.get_reason_code(), std::system_category()));
-    }
+    mqtt::connect_options connOpts;
+    connOpts.set_keep_alive_interval(20);
+    connOpts.set_clean_session(true);
+    _mqtt->connect(connOpts);
 
     spdlog::info("MQTT 已连接：{0}", _address);
-
-    return {};
 }
 
 void MqttClient::close() noexcept {
@@ -49,15 +43,10 @@ void MqttClient::close() noexcept {
     }
 }
 
-Result<> MqttClient::publish(const std::string_view& topic, mqtt::binary_ref payload, int qos) noexcept {
-    try {
-        auto msg = mqtt::make_message(topic.data(), payload);
-        msg->set_qos(qos);
-        _mqtt->publish(msg);
-    } catch (const mqtt::exception& ex) {
-        return Result<>(std::error_code(ex.get_reason_code(), std::system_category()));
-    }
-    return {};
+void MqttClient::publish(const std::string_view& topic, mqtt::binary_ref payload, int qos) {
+    auto msg = mqtt::make_message(topic.data(), payload);
+    msg->set_qos(qos);
+    _mqtt->publish(msg);
 }
 
 }; // namespace edgelink

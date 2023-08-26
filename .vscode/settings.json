@@ -9,7 +9,8 @@
         "thread": "cpp",
         "stop_token": "cpp",
         "version": "cpp",
-        "type_traits": "cpp"
+        "type_traits": "cpp",
+        "stdexcept": "cpp"
     },
     "[python]": {
         "editor.defaultFormatter": "ms-python.black-formatter"

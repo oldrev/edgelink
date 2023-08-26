@@ -7,6 +7,7 @@ set(CMAKE_GENERATOR "Ninja")
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+
 # 查找Boost库
 find_package(Boost REQUIRED COMPONENTS system log regex log_setup url  thread)
 set(Boost_MINIMUM_REQUIRED 1.81.0)

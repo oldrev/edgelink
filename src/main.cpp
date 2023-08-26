@@ -23,7 +23,7 @@ using namespace boost;
 
 namespace edgelink {
 
-Result<EdgeLinkSettings*> load_settings() {
+EdgeLinkSettings* load_settings() {
     std::ifstream config_file("./edgelink-conf.json");
     auto json_config = nlohmann::json::parse(config_file);
     // auto settings = std::make_shared<EdgeLinkSettings>();
@@ -36,15 +36,9 @@ Result<EdgeLinkSettings*> load_settings() {
 
 class App {
   public:
-    App(const EdgeLinkSettings& settings) : _settings(settings) {
-    }
+    App(const EdgeLinkSettings& settings) : _settings(settings) {}
 
-    Result<> run() {
-
-        _engine.run();
-
-        return {};
-    }
+    void run() { _engine.run(); }
 
   private:
     const EdgeLinkSettings& _settings;
@@ -66,12 +60,15 @@ int main(int argc, char* argv[]) {
 
     spdlog::info("日志子系统已初始化");
 
-    auto settings_result = load_settings();
-    if (settings_result.has_error()) {
-        spdlog::critical("读取配置文件错误");
+    EdgeLinkSettings* settings = nullptr;
+    try {
+        settings = load_settings();
+    } catch (std::exception& ex) {
+        spdlog::critical("读取配置文件错误：{0}", ex.what());
         return -1;
     }
-    di::aux::owner<EdgeLinkSettings*> settings_owner{settings_result.value()};
+
+    di::aux::owner<EdgeLinkSettings*> settings_owner{settings};
 
     const auto injector = di::make_injector(              //
         di::bind<App>().in(di::singleton),                // App
@@ -82,12 +79,10 @@ int main(int argc, char* argv[]) {
     auto app = injector.create<App>();
 
     // 启动主程序
-    auto result = app.run();
-
-    if (result.has_error()) {
+    try {
+        app.run();
+    } catch (std::exception& ex) {
+        spdlog::critical("程序异常！错误消息：{0}", ex.what());
         return -1;
-    } else {
-        return 0;
     }
 }
-

@@ -11,10 +11,10 @@ class MqttClient : public virtual mqtt::callback, public virtual IClosable {
   public:
     MqttClient(const EdgeLinkSettings& settings);
     virtual ~MqttClient();
-    Result<> connect() noexcept;
+    void connect();
     void close() noexcept override;
 
-    Result<> publish(const std::string_view& topic, mqtt::binary_ref payload, int qos) noexcept;
+    void publish(const std::string_view& topic, mqtt::binary_ref payload, int qos);
 
     const std::string_view address() const noexcept { return _address; }
     bool is_connected() const noexcept { return _mqtt->is_connected(); }

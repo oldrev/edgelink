@@ -7,7 +7,7 @@ using namespace std;
 namespace edgelink {
 
 std::vector<const ISourceProvider*> Engine::s_source_providers;
-std::vector<const IFilterProvider*> Engine::s_filter_providers;
+std::vector<const IPipeProvider*> Engine::s_filter_providers;
 std::vector<const ISinkProvider*> Engine::s_sink_providers;
 
 void Engine::register_source(const ISourceProvider* provider) {
@@ -20,7 +20,7 @@ void Engine::register_sink(const ISinkProvider* provider) {
     std::cout << "已注册接收器：" << provider->type_name() << std::endl;
 }
 
-void Engine::register_filter(const IFilterProvider* provider) {
+void Engine::register_filter(const IPipeProvider* provider) {
     Engine::s_filter_providers.push_back(provider);
     std::cout << "已注册过滤器：" << provider->type_name() << std::endl;
 }

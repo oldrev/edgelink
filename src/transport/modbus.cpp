@@ -2,6 +2,8 @@
 
 #include <edgelink/transport/modbus.hpp>
 
+using namespace std;
+
 namespace edgelink {
 
 ModbusClient::ModbusClient(const std::string_view& url, int baud, char parity, int data_bits, int stop_bits)
@@ -24,20 +26,19 @@ ModbusClient::~ModbusClient() {
     this->close();
 }
 
-Result<> ModbusClient::connect() noexcept {
+void ModbusClient::connect() {
     _modbus = modbus_new_rtu(_device.c_str(), baud, parity, dataBits, stopBits);
     if (_modbus == nullptr) {
         spdlog::error("创建 modbus 上下文失败");
-        return Result<>(std::error_code(errno, std::system_category()));
     }
 
     if (modbus_connect(_modbus) == -1) {
-        spdlog::error("ModBus 连接失败！错误消息：{0}", modbus_strerror(errno));
+        string error_msg = modbus_strerror(errno);
+        spdlog::error("ModBus 连接失败！错误消息：{0}", error_msg);
         modbus_free(_modbus);
         _modbus = nullptr;
-        return Result<>(std::error_code(errno, std::system_category()));
+        throw ModbusException(error_msg, errno);
     }
-    return {};
 }
 
 void ModbusClient::close() noexcept {
@@ -48,20 +49,18 @@ void ModbusClient::close() noexcept {
     }
 }
 
-Result<> ModbusClient::read_input_registers(int address, std::span<uint16_t> data) noexcept {
+void ModbusClient::read_input_registers(int address, std::span<uint16_t> data) {
     if (modbus_read_input_registers(_modbus, address, data.size(), data.data()) == -1) {
         spdlog::error("ModBus 读取寄存器失败！错误消息：{0}", modbus_strerror(errno));
-        return Result<>(std::error_code(errno, std::system_category()));
+        throw std::exception();
     }
-    return {};
 }
 
-Result<> ModbusClient::write_single_register(int address, uint16_t value) noexcept {
+void ModbusClient::write_single_register(int address, uint16_t value) {
     if (modbus_write_register(_modbus, address, value) == -1) {
         spdlog::error("ModBus 写入寄存器失败！错误消息：{0}", modbus_strerror(errno));
-        return Result<>(std::error_code(errno, std::system_category()));
+        throw std::exception();
     }
-    return {};
 }
 
 }; // namespace edgelink

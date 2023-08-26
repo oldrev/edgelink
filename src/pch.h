@@ -7,7 +7,8 @@
 #include <map>
 #include <span>
 #include <thread>
-#include <rva/variant.hpp>
+#include <stdexcept>
+#include "rva/variant.hpp"
 
 #include <nlohmann/json.hpp>
 #include <boost/di.hpp>
@@ -15,6 +16,8 @@
 #include <boost/lockfree/queue.hpp>
 #include <boost/thread/thread.hpp>
 
+
 #include "edgelink/edgelink.hpp"
 #include "edgelink/logging.hpp"
 #include "edgelink/engine.hpp"
+#include "edgelink/errors.hpp"

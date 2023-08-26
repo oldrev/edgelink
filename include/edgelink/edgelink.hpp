@@ -1,8 +1,8 @@
 #pragma once
 
+
 #include "dataflow.hpp"
 #include "logging.hpp"
-#include "result.hpp"
 
 namespace edgelink {
 

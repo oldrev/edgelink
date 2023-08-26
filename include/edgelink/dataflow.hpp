@@ -24,10 +24,12 @@ struct ISourceNode : public virtual IDataFlowNode {};
 
 struct ISinkNode : public virtual IDataFlowNode {};
 
-struct IFilter : public virtual IDataFlowElement {
-    virtual IDataFlowElement* get_input() = 0;
-    virtual IDataFlowElement* get_output() = 0;
-    virtual bool is_match(const std::span<uint8_t>& data) const = 0;
+struct IPipe : public virtual IDataFlowElement {
+    virtual IDataFlowElement* from() const = 0;
+    virtual IDataFlowElement* to() const = 0;
+
+    virtual void write(const Msg* data) const = 0;
+    virtual Msg* read() const = 0;
 };
 
 class AbstractSource : public virtual ISourceNode {
@@ -52,30 +54,30 @@ class AbstractSource : public virtual ISourceNode {
     virtual void process(std::stop_token& stoken) = 0;
 
     std::jthread& thread() { return _thread; }
-    boost::concurrent::concurrent_queue<Msg*>& msg_queue() { return _msg_queue; }
+    // boost::concurrent::concurrent_queue<Msg*>& msg_queue() { return _msg_queue; }
 
     void emit_msg(Msg* msg) {
         // 直接将一个消息入队
-        _msg_queue.push(msg);
+        //_msg_queue.push(msg);
     }
 
   private:
     std::jthread _thread; // 一个数据源一个线程
-    boost::concurrent::concurrent_queue<Msg*> _msg_queue;
+    // boost::concurrent::concurrent_queue<Msg*> _msg_queue;
 };
 
-class AbstractFilter : public virtual IFilter {
+class AbstractPipe : public virtual IPipe {
 
   public:
-    AbstractFilter(const ::nlohmann::json::object_t& config, ISourceNode* source, ISinkNode* sink)
-        : _source(source), _sink(sink) {}
+    AbstractPipe(const ::nlohmann::json::object_t& config, IDataFlowElement* from, IDataFlowElement* to)
+        : _from(from), _to(to) {}
 
-    virtual IDataFlowElement* get_input() { return _source; }
-    virtual IDataFlowElement* get_output() { return _sink; }
+    IDataFlowElement* from() const { return _from; }
+    IDataFlowElement* to() const { return _to; }
 
   private:
-    ISourceNode* _source;
-    ISinkNode* _sink;
+    IDataFlowElement* _from;
+    IDataFlowElement* _to;
 };
 
 class AbstractQueuedSourceNode : public virtual ISourceNode {};
@@ -90,9 +92,10 @@ struct ISinkProvider {
     virtual ISinkNode* create(const ::nlohmann::json::object_t& config) const = 0;
 };
 
-struct IFilterProvider {
+struct IPipeProvider {
     virtual const std::string& type_name() const = 0;
-    virtual IFilter* create(const ::nlohmann::json::object_t& config, ISourceNode* source, ISinkNode* sink) const = 0;
+    virtual IPipe* create(const ::nlohmann::json::object_t& config, IDataFlowElement* source,
+                          IDataFlowElement* sink) const = 0;
 };
 
 }; // namespace edgelink
