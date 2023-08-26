@@ -12,27 +12,60 @@ using MsgValue = rva::variant<          //
 
 using Msg = std::map<std::string, MsgValue>;
 
+struct IEngine;
+
+/// @brief 数据处理上下文
+class DataFlowContext {
+
+public:
+  DataFlowContext(IEngine* engine, Msg* msg) : _engine(engine), _msg(msg) {}
+
+  inline IEngine* engine() const { return _engine; }
+  inline Msg* msg() const { return _msg; }
+
+private:
+
+    IEngine* _engine;
+    Msg* _msg;
+};
+
+/// @brief 数据处理引擎接口
+struct IEngine {
+    virtual void emit(Msg* msg) = 0;
+};
+
 /// @brief 数据流处理基础元素
-struct IDataFlowElement {
+struct IDataFlowElement {};
+
+struct IDataFlowNode : public virtual IDataFlowElement {
     virtual void start() = 0;
     virtual void stop() = 0;
 };
 
-struct IDataFlowNode : public virtual IDataFlowElement {};
-
+/// @brief 数据源接口
 struct ISourceNode : public virtual IDataFlowNode {};
 
+/// @brief 数据接收器接口
 struct ISinkNode : public virtual IDataFlowNode {};
 
+/// @brief 管道接口
 struct IPipe : public virtual IDataFlowElement {
     virtual IDataFlowElement* from() const = 0;
     virtual IDataFlowElement* to() const = 0;
 
-    virtual void write(const Msg* data) const = 0;
-    virtual Msg* read() const = 0;
+    virtual bool is_match(const Msg* data) const = 0;
 };
 
-class AbstractSource : public virtual ISourceNode {
+/// @brief 过滤器接口
+struct IFilter : public virtual IDataFlowElement {
+    virtual void emit(Msg* msg) const = 0;
+};
+
+/// @brief 抽象数据流元素
+class AbstractDataFlowElement : public virtual IDataFlowElement {};
+
+/// @brief 抽象数据源
+class AbstractSource : public virtual AbstractDataFlowElement, public virtual ISourceNode {
   public:
     void start() override {
         _thread = std::jthread([this](std::stop_token stoken) {
@@ -66,7 +99,7 @@ class AbstractSource : public virtual ISourceNode {
     // boost::concurrent::concurrent_queue<Msg*> _msg_queue;
 };
 
-class AbstractPipe : public virtual IPipe {
+class AbstractPipe : public virtual AbstractDataFlowElement, public virtual IPipe {
 
   public:
     AbstractPipe(const ::nlohmann::json::object_t& config, IDataFlowElement* from, IDataFlowElement* to)
@@ -80,7 +113,7 @@ class AbstractPipe : public virtual IPipe {
     IDataFlowElement* _to;
 };
 
-class AbstractQueuedSourceNode : public virtual ISourceNode {};
+class AbstractQueuedSourceNode : public virtual AbstractDataFlowElement, public virtual ISourceNode {};
 
 struct ISourceProvider {
     virtual const std::string& type_name() const = 0;

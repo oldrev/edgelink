@@ -4,7 +4,7 @@
 
 namespace edgelink {
 
-class Engine {
+class Engine :public virtual  IEngine {
   public:
     static void register_source(const ISourceProvider* provider);
     static void register_sink(const ISinkProvider* sink);
@@ -13,6 +13,8 @@ class Engine {
   public:
     Engine();
     void run();
+
+    void emit(Msg* msg) override;
 
   private:
     std::map<std::string, IPipe*> _filters;

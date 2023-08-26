@@ -30,6 +30,10 @@ Engine::Engine() {
     // 这里注册测试用的
 }
 
+void Engine::emit(Msg* msg) {
+    // 处理消息
+}
+
 void Engine::run() {
     /*
     vector<thread> threads;
@@ -45,17 +49,17 @@ void Engine::run() {
     }
     */
 
-    std::cout << "All threads have completed." << std::endl;
-
     for (auto& i : _sinks) {
         spdlog::info("正在启动接收器线程：[type={0}]", i.first);
         i.second->start();
     }
 
+    /*
     for (auto& i : _filters) {
         spdlog::info("正在启动过滤器：[type={0}]", i.first);
         i.second->start();
     }
+    */
 
     for (auto& i : _sources) {
         spdlog::info("正在启动来源线程：[type={0}]", i.first);

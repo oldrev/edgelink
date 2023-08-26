@@ -10,13 +10,8 @@ class ForwardPipe : public virtual AbstractPipe {
     ForwardPipe(const ::nlohmann::json::object_t& config, IDataFlowElement* from, IDataFlowElement* to)
         : AbstractPipe(config, from, to) {}
 
-    void start() override {}
-
-    void stop() override {}
-
-    void write(const Msg* data) const override {}
-
-    Msg* read() const override { return nullptr; }
+    // TODO FIXME
+    bool is_match(const Msg* data) const override { return true; }
 };
 
 /// @brief 单向转发管道提供者
