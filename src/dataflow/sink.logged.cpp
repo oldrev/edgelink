@@ -7,24 +7,27 @@ namespace edgelink {
 
 class LoggedSink : public virtual ISinkNode {
   public:
-    LoggedSink(const ::nlohmann::json::object_t& config) {}
+    LoggedSink(const ::nlohmann::json& config) {}
 
     void start() override {}
 
     void stop() override {}
 };
 
-struct LoggedSinkProvider : public virtual ISinkProvider {
+class LoggedSinkProvider : public virtual ISinkProvider {
   public:
-    LoggedSinkProvider() : _type_name("sink.logged") { Engine::register_sink(this); }
+    LoggedSinkProvider() : _type_name("sink.logged") {}
 
-    const std::string& type_name() const override { return _type_name; }
-    ISinkNode* create(const ::nlohmann::json::object_t& config) const override { return new LoggedSink(config); }
+    const std::string_view& type_name() const override { return _type_name; }
+    ISinkNode* create(const ::nlohmann::json& config) const override { return new LoggedSink(config); }
 
   private:
-    const string _type_name;
+    const string_view _type_name;
+
+    RTTR_ENABLE(ISinkProvider)
 };
 
-const static LoggedSinkProvider s_logged_sink_provider;
 
 }; // namespace edgelink
+
+RTTR_REGISTRATION { rttr::registration::class_<edgelink::LoggedSinkProvider>("edgelink::LoggedSinkProvider"); }

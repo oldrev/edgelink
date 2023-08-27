@@ -1,20 +1,7 @@
-#include <fstream>
-#include <iostream>
-#include <map>
-#include <span>
-#include <string>
-#include <thread>
-#include <vector>
-
-#include <boost/di.hpp>
-
-#include <mqtt/client.h>
-#include <nlohmann/json.hpp>
+#include "pch.hpp"
 
 #include "edgelink/edgelink.hpp"
-#include "edgelink/engine.hpp"
 #include "edgelink/logging.hpp"
-#include "edgelink/transport/mqtt.hpp"
 
 using namespace std;
 using namespace boost;
@@ -23,27 +10,17 @@ using namespace boost;
 
 namespace edgelink {
 
-EdgeLinkSettings* load_settings() {
-    std::ifstream config_file("./edgelink-conf.json");
-    auto json_config = nlohmann::json::parse(config_file);
-    // auto settings = std::make_shared<EdgeLinkSettings>();
-    auto settings = new EdgeLinkSettings;
-    settings->project_id = json_config["projectID"];
-    settings->device_id = json_config["deviceID"];
-    settings->server_url = json_config["serverUrl"];
-    return settings;
-}
-
 class App {
   public:
-    App(const EdgeLinkSettings& settings) : _settings(settings) {}
+    App(std::shared_ptr<Engine> engine) : _engine(engine) {}
 
-    void run() { _engine.run(); }
+    void run() {
+        spdlog::info("正在启动消息引擎...");
+        _engine->run();
+    }
 
   private:
-    const EdgeLinkSettings& _settings;
-    std::shared_ptr<MqttClient> _client;
-    Engine _engine;
+    std::shared_ptr<Engine> _engine;
 };
 
 }; // namespace edgelink
@@ -55,25 +32,29 @@ int main(int argc, char* argv[]) {
     std::cout << "EdgeLink 物联网边缘数据采集系统" << std::endl;
     std::cout << std::endl;
 
+
     // 初始化日志系统
     init_logging();
 
     spdlog::info("日志子系统已初始化");
 
-    EdgeLinkSettings* settings = nullptr;
+    ::nlohmann::json json_config;
     try {
-        settings = load_settings();
+        std::ifstream config_file("./edgelink-conf.json");
+        json_config = ::nlohmann::json::parse(config_file, nullptr, true, true);
     } catch (std::exception& ex) {
         spdlog::critical("读取配置文件错误：{0}", ex.what());
         return -1;
     }
+    catch(...) {
+        spdlog::critical("未知错误");
+        return -1;
+    }
 
-    di::aux::owner<EdgeLinkSettings*> settings_owner{settings};
-
-    const auto injector = di::make_injector(              //
-        di::bind<App>().in(di::singleton),                // App
-        di::bind<EdgeLinkSettings>().to(*settings_owner), // 注册系统配置
-        di::bind<MqttClient>().in(di::singleton)          // 注册 MQTT 客户端单体
+    const auto injector = di::make_injector(                                    //
+        di::bind<App>().in(di::singleton),                                      // App
+        di::bind<Engine>().in(di::singleton),                                   // Engine
+        di::bind<::nlohmann::json>.to(std::move(json_config)).in(di::singleton) //
     );
 
     auto app = injector.create<App>();

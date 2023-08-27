@@ -10,7 +10,14 @@ using MsgValue = rva::variant<          //
     std::map<std::string, rva::self_t>, // json object, type is std::map<std::string, json_value>
     std::vector<rva::self_t>>;          // json array, type is std::vector<json_value>
 
-using Msg = std::map<std::string, MsgValue>;
+using MsgPayload = std::map<std::string, MsgValue>;
+
+struct ISourceNode;
+
+struct Msg {
+    ISourceNode* source;
+    MsgPayload payload;
+};
 
 struct IEngine;
 
@@ -32,6 +39,7 @@ private:
 /// @brief 数据处理引擎接口
 struct IEngine {
     virtual void emit(Msg* msg) = 0;
+    virtual void run() = 0;
 };
 
 /// @brief 数据流处理基础元素
@@ -58,7 +66,7 @@ struct IPipe : public virtual IDataFlowElement {
 
 /// @brief 过滤器接口
 struct IFilter : public virtual IDataFlowElement {
-    virtual void emit(Msg* msg) const = 0;
+    virtual void filter(Msg* msg) const = 0;
 };
 
 /// @brief 抽象数据流元素
@@ -116,19 +124,26 @@ class AbstractPipe : public virtual AbstractDataFlowElement, public virtual IPip
 class AbstractQueuedSourceNode : public virtual AbstractDataFlowElement, public virtual ISourceNode {};
 
 struct ISourceProvider {
-    virtual const std::string& type_name() const = 0;
-    virtual ISourceNode* create(const ::nlohmann::json::object_t& config) const = 0;
+    virtual const std::string_view& type_name() const = 0;
+    virtual ISourceNode* create(const ::nlohmann::json& config) const = 0;
+
+    RTTR_ENABLE()
 };
 
 struct ISinkProvider {
-    virtual const std::string& type_name() const = 0;
-    virtual ISinkNode* create(const ::nlohmann::json::object_t& config) const = 0;
+
+    virtual const std::string_view& type_name() const = 0;
+    virtual ISinkNode* create(const ::nlohmann::json& config) const = 0;
+
+    RTTR_ENABLE()
 };
 
-struct IPipeProvider {
-    virtual const std::string& type_name() const = 0;
-    virtual IPipe* create(const ::nlohmann::json::object_t& config, IDataFlowElement* source,
-                          IDataFlowElement* sink) const = 0;
+struct IFilterProvider {
+
+    virtual const std::string_view& type_name() const = 0;
+    virtual IFilter* create(const ::nlohmann::json& config) const = 0;
+
+    RTTR_ENABLE()
 };
 
 }; // namespace edgelink

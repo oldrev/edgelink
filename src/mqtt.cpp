@@ -12,9 +12,9 @@ using namespace boost;
 
 namespace edgelink {
 
-MqttClient::MqttClient(const EdgeLinkSettings& settings) {
+MqttClient::MqttClient(const ::nlohmann::json& json_config) {
     //
-    _address = settings.server_url;
+    _address = json_config["test"];
     auto client_id = uuids::to_string(uuids::uuid());
     _mqtt = make_unique<mqtt::client>(_address, client_id);
 }

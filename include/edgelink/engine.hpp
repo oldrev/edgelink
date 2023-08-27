@@ -4,26 +4,29 @@
 
 namespace edgelink {
 
-class Engine :public virtual  IEngine {
-  public:
-    static void register_source(const ISourceProvider* provider);
-    static void register_sink(const ISinkProvider* sink);
-    static void register_filter(const IPipeProvider* filter);
+struct EngineConfig {
+    size_t queue_capacity;
+};
 
+class Engine : public virtual IEngine {
   public:
-    Engine();
-    void run();
+    Engine(const ::nlohmann::json& json_config);
 
+    void run() override;
     void emit(Msg* msg) override;
 
   private:
-    std::map<std::string, IPipe*> _filters;
-    std::map<std::string, ISourceNode*> _sources;
-    std::map<std::string, ISinkNode*> _sinks;
+    std::vector<ISourceNode*> _sources;
+    std::vector<ISinkNode*> _sinks;
+    std::vector<IPipe*> _pipes;
+    std::vector<IFilter*> _filters;
+    boost::sync_bounded_queue<Msg*> _msg_queue;
+    const EngineConfig _config;
 
-    static std::vector<const ISourceProvider*> s_source_providers;
-    static std::vector<const IPipeProvider*> s_filter_providers;
-    static std::vector<const ISinkProvider*> s_sink_providers;
+  private:
+    std::map<std::string_view, const ISourceProvider*> _source_providers;
+    std::map<std::string_view, const ISinkProvider*> _sink_providers;
+    std::map<std::string_view, const IFilterProvider*> _filter_providers;
 };
 
 }; // namespace edgelink

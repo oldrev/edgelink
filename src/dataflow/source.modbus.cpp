@@ -18,7 +18,7 @@ class BaseModbusSource : public virtual ISourceNode {
 
 class ModbusRtuSource : public virtual BaseModbusSource {
   public:
-    ModbusRtuSource(const ::nlohmann::json::object_t& config) {}
+    ModbusRtuSource(const ::nlohmann::json& config) {}
 };
 
 class ModbusTcpSource : public virtual BaseModbusSource {
@@ -27,16 +27,18 @@ class ModbusTcpSource : public virtual BaseModbusSource {
 };
 
 struct ModbusRtuSourceProvider : public virtual ISourceProvider {
-    ModbusRtuSourceProvider() : _type_name("source.modbus.rtu") { Engine::register_source(this); }
+    ModbusRtuSourceProvider() : _type_name("source.modbus.rtu") {}
 
-    const std::string& type_name() const override { return _type_name; }
-    ISourceNode* create(const ::nlohmann::json::object_t& config) const override { return new ModbusRtuSource(config); }
+    const std::string_view& type_name() const override { return _type_name; }
+    ISourceNode* create(const ::nlohmann::json& config) const override { return new ModbusRtuSource(config); }
 
   private:
-    const string _type_name;
+    const string_view _type_name;
 
+    RTTR_ENABLE(ISourceProvider)
 };
 
-const static ModbusRtuSourceProvider s_rtu_source_provider;
 
 }; // namespace edgelink
+
+RTTR_REGISTRATION { rttr::registration::class_<edgelink::ModbusRtuSourceProvider>("edgelink::ModbusRtuSourceProvider"); }

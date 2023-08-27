@@ -9,7 +9,7 @@ namespace edgelink {
  */
 class MqttClient : public virtual mqtt::callback, public virtual IClosable {
   public:
-    MqttClient(const EdgeLinkSettings& settings);
+    MqttClient(const ::nlohmann::json& json_config);
     virtual ~MqttClient();
     void connect();
     void close() noexcept override;

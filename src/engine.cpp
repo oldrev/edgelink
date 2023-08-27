@@ -6,28 +6,31 @@ using namespace std;
 
 namespace edgelink {
 
-std::vector<const ISourceProvider*> Engine::s_source_providers;
-std::vector<const IPipeProvider*> Engine::s_filter_providers;
-std::vector<const ISinkProvider*> Engine::s_sink_providers;
+Engine::Engine(const nlohmann::json& json_config)
+    : _config{.queue_capacity = 100}, _msg_queue(boost::sync_bounded_queue<Msg*>(100)) {
 
-void Engine::register_source(const ISourceProvider* provider) {
-    Engine::s_source_providers.push_back(provider);
-    std::cout << "已注册数据源：" << provider->type_name() << std::endl;
-}
+    // 注册 sinks
+    auto sink_provider_type = rttr::type::get<ISinkProvider>();
+    auto sink_providers = sink_provider_type.get_derived_classes();
+    for (auto& pt : sink_providers) {
+        auto provider_var = pt.create();
+        // auto provider = rttr::rttr_cast<ISinkProvider*>(&provider_var);
+        if(provider_var.convert(sink_provider_type)) {
+            auto x = rttr::rttr_cast<ISinkProvider>(provider_var);
+        }
+        //spdlog::info("发现数据接收器: [class_name={0}, type_name={1}]", pt.get_name(), provider->type_name());
+        // auto x = pt.invoke("create", provider_var, {json_config});
+        // auto sink = rttr::variant_cast<ISinkNode*>(&x);
+        // const ISinkProvider* x = provider.get_wrapped_value<>();
+        // spdlog::info("发现数据接收器: [class_name={0}, type_name={1}]", pt.get_name(), provider->type_name());
+    }
 
-void Engine::register_sink(const ISinkProvider* provider) {
-    Engine::s_sink_providers.push_back(provider);
-    std::cout << "已注册接收器：" << provider->type_name() << std::endl;
-}
-
-void Engine::register_filter(const IPipeProvider* provider) {
-    Engine::s_filter_providers.push_back(provider);
-    std::cout << "已注册过滤器：" << provider->type_name() << std::endl;
-}
-
-Engine::Engine() {
+    auto config = nlohmann::json::object();
 
     // 这里注册测试用的
+    // auto sp0 = Engine::s_source_providers["source.dummy.periodic"];
+    // sp0->create(config);
+    //_sources.push_back(sp0->create(config));
 }
 
 void Engine::emit(Msg* msg) {
@@ -50,8 +53,8 @@ void Engine::run() {
     */
 
     for (auto& i : _sinks) {
-        spdlog::info("正在启动接收器线程：[type={0}]", i.first);
-        i.second->start();
+        spdlog::info("正在启动接收器线程：[type={0}]", typeid(i).name());
+        i->start();
     }
 
     /*
@@ -62,8 +65,8 @@ void Engine::run() {
     */
 
     for (auto& i : _sources) {
-        spdlog::info("正在启动来源线程：[type={0}]", i.first);
-        i.second->start();
+        // spdlog::info("正在启动来源线程：[type={0}]", i.first);
+        i->start();
     }
 }
 

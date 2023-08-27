@@ -20,6 +20,7 @@ find_package(PahoMqttCpp REQUIRED)
 find_library(LIBMODBUS NAMES modbus REQUIRED)
 find_library(LIBSPDLOG NAMES spdlog REQUIRED)
 find_library(LIBFMT NAMES fmt REQUIRED)
+find_library(LIBRTTR_CORE NAMES rttr_core REQUIRED)
 
 
 include_directories(
@@ -43,6 +44,7 @@ target_link_libraries(
     PRIVATE ${LIBMODBUS}
     PRIVATE ${LIBSPDLOG}
     PRIVATE ${LIBFMT}
+    PRIVATE ${LIBRTTR_CORE}
     PRIVATE PahoMqttCpp::paho-mqttpp3
 )
 #add_definitions(-DBOOST_LOG_DYN_LINK)

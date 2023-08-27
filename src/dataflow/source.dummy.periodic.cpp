@@ -8,7 +8,7 @@ namespace edgelink {
 
 class DummyPeriodicSource : public virtual ISourceNode {
   public:
-    DummyPeriodicSource(const ::nlohmann::json::object_t& config) {}
+    DummyPeriodicSource(const ::nlohmann::json& config) {}
 
     void start() override {}
 
@@ -17,15 +17,18 @@ class DummyPeriodicSource : public virtual ISourceNode {
 
 struct DummyPeriodicSourceProvider : public virtual ISourceProvider {
   public:
-    DummyPeriodicSourceProvider() : _type_name("source.dummy.periodic") { Engine::register_source(this); }
+    DummyPeriodicSourceProvider() : _type_name("source.dummy.periodic") {}
 
-    const std::string& type_name() const override { return _type_name; }
-    ISourceNode* create(const ::nlohmann::json::object_t& config) const override { return new DummyPeriodicSource(config); }
+    const std::string_view& type_name() const override { return _type_name; }
+    ISourceNode* create(const ::nlohmann::json& config) const override { return new DummyPeriodicSource(config); }
 
   private:
-    const string _type_name;
+    const string_view _type_name;
+
+    RTTR_ENABLE(ISourceProvider)
 };
 
-const static DummyPeriodicSourceProvider s_dummy_periodic_source_provider;
-
 }; // namespace edgelink
+
+
+RTTR_REGISTRATION { rttr::registration::class_<edgelink::DummyPeriodicSourceProvider>("edgelink::DummyPeriodicSourceProvider"); }
