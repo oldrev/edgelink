@@ -1,6 +1,9 @@
-#include "../pch.h"
+#include "../pch.hpp"
 
-#include <edgelink/transport/modbus.hpp>
+#include <modbus/modbus.h>
+
+#include "edgelink/edgelink.hpp"
+#include "edgelink/transport/modbus.hpp"
 
 using namespace std;
 

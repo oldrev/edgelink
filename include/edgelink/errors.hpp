@@ -1,5 +1,7 @@
 #pragma once
 
+namespace edgelink {
+
 class ArgumentException : public std::invalid_argument {};
 
 class IOException : public std::exception {
@@ -13,3 +15,5 @@ class IOException : public std::exception {
   private:
     std::string _message;
 };
+
+}; // namespace edgelink

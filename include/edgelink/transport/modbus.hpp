@@ -1,7 +1,5 @@
 #pragma once
 
-#include <modbus/modbus.h>
-
 namespace edgelink {
 
 enum class ModbusTransport {
