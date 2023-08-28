@@ -54,12 +54,14 @@ struct IDataFlowNode : public virtual IDataFlowElement {
 struct ISourceNode : public virtual IDataFlowNode {};
 
 /// @brief 数据接收器接口
-struct ISinkNode : public virtual IDataFlowNode {};
+struct ISinkNode : public virtual IDataFlowNode {
+    virtual void receive(const Msg* msg) = 0;
+};
 
 /// @brief 管道接口
 struct IPipe : public virtual IDataFlowElement {
-    virtual IDataFlowElement* from() const = 0;
-    virtual IDataFlowElement* to() const = 0;
+    virtual IDataFlowNode* from() const = 0;
+    virtual IDataFlowNode* to() const = 0;
 
     virtual bool is_match(const Msg* data) const = 0;
 };
@@ -95,7 +97,6 @@ class AbstractSource : public virtual AbstractDataFlowElement, public virtual IS
     virtual void process(std::stop_token& stoken) = 0;
 
     std::jthread& thread() { return _thread; }
-    // boost::concurrent::concurrent_queue<Msg*>& msg_queue() { return _msg_queue; }
 
     void emit_msg(Msg* msg) {
         // 直接将一个消息入队
@@ -104,21 +105,20 @@ class AbstractSource : public virtual AbstractDataFlowElement, public virtual IS
 
   private:
     std::jthread _thread; // 一个数据源一个线程
-    // boost::concurrent::concurrent_queue<Msg*> _msg_queue;
 };
 
 class AbstractPipe : public virtual AbstractDataFlowElement, public virtual IPipe {
 
   public:
-    AbstractPipe(const ::nlohmann::json::object_t& config, IDataFlowElement* from, IDataFlowElement* to)
+    AbstractPipe(const ::nlohmann::json::object_t& config, IDataFlowNode* from, IDataFlowNode* to)
         : _from(from), _to(to) {}
 
-    IDataFlowElement* from() const { return _from; }
-    IDataFlowElement* to() const { return _to; }
+    IDataFlowNode* from() const override { return _from; }
+    IDataFlowNode* to() const override { return _to; }
 
   private:
-    IDataFlowElement* _from;
-    IDataFlowElement* _to;
+    IDataFlowNode* _from;
+    IDataFlowNode* _to;
 };
 
 class AbstractQueuedSourceNode : public virtual AbstractDataFlowElement, public virtual ISourceNode {};

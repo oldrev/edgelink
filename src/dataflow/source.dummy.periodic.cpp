@@ -6,16 +6,18 @@ using namespace std;
 
 namespace edgelink {
 
-class DummyPeriodicSource : public virtual ISourceNode {
+class DummyPeriodicSource : public AbstractSource {
   public:
     DummyPeriodicSource(const ::nlohmann::json& config) {}
 
-    void start() override {}
-
-    void stop() override {}
+    void process(std::stop_token& stoken) override {
+        // TODO 产生消息给 Engine
+        std::this_thread::sleep_for(1000ms);
+        spdlog::info("DummyPeriodicSource: 产生时间");
+    }
 };
 
-struct DummyPeriodicSourceProvider : public virtual ISourceProvider {
+struct DummyPeriodicSourceProvider : public ISourceProvider {
   public:
     DummyPeriodicSourceProvider() : _type_name("source.dummy.periodic") {}
 
@@ -30,5 +32,7 @@ struct DummyPeriodicSourceProvider : public virtual ISourceProvider {
 
 }; // namespace edgelink
 
-
-RTTR_REGISTRATION { rttr::registration::class_<edgelink::DummyPeriodicSourceProvider>("edgelink::DummyPeriodicSourceProvider"); }
+RTTR_REGISTRATION {
+    rttr::registration::class_<edgelink::DummyPeriodicSourceProvider>("edgelink::DummyPeriodicSourceProvider")
+        .constructor()(rttr::policy::ctor::as_raw_ptr);
+}

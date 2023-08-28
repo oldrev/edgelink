@@ -9,14 +9,14 @@ using namespace std;
 
 namespace edgelink {
 
-class BaseModbusSource : public virtual ISourceNode {
+class BaseModbusSource : public ISourceNode {
 
     void start() override {}
 
     void stop() override {}
 };
 
-class ModbusRtuSource : public virtual BaseModbusSource {
+class ModbusRtuSource : public BaseModbusSource {
   public:
     ModbusRtuSource(const ::nlohmann::json& config) {}
 };
@@ -26,7 +26,7 @@ class ModbusTcpSource : public virtual BaseModbusSource {
     ModbusTcpSource(const ::nlohmann::json::object_t& config) {}
 };
 
-struct ModbusRtuSourceProvider : public virtual ISourceProvider {
+struct ModbusRtuSourceProvider : public ISourceProvider {
     ModbusRtuSourceProvider() : _type_name("source.modbus.rtu") {}
 
     const std::string_view& type_name() const override { return _type_name; }
@@ -38,7 +38,9 @@ struct ModbusRtuSourceProvider : public virtual ISourceProvider {
     RTTR_ENABLE(ISourceProvider)
 };
 
-
 }; // namespace edgelink
 
-RTTR_REGISTRATION { rttr::registration::class_<edgelink::ModbusRtuSourceProvider>("edgelink::ModbusRtuSourceProvider"); }
+RTTR_REGISTRATION {
+    rttr::registration::class_<edgelink::ModbusRtuSourceProvider>("edgelink::ModbusRtuSourceProvider")
+        .constructor()(rttr::policy::ctor::as_raw_ptr);
+}

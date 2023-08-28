@@ -5,16 +5,21 @@ using namespace std;
 
 namespace edgelink {
 
-class LoggedSink : public virtual ISinkNode {
+class LoggedSink : public ISinkNode {
   public:
     LoggedSink(const ::nlohmann::json& config) {}
 
     void start() override {}
 
     void stop() override {}
+
+    void receive(const Msg* msg) override {
+        spdlog::info("收到了消息");
+        //
+    }
 };
 
-class LoggedSinkProvider : public virtual ISinkProvider {
+class LoggedSinkProvider : public ISinkProvider {
   public:
     LoggedSinkProvider() : _type_name("sink.logged") {}
 
@@ -30,4 +35,7 @@ class LoggedSinkProvider : public virtual ISinkProvider {
 
 }; // namespace edgelink
 
-RTTR_REGISTRATION { rttr::registration::class_<edgelink::LoggedSinkProvider>("edgelink::LoggedSinkProvider"); }
+RTTR_REGISTRATION {
+    rttr::registration::class_<edgelink::LoggedSinkProvider>("edgelink::LoggedSinkProvider")
+        .constructor()(rttr::policy::ctor::as_raw_ptr);
+}

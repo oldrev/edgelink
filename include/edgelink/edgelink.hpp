@@ -3,6 +3,7 @@
 
 #include "errors.hpp"
 #include "dataflow.hpp"
+#include "dataflow.pipes.hpp"
 #include "logging.hpp"
 #include "engine.hpp"
 
