@@ -16,7 +16,7 @@ class DummyPeriodicSource : public AbstractSource {
   protected:
     void process(std::stop_token& stoken) override {
         // TODO 产生消息给 Engine
-        // std::this_thread::sleep_for(200ms);
+        std::this_thread::sleep_for(1000ms);
         spdlog::info("DummyPeriodicSource: 产生时间");
 
         auto msg = new Msg{
