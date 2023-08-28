@@ -23,7 +23,7 @@ jobs:
     - uses: actions/checkout@v3
 
     - name: Install dependencies
-      run: apt-get install git build-essential libsqlite3-dev uuid-dev libzmq5 libzmq3-dev git libspnav-dev cmake libmodbus-dev libboost1.81-all-dev libboost-url1.81-dev -y
+      run: sudo apt-get install git build-essential libsqlite3-dev uuid-dev git libspnav-dev cmake libmodbus-dev libboost1.81-all-dev libboost-url1.81-dev -y
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
