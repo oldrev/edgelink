@@ -9,28 +9,34 @@ using namespace std;
 
 namespace edgelink {
 
-class BaseModbusSource : public ISourceNode {
-
-    void start() override {}
-
-    void stop() override {}
+class BaseModbusSource : public AbstractSource {
+  public:
+    BaseModbusSource(const ::nlohmann::json& config, IMsgRouter* router) : AbstractSource(router) {}
 };
 
 class ModbusRtuSource : public BaseModbusSource {
   public:
-    ModbusRtuSource(const ::nlohmann::json& config) {}
+    ModbusRtuSource(const ::nlohmann::json& config, IMsgRouter* router) : BaseModbusSource(config, router) {}
+
+  protected:
+    void process(std::stop_token& stoken) override {}
 };
 
 class ModbusTcpSource : public virtual BaseModbusSource {
   public:
-    ModbusTcpSource(const ::nlohmann::json::object_t& config) {}
+    ModbusTcpSource(const ::nlohmann::json& config, IMsgRouter* router) : BaseModbusSource(config, router) {}
+
+  protected:
+    void process(std::stop_token& stoken) override { }
 };
 
 struct ModbusRtuSourceProvider : public ISourceProvider {
     ModbusRtuSourceProvider() : _type_name("source.modbus.rtu") {}
 
     const std::string_view& type_name() const override { return _type_name; }
-    ISourceNode* create(const ::nlohmann::json& config) const override { return new ModbusRtuSource(config); }
+    ISourceNode* create(const ::nlohmann::json& config, IMsgRouter* router) const override {
+        return new ModbusRtuSource(config, router);
+    }
 
   private:
     const string_view _type_name;

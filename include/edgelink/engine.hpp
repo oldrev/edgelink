@@ -8,12 +8,17 @@ struct EngineConfig {
     size_t queue_capacity;
 };
 
+using MsgRoutingPath = boost::container::static_vector<IDataFlowNode*, 16>;
+
 class Engine : public virtual IEngine {
   public:
     Engine(const ::nlohmann::json& json_config);
 
     void run() override;
     void emit(Msg* msg) override;
+
+  private:
+    void do_dfs(IDataFlowNode* current, MsgRoutingPath& path, Msg* msg);
 
   private:
     std::vector<ISourceNode*> _sources;

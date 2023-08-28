@@ -10,6 +10,7 @@
 #include <thread>
 #include <chrono>
 #include <stdexcept>
+#include <type_traits>
 #include "rva/variant.hpp"
 
 #include <boost/di.hpp>
@@ -17,6 +18,8 @@
 #include <boost/lockfree/queue.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/thread/concurrent_queues/sync_bounded_queue.hpp>
+#include <boost/container/static_vector.hpp>
+
 
 #include <nlohmann/json.hpp>
 #include <spdlog/spdlog.h>
