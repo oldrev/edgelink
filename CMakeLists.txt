@@ -7,6 +7,12 @@ set(CMAKE_GENERATOR "Ninja")
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# 设置 C++ 编译器为 ccache
+set(CMAKE_CXX_COMPILER_LAUNCHER ccache)
+
+# 设置 C 编译器为 ccache
+set(CMAKE_C_COMPILER_LAUNCHER ccache)
+
 
 # 查找Boost库
 find_package(Boost REQUIRED COMPONENTS system log regex log_setup url  thread)
