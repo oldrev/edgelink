@@ -23,7 +23,7 @@ jobs:
     - uses: actions/checkout@v3
 
     - name: Install dependencies
-      run: sudo apt-get install git build-essential libsqlite3-dev uuid-dev git libspnav-dev cmake libmodbus-dev libpaho-mqtt-dev libpaho-mqttpp-dev libspdlog-dev -y
+      run: sudo apt-get install git build-essential libsqlite3-dev uuid-dev git libspnav-dev cmake libmodbus-dev libpaho-mqtt-dev libpaho-mqttpp-dev libspdlog-dev librttr-dev -y
 
     - name: Install boost
       uses: MarkusJx/install-boost@v2.4.4
@@ -40,7 +40,7 @@ jobs:
           # OPTIONAL: Specify a toolset
           toolset: gcc
           # OPTIONAL: Specify an architecture
-          arch: x86
+          # arch: x86
 
 
     - name: Configure CMake
