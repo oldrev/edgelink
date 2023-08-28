@@ -66,18 +66,7 @@ void Engine::emit(Msg* msg) {
     // 这里只是概念验证原型
     // 消息来源调用此函数将消息存入队列，然后引擎 worker 线程取出消息进入流水线处理
 
-    spdlog::info("处理消息了呢");
-    try {
-        MsgRoutingPath path;
-        this->do_dfs(msg->source, path, msg);
-    } catch (std::exception& ex) {
-        spdlog::error("处理消息时发生了异常: {0}", ex.what());
-    } catch (...) {
-        spdlog::error("处理消息时发生了未知异常");
-    }
-
-    // 消息处理完就删掉
-    delete msg;
+    _msg_queue.wait_push_back(msg);
 }
 
 void Engine::run() {
@@ -109,19 +98,34 @@ void Engine::run() {
     }
 
     // 引擎主线程
-    auto thread = std::jthread([this](std::stop_token stoken) {
-        while (!stoken.stop_requested()) {
-            // 执行线程的工作
-            std::this_thread::sleep_for(std::chrono::seconds(5));
-            std::cout << "Worker thread is running..." << std::endl;
-        }
-    });
+    spdlog::info("正在启动引擎工作线程");
+    auto thread = std::jthread([this](std::stop_token stoken) { this->worker_proc(stoken); });
     thread.join();
+}
+
+void Engine::worker_proc(std::stop_token stoken) {
+    while (!stoken.stop_requested()) {
+
+        Msg* msg;
+        try {
+            _msg_queue.wait_pull_front(msg);
+
+            MsgRoutingPath path;
+            this->do_dfs(msg->source, path, msg);
+        } catch (std::exception& ex) {
+            spdlog::error("处理消息时发生了异常: {0}", ex.what());
+        } catch (...) {
+            spdlog::error("处理消息时发生了未知异常");
+        }
+
+        // 消息处理完就删掉
+        delete msg;
+    }
 }
 
 void Engine::do_dfs(IDataFlowNode* current, MsgRoutingPath& path, Msg* msg) {
 
-   // 将当前节点添加到路径中
+    // 将当前节点添加到路径中
     path.push_back(current);
 
     // 找到以当前节点为起点的所有边
@@ -143,7 +147,7 @@ void Engine::do_dfs(IDataFlowNode* current, MsgRoutingPath& path, Msg* msg) {
                 if (!isVisited) {
                     // 递归调用DFS来继续探索路径
                     auto target_filter_node = dynamic_cast<IFilter*>(pipe->to());
-                    if(target_filter_node == nullptr) {
+                    if (target_filter_node == nullptr) {
                     }
                     target_filter_node->filter(msg);
                     this->do_dfs(pipe->to(), path, msg);

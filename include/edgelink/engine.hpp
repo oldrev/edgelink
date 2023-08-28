@@ -1,7 +1,5 @@
 #pragma once
 
-#include "dataflow.hpp"
-
 namespace edgelink {
 
 struct EngineConfig {
@@ -19,16 +17,16 @@ class Engine : public virtual IEngine {
 
   private:
     void do_dfs(IDataFlowNode* current, MsgRoutingPath& path, Msg* msg);
+    void worker_proc(std::stop_token stoken);
 
   private:
     std::vector<ISourceNode*> _sources;
     std::vector<ISinkNode*> _sinks;
     std::vector<IPipe*> _pipes;
     std::vector<IFilter*> _filters;
-    boost::sync_bounded_queue<Msg*> _msg_queue;
     const EngineConfig _config;
+    boost::sync_bounded_queue<Msg*> _msg_queue;
 
-  private:
     std::map<std::string_view, const ISourceProvider*> _source_providers;
     std::map<std::string_view, const ISinkProvider*> _sink_providers;
     std::map<std::string_view, const IFilterProvider*> _filter_providers;

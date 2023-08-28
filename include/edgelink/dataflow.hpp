@@ -5,7 +5,7 @@ namespace edgelink {
 using MsgValue = rva::variant<          //
     std::nullptr_t,                     // json null
     bool,                               // json boolean
-    double,                             // json number
+    std::decimal::decimal64,            // json number
     std::string,                        // json string
     std::map<std::string, rva::self_t>, // json object, type is std::map<std::string, json_value>
     std::vector<rva::self_t>>;          // json array, type is std::vector<json_value>
@@ -87,6 +87,7 @@ class AbstractSource : public AbstractDataFlowElement, public ISourceNode {
     IMsgRouter* router() const override { return _router; }
 
     void start() override {
+        auto x = std::decimal::decimal64(10);
         if (!_thread.joinable()) {
             _thread = std::jthread([this](std::stop_token stoken) {
                 // 线程函数

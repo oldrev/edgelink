@@ -14,8 +14,8 @@ class LoggedSink : public ISinkNode {
     void stop() override {}
 
     void receive(const Msg* msg) override {
-        spdlog::info("LoggerSink: 收到了消息");
-        //
+        decimal64 count = std::get<decimal64>(msg->payload.at("count"));
+        spdlog::info("LoggerSink: 收到了消息：[counter={0}]", count);
     }
 };
 

@@ -3,6 +3,7 @@
 #include "edgelink/edgelink.hpp"
 
 using namespace std;
+using namespace std::decimal;
 
 namespace edgelink {
 
@@ -15,7 +16,7 @@ class DummyPeriodicSource : public AbstractSource {
   protected:
     void process(std::stop_token& stoken) override {
         // TODO 产生消息给 Engine
-        std::this_thread::sleep_for(1000ms);
+        // std::this_thread::sleep_for(200ms);
         spdlog::info("DummyPeriodicSource: 产生时间");
 
         auto msg = new Msg{
@@ -24,7 +25,7 @@ class DummyPeriodicSource : public AbstractSource {
         };
 
         _counter++;
-        msg->payload["count"] = (double)_counter;
+        msg->payload["count"] = decimal64(_counter);
 
             this->router()->emit(msg);
     }
