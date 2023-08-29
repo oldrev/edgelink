@@ -51,11 +51,11 @@ struct IDataFlowElement {};
 struct IDataFlowNode : public IDataFlowElement {
     virtual void start() = 0;
     virtual void stop() = 0;
+    virtual IMsgRouter* router() const = 0;
 };
 
 /// @brief 数据源接口
 struct ISourceNode : public IDataFlowNode {
-    virtual IMsgRouter* router() const = 0;
 };
 
 /// @brief 数据接收器接口
@@ -65,8 +65,8 @@ struct ISinkNode : public IDataFlowNode {
 
 /// @brief 管道接口
 struct IPipe : public IDataFlowElement {
-    virtual IDataFlowNode* from() const = 0;
-    virtual IDataFlowNode* to() const = 0;
+    virtual IDataFlowNode* input() const = 0;
+    virtual IDataFlowNode* output() const = 0;
 
     virtual bool is_match(const Msg* data) const = 0;
 };
@@ -82,7 +82,7 @@ class AbstractDataFlowElement : public IDataFlowElement {};
 /// @brief 抽象数据源
 class AbstractSource : public AbstractDataFlowElement, public ISourceNode {
   public:
-    AbstractSource(IMsgRouter* router) : _router(router) {}
+    explicit AbstractSource(IMsgRouter* router) : _router(router) {}
 
     IMsgRouter* router() const override { return _router; }
 
@@ -124,41 +124,37 @@ class AbstractSource : public AbstractDataFlowElement, public ISourceNode {
     IMsgRouter* _router;
 };
 
+
+/// @brief 抽象数据接收器
+class AbstractSink : public AbstractDataFlowElement, public ISinkNode {
+  public:
+    explicit AbstractSink(IMsgRouter* router) : _router(router) {}
+
+    IMsgRouter* router() const override { return _router; }
+
+  private:
+    IMsgRouter* _router;
+};
+
 class AbstractPipe : public AbstractDataFlowElement, public IPipe {
 
   public:
-    AbstractPipe(const ::nlohmann::json::object_t& config, IDataFlowNode* from, IDataFlowNode* to)
-        : _from(from), _to(to) {}
+    AbstractPipe(const ::nlohmann::json::object_t& config, IDataFlowNode* input, IDataFlowNode* output)
+        : _input(input), _output(output) {}
 
-    IDataFlowNode* from() const override { return _from; }
-    IDataFlowNode* to() const override { return _to; }
+    IDataFlowNode* input() const override { return _input; }
+    IDataFlowNode* output() const override { return _output; }
 
   private:
-    IDataFlowNode* _from;
-    IDataFlowNode* _to;
+    IDataFlowNode* _input;
+    IDataFlowNode* _output;
 };
 
 class AbstractQueuedSourceNode : public AbstractDataFlowElement, public ISourceNode {};
 
-struct ISourceProvider {
+struct INodeProvider {
     virtual const std::string_view& type_name() const = 0;
-    virtual ISourceNode* create(const ::nlohmann::json& config, IMsgRouter* router) const = 0;
-
-    RTTR_ENABLE()
-};
-
-struct ISinkProvider {
-
-    virtual const std::string_view& type_name() const = 0;
-    virtual ISinkNode* create(const ::nlohmann::json& config) const = 0;
-
-    RTTR_ENABLE()
-};
-
-struct IFilterProvider {
-
-    virtual const std::string_view& type_name() const = 0;
-    virtual IFilter* create(const ::nlohmann::json& config) const = 0;
+    virtual IDataFlowNode* create(const ::nlohmann::json& config, IMsgRouter* router) const = 0;
 
     RTTR_ENABLE()
 };

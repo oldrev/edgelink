@@ -9,56 +9,67 @@ namespace edgelink {
 Engine::Engine(const nlohmann::json& json_config)
     : _config{.queue_capacity = 100}, _msg_queue(boost::sync_bounded_queue<Msg*>(100)) {
 
-    {
-        // 注册 sources
-        auto source_provider_type = rttr::type::get<ISourceProvider>();
-        auto source_providers = source_provider_type.get_derived_classes();
-        for (auto& pt : source_providers) {
-            auto provider_var = pt.create();
-            auto provider = provider_var.get_value<ISourceProvider*>();
-            _source_providers[provider->type_name()] = provider;
-            spdlog::info("注册数据源: [class_name={0}, type_name={1}]", pt.get_name(), provider->type_name());
-        }
+    // 注册 nodes
+    spdlog::info("开始注册数据流节点");
+    auto node_provider_type = rttr::type::get<INodeProvider>();
+    auto node_providers = node_provider_type.get_derived_classes();
+    for (auto& pt : node_providers) {
+        auto provider_var = pt.create();
+        auto provider = provider_var.get_value<INodeProvider*>();
+        _node_providers[provider->type_name()] = provider;
+        spdlog::info("注册数据流节点: [class_name={0}, type_name={1}]", pt.get_name(), provider->type_name());
     }
-
-    {
-        // 注册 sinks
-        auto sink_provider_type = rttr::type::get<ISinkProvider>();
-        auto sink_providers = sink_provider_type.get_derived_classes();
-        for (auto& pt : sink_providers) {
-            auto provider_var = pt.create();
-            auto provider = provider_var.get_value<ISinkProvider*>();
-            _sink_providers[provider->type_name()] = provider;
-            spdlog::info("注册数据接收器: [class_name={0}, type_name={1}]", pt.get_name(), provider->type_name());
-        }
-    }
-
-    {
-        // 注册 filters
-        auto filter_provider_type = rttr::type::get<IFilterProvider>();
-        auto filter_providers = filter_provider_type.get_derived_classes();
-        for (auto& pt : filter_providers) {
-            auto provider_var = pt.create();
-            auto provider = provider_var.get_value<IFilterProvider*>();
-            _filter_providers[provider->type_name()] = provider;
-            spdlog::info("注册数据过滤器: [class_name={0}, type_name={1}]", pt.get_name(), provider->type_name());
-        }
-    }
-
-    auto config = nlohmann::json::object();
 
     // 这里注册测试用的
-    auto sp0 = Engine::_source_providers["source.dummy.periodic"];
-    _sources.push_back(sp0->create(config, this));
+    auto dataflow_elements = json_config["dataflow"];
 
-    auto sp1 = Engine::_sink_providers["sink.logged"];
-    _sinks.push_back(sp1->create(config));
+    // 第一遍扫描先创建节点
+    std::map<std::string, IDataFlowNode*> node_map;
 
-    // 注册个管道
-    IDataFlowNode* from = dynamic_cast<IDataFlowNode*>(_sources[0]);
-    IDataFlowNode* to = dynamic_cast<IDataFlowNode*>(_sinks[0]);
-    auto edge0 = new ForwardPipe(config, from, to);
-    _pipes.push_back(edge0);
+    for (const auto& elem : dataflow_elements) {
+        const std::string elem_type = elem["$type"];
+        if (elem_type == "pipe") { // 管道直接跳过
+            continue;
+        }
+
+        const std::string elem_key = elem["@key"];
+        spdlog::info("开始创建数据流节点：[$type={0}, @key={1}]", elem_type, elem_key);
+        auto provider_iter = _node_providers.find(elem_type);
+        if(provider_iter ==_node_providers.end()) {
+            spdlog::error("找不到数据流节点配型：'{0}'", elem_type);
+            throw BadConfigException(elem_type, "无效的配置主键");
+        }
+        auto node = provider_iter->second->create(elem, this);
+        _nodes.push_back(node);
+        node_map[elem_key] = node;
+    }
+
+    // 第二遍扫描创建管道
+    for (const auto& elem : dataflow_elements) {
+        const std::string elem_type = elem["$type"];
+        if (elem_type != "pipe") { // 非管道就跳过
+            continue;
+        }
+        spdlog::info("开始创建数据流管道");
+        const std::string& input_key = elem["@input"];
+        const std::string& output_key = elem["@output"];
+        auto input_node = node_map.at(input_key);
+        auto output_node = node_map.at(output_key);
+        auto pipe = new ForwardPipe(elem, input_node, output_node);
+        _pipes.push_back(pipe);
+        spdlog::info("已创建数据流管道");
+    }
+}
+
+Engine::~Engine() {
+
+    for (auto pipe : _pipes) {
+        delete pipe;
+    }
+
+    for (auto node : _nodes) {
+        delete node;
+    }
 }
 
 void Engine::emit(Msg* msg) {
@@ -92,14 +103,20 @@ void Engine::run() {
     }
     */
 
-    for (auto& i : _sources) {
-        spdlog::info("正在启动来源线程");
-        i->start();
+    for (auto node : _nodes) {
+
+        spdlog::info("正在启动数据源节点：{0}", typeid(node).name());
+        auto source_node = dynamic_cast<ISourceNode*>(node); 
+        if(source_node != nullptr) {
+            source_node->start();
+        }
     }
+    spdlog::info("全部节点启动完毕");
 
     // 引擎主线程
     spdlog::info("正在启动引擎工作线程");
     auto thread = std::jthread([this](std::stop_token stoken) { this->worker_proc(stoken); });
+    spdlog::info("引擎工作线程已启动");
     thread.join();
 }
 
@@ -130,27 +147,27 @@ void Engine::do_dfs(IDataFlowNode* current, MsgRoutingPath& path, Msg* msg) {
 
     // 找到以当前节点为起点的所有边
     for (auto pipe : _pipes) {
-        if (pipe->from() == current && pipe->is_match(msg)) {
+        if (pipe->input() == current && pipe->is_match(msg)) {
             // 检查目标节点是否已经在路径中，以避免循环
             bool isVisited = false;
             for (auto dest_node : path) {
-                if (dest_node == pipe->to()) {
+                if (dest_node == pipe->output()) {
                     isVisited = true;
                     break;
                 }
             }
 
-            auto target_sink_node = dynamic_cast<ISinkNode*>(pipe->to());
+            auto target_sink_node = dynamic_cast<ISinkNode*>(pipe->output());
             if (target_sink_node != nullptr) { // 到达了收集器
                 target_sink_node->receive(msg);
             } else { // 其他只可能是过滤器节点
                 if (!isVisited) {
                     // 递归调用DFS来继续探索路径
-                    auto target_filter_node = dynamic_cast<IFilter*>(pipe->to());
+                    auto target_filter_node = dynamic_cast<IFilter*>(pipe->output());
                     if (target_filter_node == nullptr) {
                     }
                     target_filter_node->filter(msg);
-                    this->do_dfs(pipe->to(), path, msg);
+                    this->do_dfs(pipe->output(), path, msg);
                 }
             }
         }

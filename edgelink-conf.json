@@ -2,47 +2,23 @@
     "projectID": "yncic-dangerous",
     "deviceID": "3D24E79E3D7D4078B48440B528E7BF74",
     "serverUrl": "tcp://test.mosquitto.org:1883",
-
     "queueCapacity": 100,
-
-
     "dataflow": [
-
         {
-            "$type": "source.modbus.rtu",
-            "id": "modbus.in",
-            "interval": 5000,
-            "port": "COM4",
-            "baudRate": 115200,
-            "sites": [
-                {
-                    "$type": "coil",
-                    "address": 0,
-                    "count": 4
-                }
-            ]
+            "$type": "source.inject",
+            "@key": "source1",
+            "@cron": "*/2 * * * * ?" // 每隔两秒执行一次
         },
-
         {
-            "$type": "filter.forward",
-            "id": "filter.1",
-            "input": "modbus.in",
-            "output": "mqtt.out",
-            "condition": "x.name = "
+            "$type": "pipe",
+            "@key": "pipe.1",
+            "@input": "source1",
+            "@output": "sink1",
+            "@condition": "true"
         },
-
         {
-            "$type": "sink.mqtt",
-            "id": "mqtt.out",
-            "host": "test.mosquitto.org",
-            "port": "1883",
-            "topic": "/data/test"
+            "$type": "sink.logged",
+            "@key": "sink1"
         }
-
     ]
-
-
-
-
-
 }

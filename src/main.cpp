@@ -12,7 +12,9 @@ namespace edgelink {
 
 class App {
   public:
-    App(std::shared_ptr<Engine> engine) : _engine(engine) {}
+    App(std::shared_ptr<nlohmann::json>& json_config, std::shared_ptr<Engine> engine) : _engine(engine) {
+        std::cout << *json_config << std::endl;
+    }
 
     void run() {
         spdlog::info("正在启动消息引擎...");
@@ -38,10 +40,10 @@ int main(int argc, char* argv[]) {
 
     spdlog::info("日志子系统已初始化");
 
-    ::nlohmann::json json_config;
+    std::shared_ptr<::nlohmann::json> json_config = nullptr;
     try {
         std::ifstream config_file("./edgelink-conf.json");
-        json_config = ::nlohmann::json::parse(config_file, nullptr, true, true);
+        json_config = std::make_shared<::nlohmann::json>(::nlohmann::json::parse(config_file, nullptr, true, true));
     } catch (std::exception& ex) {
         spdlog::critical("读取配置文件错误：{0}", ex.what());
         return -1;
@@ -51,10 +53,10 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
-    const auto injector = di::make_injector(                                    //
-        di::bind<App>().in(di::singleton),                                      // App
-        di::bind<Engine>().in(di::singleton),                                   // Engine
-        di::bind<::nlohmann::json>.to(std::move(json_config)).in(di::singleton) //
+    const auto injector = di::make_injector(                         //
+        di::bind<>().to(json_config), //
+        di::bind<App>().in(di::singleton),                           // App
+        di::bind<Engine>().in(di::singleton)                         // Engine
     );
 
     auto app = injector.create<App>();

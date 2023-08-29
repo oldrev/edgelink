@@ -27,21 +27,21 @@ class ModbusTcpSource : public virtual BaseModbusSource {
     ModbusTcpSource(const ::nlohmann::json& config, IMsgRouter* router) : BaseModbusSource(config, router) {}
 
   protected:
-    void process(std::stop_token& stoken) override { }
+    void process(std::stop_token& stoken) override {}
 };
 
-struct ModbusRtuSourceProvider : public ISourceProvider {
+struct ModbusRtuSourceProvider : public INodeProvider {
     ModbusRtuSourceProvider() : _type_name("source.modbus.rtu") {}
 
     const std::string_view& type_name() const override { return _type_name; }
-    ISourceNode* create(const ::nlohmann::json& config, IMsgRouter* router) const override {
+    IDataFlowNode* create(const ::nlohmann::json& config, IMsgRouter* router) const override {
         return new ModbusRtuSource(config, router);
     }
 
   private:
     const string_view _type_name;
 
-    RTTR_ENABLE(ISourceProvider)
+    RTTR_ENABLE(INodeProvider)
 };
 
 }; // namespace edgelink

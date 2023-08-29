@@ -5,9 +5,9 @@ using namespace std;
 
 namespace edgelink {
 
-class LoggedSink : public ISinkNode {
+class LoggedSink : public AbstractSink {
   public:
-    LoggedSink(const ::nlohmann::json& config) {}
+    LoggedSink(const ::nlohmann::json& config, IMsgRouter* router) : AbstractSink(router) {}
 
     void start() override {}
 
@@ -19,19 +19,21 @@ class LoggedSink : public ISinkNode {
     }
 };
 
-class LoggedSinkProvider : public ISinkProvider {
+class LoggedSinkProvider : public INodeProvider {
   public:
     LoggedSinkProvider() : _type_name("sink.logged") {}
 
     const std::string_view& type_name() const override { return _type_name; }
-    ISinkNode* create(const ::nlohmann::json& config) const override { return new LoggedSink(config); }
+
+    IDataFlowNode* create(const ::nlohmann::json& config, IMsgRouter* router) const override {
+        return new LoggedSink(config, router);
+    }
 
   private:
     const string_view _type_name;
 
-    RTTR_ENABLE(ISinkProvider)
+    RTTR_ENABLE(INodeProvider)
 };
-
 
 }; // namespace edgelink
 
