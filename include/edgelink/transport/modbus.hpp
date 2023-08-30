@@ -17,7 +17,7 @@ class ModbusException : public IOException {
     int _error_code;
 };
 
-class ModbusClient : public virtual IClosable {
+class ModbusClient : public IClosable {
   public:
     ModbusClient(const std::string_view& url, int baud, char parity, int data_bits, int stop_bits);
     ~ModbusClient();

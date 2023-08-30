@@ -7,7 +7,8 @@ namespace edgelink {
 
 class LoggedSink : public AbstractSink {
   public:
-    LoggedSink(const ::nlohmann::json& config, IMsgRouter* router) : AbstractSink(router) {}
+    LoggedSink(const ::nlohmann::json& config, const INodeDescriptor* desc, IMsgRouter* router)
+        : AbstractSink(desc, router) {}
 
     void start() override {}
 
@@ -19,14 +20,16 @@ class LoggedSink : public AbstractSink {
     }
 };
 
-class LoggedSinkProvider : public INodeProvider {
+class LoggedSinkProvider : public INodeProvider, public INodeDescriptor {
   public:
     LoggedSinkProvider() : _type_name("sink.logged") {}
 
+    const INodeDescriptor* descriptor() const override { return this; }
     const std::string_view& type_name() const override { return _type_name; }
+    const NodeKind kind() const override { return NodeKind::SINK; }
 
     IDataFlowNode* create(const ::nlohmann::json& config, IMsgRouter* router) const override {
-        return new LoggedSink(config, router);
+        return new LoggedSink(config, this, router);
     }
 
   private:

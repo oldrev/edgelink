@@ -11,7 +11,8 @@ namespace edgelink {
 
 class InjectSource : public AbstractSource {
   public:
-    InjectSource(const ::nlohmann::json& config, IMsgRouter* router) : AbstractSource(router), _counter(0) {
+    InjectSource(const ::nlohmann::json& config, const INodeDescriptor* desc, IMsgRouter* router)
+        : AbstractSource(desc, router), _counter(0) {
         std::cout << config << std::endl;
         const std::string cron_expression = config["@cron"];
         _cron = ::cron::make_cron(cron_expression);
@@ -44,14 +45,17 @@ class InjectSource : public AbstractSource {
     cron::cronexpr _cron;
 };
 
-struct InjectSourceProvider : public INodeProvider {
+struct InjectSourceProvider : public INodeProvider, public INodeDescriptor {
   public:
     InjectSourceProvider() : _type_name("source.inject") {}
 
-    const std::string_view& type_name() const override { return _type_name; }
     IDataFlowNode* create(const ::nlohmann::json& config, IMsgRouter* router) const override {
-        return new InjectSource(config, router);
+        return new InjectSource(config, this, router);
     }
+
+    const INodeDescriptor* descriptor() const override { return this; }
+    const std::string_view& type_name() const override { return _type_name; }
+    const NodeKind kind() const override { return NodeKind::SOURCE; }
 
   private:
     const string_view _type_name;

@@ -11,32 +11,38 @@ namespace edgelink {
 
 class BaseModbusSource : public AbstractSource {
   public:
-    BaseModbusSource(const ::nlohmann::json& config, IMsgRouter* router) : AbstractSource(router) {}
+    BaseModbusSource(const ::nlohmann::json& config, const INodeDescriptor* desc, IMsgRouter* router)
+        : AbstractSource(desc, router) {}
 };
 
 class ModbusRtuSource : public BaseModbusSource {
   public:
-    ModbusRtuSource(const ::nlohmann::json& config, IMsgRouter* router) : BaseModbusSource(config, router) {}
+    ModbusRtuSource(const ::nlohmann::json& config, const INodeDescriptor* desc, IMsgRouter* router)
+        : BaseModbusSource(config, desc, router) {}
 
   protected:
     void process(std::stop_token& stoken) override {}
 };
 
-class ModbusTcpSource : public virtual BaseModbusSource {
+class ModbusTcpSource : public BaseModbusSource {
   public:
-    ModbusTcpSource(const ::nlohmann::json& config, IMsgRouter* router) : BaseModbusSource(config, router) {}
+    ModbusTcpSource(const ::nlohmann::json& config, const INodeDescriptor* desc, IMsgRouter* router)
+        : BaseModbusSource(config, desc, router) {}
 
   protected:
     void process(std::stop_token& stoken) override {}
 };
 
-struct ModbusRtuSourceProvider : public INodeProvider {
+struct ModbusRtuSourceProvider : public INodeProvider, public INodeDescriptor {
     ModbusRtuSourceProvider() : _type_name("source.modbus.rtu") {}
 
-    const std::string_view& type_name() const override { return _type_name; }
     IDataFlowNode* create(const ::nlohmann::json& config, IMsgRouter* router) const override {
-        return new ModbusRtuSource(config, router);
+        return new ModbusRtuSource(config, this->descriptor(), router);
     }
+
+    const INodeDescriptor* descriptor() const override { return this; }
+    const std::string_view& type_name() const override { return _type_name; }
+    const NodeKind kind() const override { return NodeKind::SOURCE; }
 
   private:
     const string_view _type_name;

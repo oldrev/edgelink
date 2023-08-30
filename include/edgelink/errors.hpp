@@ -27,4 +27,13 @@ class BadConfigException : public std::exception {
     std::string _key;
 };
 
+class InvalidDataException : public std::exception {
+  public:
+    InvalidDataException(const std::string& message) : _message(message) {}
+    const char* what() const noexcept override { return _message.c_str(); }
+
+  private:
+    std::string _message;
+};
+
 }; // namespace edgelink

@@ -4,7 +4,10 @@
 
 using namespace std;
 
+using PipeStaticVector = boost::container::static_vector<const edgelink::IPipe*, 128>;
+
 namespace edgelink {
+
 
 Engine::Engine(const nlohmann::json& json_config)
     : _config{.queue_capacity = 100}, _msg_queue(boost::sync_bounded_queue<Msg*>(100)) {
@@ -16,8 +19,9 @@ Engine::Engine(const nlohmann::json& json_config)
     for (auto& pt : node_providers) {
         auto provider_var = pt.create();
         auto provider = provider_var.get_value<INodeProvider*>();
-        _node_providers[provider->type_name()] = provider;
-        spdlog::info("注册数据流节点: [class_name={0}, type_name={1}]", pt.get_name(), provider->type_name());
+        auto desc = provider->descriptor();
+        _node_providers[desc->type_name()] = provider;
+        spdlog::info("注册数据流节点: [class_name={0}, type_name={1}]", pt.get_name(), desc->type_name());
     }
 
     // 这里注册测试用的
@@ -55,7 +59,7 @@ Engine::Engine(const nlohmann::json& json_config)
         const std::string& output_key = elem["@output"];
         auto input_node = node_map.at(input_key);
         auto output_node = node_map.at(output_key);
-        auto pipe = new ForwardPipe(elem, input_node, output_node);
+        auto pipe = new ForwardPipe(input_node, output_node);
         _pipes.push_back(pipe);
         spdlog::info("已创建数据流管道");
     }
@@ -145,30 +149,43 @@ void Engine::do_dfs(IDataFlowNode* current, MsgRoutingPath& path, Msg* msg) {
     // 将当前节点添加到路径中
     path.push_back(current);
 
+    PipeStaticVector out_pipes;
     // 找到以当前节点为起点的所有边
     for (auto pipe : _pipes) {
-        if (pipe->input() == current && pipe->is_match(msg)) {
-            // 检查目标节点是否已经在路径中，以避免循环
-            bool isVisited = false;
-            for (auto dest_node : path) {
-                if (dest_node == pipe->output()) {
-                    isVisited = true;
-                    break;
-                }
-            }
+        if (pipe->input() == current) {
+            out_pipes.push_back(pipe);
+        }
+    }
 
+    for (size_t i = 0; i < out_pipes.size(); i++) {
+        const auto pipe  = out_pipes[i]; 
+
+        // 检查目标节点是否已经在路径中，以避免循环
+        bool is_visited = false;
+        for (auto dest_node : path) {
+            if (dest_node == pipe->output()) {
+                is_visited = true;
+                break;
+            }
+        }
+
+        if (!is_visited) {
+
+            // TODO FIXME 把这些 dynamic_cast 替换掉
             auto target_sink_node = dynamic_cast<ISinkNode*>(pipe->output());
-            if (target_sink_node != nullptr) { // 到达了收集器
+            if (target_sink_node != nullptr) { // 遇到了收集器就停止了
+                // auto new_msg = i > 0 ? msg->clone() : msg;
                 target_sink_node->receive(msg);
             } else { // 其他只可能是过滤器节点
-                if (!isVisited) {
-                    // 递归调用DFS来继续探索路径
-                    auto target_filter_node = dynamic_cast<IFilter*>(pipe->output());
-                    if (target_filter_node == nullptr) {
-                    }
-                    target_filter_node->filter(msg);
-                    this->do_dfs(pipe->output(), path, msg);
+                auto target_filter_node = dynamic_cast<IFilter*>(pipe->output());
+                if (target_filter_node == nullptr) {
+                    throw InvalidDataException("配置错误，Pipe 指向了了非 IFilter 或 ISinkNode 节点");
                 }
+                // 执行过滤器
+                target_filter_node->filter(msg);
+
+                // 递归调用DFS来继续探索路径
+                this->do_dfs(pipe->output(), path, msg);
             }
         }
     }

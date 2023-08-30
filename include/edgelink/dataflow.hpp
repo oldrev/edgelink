@@ -13,10 +13,16 @@ using MsgValue = rva::variant<          //
 using MsgPayload = std::map<std::string, MsgValue>;
 
 struct ISourceNode;
+struct INodeDescriptor;
 
 struct Msg {
     ISourceNode* source;
     MsgPayload payload;
+
+    Msg* clone() {
+        // TODO FIXME 改成递归的深克隆
+        return new Msg(*this);
+    }
 };
 
 struct IEngine;
@@ -48,15 +54,21 @@ struct IEngine : public IMsgRouter {
 /// @brief 数据流处理基础元素
 struct IDataFlowElement {};
 
+enum class NodeKind {
+    SOURCE = 0, ///< 数据源
+    SINK = 1,   ///< 数据收集器
+    FILTER = 2  ///< 过滤器
+};
+
 struct IDataFlowNode : public IDataFlowElement {
+    virtual const INodeDescriptor* descriptor() const = 0;
     virtual void start() = 0;
     virtual void stop() = 0;
     virtual IMsgRouter* router() const = 0;
 };
 
 /// @brief 数据源接口
-struct ISourceNode : public IDataFlowNode {
-};
+struct ISourceNode : public IDataFlowNode {};
 
 /// @brief 数据接收器接口
 struct ISinkNode : public IDataFlowNode {
@@ -67,8 +79,6 @@ struct ISinkNode : public IDataFlowNode {
 struct IPipe : public IDataFlowElement {
     virtual IDataFlowNode* input() const = 0;
     virtual IDataFlowNode* output() const = 0;
-
-    virtual bool is_match(const Msg* data) const = 0;
 };
 
 /// @brief 过滤器接口
@@ -76,14 +86,12 @@ struct IFilter : public IDataFlowElement {
     virtual void filter(Msg* msg) const = 0;
 };
 
-/// @brief 抽象数据流元素
-class AbstractDataFlowElement : public IDataFlowElement {};
-
 /// @brief 抽象数据源
-class AbstractSource : public AbstractDataFlowElement, public ISourceNode {
+class AbstractSource : public ISourceNode {
   public:
-    explicit AbstractSource(IMsgRouter* router) : _router(router) {}
+    AbstractSource(const INodeDescriptor* desc, IMsgRouter* router) : _descriptor(desc), _router(router) {}
 
+    const INodeDescriptor* descriptor() const override { return _descriptor; }
     IMsgRouter* router() const override { return _router; }
 
     void start() override {
@@ -121,26 +129,29 @@ class AbstractSource : public AbstractDataFlowElement, public ISourceNode {
 
   private:
     std::jthread _thread; // 一个数据源一个线程
+
+  private:
     IMsgRouter* _router;
+    const INodeDescriptor* _descriptor;
 };
 
-
 /// @brief 抽象数据接收器
-class AbstractSink : public AbstractDataFlowElement, public ISinkNode {
+class AbstractSink : public ISinkNode {
   public:
-    explicit AbstractSink(IMsgRouter* router) : _router(router) {}
+    AbstractSink(const INodeDescriptor* desc, IMsgRouter* router) : _descriptor(desc), _router(router) {}
 
+    const INodeDescriptor* descriptor() const override { return _descriptor; }
     IMsgRouter* router() const override { return _router; }
 
   private:
     IMsgRouter* _router;
+    const INodeDescriptor* _descriptor;
 };
 
-class AbstractPipe : public AbstractDataFlowElement, public IPipe {
+class ForwardPipe : public IPipe {
 
   public:
-    AbstractPipe(const ::nlohmann::json::object_t& config, IDataFlowNode* input, IDataFlowNode* output)
-        : _input(input), _output(output) {}
+    ForwardPipe(IDataFlowNode* input, IDataFlowNode* output) : _input(input), _output(output) {}
 
     IDataFlowNode* input() const override { return _input; }
     IDataFlowNode* output() const override { return _output; }
@@ -150,10 +161,13 @@ class AbstractPipe : public AbstractDataFlowElement, public IPipe {
     IDataFlowNode* _output;
 };
 
-class AbstractQueuedSourceNode : public AbstractDataFlowElement, public ISourceNode {};
+struct INodeDescriptor {
+    virtual const std::string_view& type_name() const = 0;
+    virtual const NodeKind kind() const = 0;
+};
 
 struct INodeProvider {
-    virtual const std::string_view& type_name() const = 0;
+    virtual const INodeDescriptor* descriptor() const = 0;
     virtual IDataFlowNode* create(const ::nlohmann::json& config, IMsgRouter* router) const = 0;
 
     RTTR_ENABLE()
