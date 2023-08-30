@@ -108,10 +108,9 @@ void Engine::run() {
     */
 
     for (auto node : _nodes) {
-
         spdlog::info("正在启动数据源节点：{0}", typeid(node).name());
-        auto source_node = dynamic_cast<ISourceNode*>(node); 
-        if(source_node != nullptr) {
+        if (node->descriptor()->kind() == NodeKind::SOURCE) {
+            auto source_node = static_cast<ISourceNode*>(node);
             source_node->start();
         }
     }
@@ -158,12 +157,14 @@ void Engine::do_dfs(IDataFlowNode* current, MsgRoutingPath& path, Msg* msg) {
     }
 
     for (size_t i = 0; i < out_pipes.size(); i++) {
-        const auto pipe  = out_pipes[i]; 
+        const auto pipe  = out_pipes[i];
+        auto input = pipe->input();
+        auto output = pipe->output();
 
         // 检查目标节点是否已经在路径中，以避免循环
         bool is_visited = false;
         for (auto dest_node : path) {
-            if (dest_node == pipe->output()) {
+            if (dest_node == output) {
                 is_visited = true;
                 break;
             }
@@ -171,21 +172,24 @@ void Engine::do_dfs(IDataFlowNode* current, MsgRoutingPath& path, Msg* msg) {
 
         if (!is_visited) {
 
-            // TODO FIXME 把这些 dynamic_cast 替换掉
-            auto target_sink_node = dynamic_cast<ISinkNode*>(pipe->output());
-            if (target_sink_node != nullptr) { // 遇到了收集器就停止了
-                // auto new_msg = i > 0 ? msg->clone() : msg;
+            switch (output->descriptor()->kind()) {
+            case NodeKind::SINK: {
+                // 遇到了收集器就停止了
+                auto target_sink_node = static_cast<ISinkNode*>(output);
                 target_sink_node->receive(msg);
-            } else { // 其他只可能是过滤器节点
-                auto target_filter_node = dynamic_cast<IFilter*>(pipe->output());
-                if (target_filter_node == nullptr) {
-                    throw InvalidDataException("配置错误，Pipe 指向了了非 IFilter 或 ISinkNode 节点");
-                }
+            } break;
+
+            case NodeKind::FILTER: {
+                auto target_filter_node = static_cast<IFilter*>(output);
                 // 执行过滤器
                 target_filter_node->filter(msg);
 
                 // 递归调用DFS来继续探索路径
                 this->do_dfs(pipe->output(), path, msg);
+            } break;
+
+            default:
+                throw InvalidDataException("配置错误，Pipe 指向了了非 IFilter 或 ISinkNode 节点");
             }
         }
     }

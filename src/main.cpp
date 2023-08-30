@@ -12,9 +12,7 @@ namespace edgelink {
 
 class App {
   public:
-    App(std::shared_ptr<nlohmann::json>& json_config, std::shared_ptr<Engine> engine) : _engine(engine) {
-        std::cout << *json_config << std::endl;
-    }
+    App(std::shared_ptr<nlohmann::json>& json_config, std::shared_ptr<Engine> engine) : _engine(engine) {}
 
     void run() {
         spdlog::info("正在启动消息引擎...");

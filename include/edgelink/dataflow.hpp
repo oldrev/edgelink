@@ -82,7 +82,7 @@ struct IPipe : public IDataFlowElement {
 };
 
 /// @brief 过滤器接口
-struct IFilter : public IDataFlowElement {
+struct IFilter : public IDataFlowNode {
     virtual void filter(Msg* msg) const = 0;
 };
 
