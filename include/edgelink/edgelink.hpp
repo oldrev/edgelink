@@ -1,5 +1,6 @@
 #pragma once
 
+#include "msg.hpp"
 #include "dataflow.hpp"
 #include "engine.hpp"
 #include "errors.hpp"

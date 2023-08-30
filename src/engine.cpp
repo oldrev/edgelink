@@ -8,9 +8,8 @@ using PipeStaticVector = boost::container::static_vector<const edgelink::Pipe*, 
 
 namespace edgelink {
 
-
 Engine::Engine(const nlohmann::json& json_config)
-    : _config{.queue_capacity = 100}, _msg_queue(boost::sync_bounded_queue<Msg*>(100)) {
+    : _config{.queue_capacity = 100}, _msg_queue(boost::sync_bounded_queue<Msg*>(100)), _msg_id_counter(0) {
 
     // 注册 nodes
     spdlog::info("开始注册数据流节点");
@@ -21,7 +20,7 @@ Engine::Engine(const nlohmann::json& json_config)
         auto provider = provider_var.get_value<INodeProvider*>();
         auto desc = provider->descriptor();
         _node_providers[desc->type_name()] = provider;
-        spdlog::info("注册数据流节点: [class_name={0}, type_name={1}]", pt.get_name(), desc->type_name());
+        spdlog::info("注册数据流节点: [class_name='{0}', type_name='{1}']", pt.get_name(), desc->type_name());
     }
 
     // 这里注册测试用的
@@ -37,7 +36,7 @@ Engine::Engine(const nlohmann::json& json_config)
         }
 
         const std::string elem_key = elem["@key"];
-        spdlog::info("开始创建数据流节点：[$type={0}, @key={1}]", elem_type, elem_key);
+        spdlog::info("开始创建数据流节点：[$type='{0}', @key='{1}']", elem_type, elem_key);
         auto provider_iter = _node_providers.find(elem_type);
         if(provider_iter ==_node_providers.end()) {
             spdlog::error("找不到数据流节点配型：'{0}'", elem_type);
@@ -108,7 +107,7 @@ void Engine::run() {
     */
 
     for (auto node : _nodes) {
-        spdlog::info("正在启动数据源节点：{0}", typeid(node).name());
+        spdlog::info("正在启动数据源节点：{0}", node->descriptor()->type_name());
         if (node->descriptor()->kind() == NodeKind::SOURCE) {
             auto source_node = static_cast<ISourceNode*>(node);
             source_node->start();
@@ -143,7 +142,7 @@ void Engine::worker_proc(std::stop_token stoken) {
     }
 }
 
-void Engine::do_dfs(IDataFlowNode* current, MsgRoutingPath& path, Msg* msg) {
+void Engine::do_dfs(const IDataFlowNode* current, MsgRoutingPath& path, Msg* msg) {
 
     // 将当前节点添加到路径中
     path.push_back(current);

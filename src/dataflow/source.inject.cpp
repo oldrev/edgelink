@@ -28,15 +28,16 @@ class InjectSource : public AbstractSource {
         std::this_thread::sleep_for(sleep_time * 1000ms);
 
         auto msg = new Msg{
+            .id = this->router()->generate_msg_id(),
             .source = this,
             .payload = MsgPayload(),
         };
 
         _counter++;
-        msg->payload["count"] = decimal64(_counter);
+        msg->payload["count"] = double(_counter);
 
         this->router()->emit(msg);
-        spdlog::info("InjectSource: 数据已注入");
+        spdlog::info("InjectSource > 数据已注入：[msg.id={0}]", msg->id);
     }
 
   private:
@@ -44,27 +45,10 @@ class InjectSource : public AbstractSource {
     cron::cronexpr _cron;
 };
 
-struct InjectSourceProvider : public INodeProvider, public INodeDescriptor {
-  public:
-    InjectSourceProvider() : _type_name("source.inject") {}
-
-    IDataFlowNode* create(const ::nlohmann::json& config, IMsgRouter* router) const override {
-        return new InjectSource(config, this, router);
-    }
-
-    const INodeDescriptor* descriptor() const override { return this; }
-    const std::string_view& type_name() const override { return _type_name; }
-    const NodeKind kind() const override { return NodeKind::SOURCE; }
-
-  private:
-    const string_view _type_name;
-
-    RTTR_ENABLE(INodeProvider)
+RTTR_REGISTRATION {
+    rttr::registration::class_<NodeProvider<InjectSource, "source.inject", NodeKind::SOURCE>>(
+        "edgelink::LoggedSinkProvider")
+        .constructor()(rttr::policy::ctor::as_raw_ptr);
 };
 
 }; // namespace edgelink
-
-RTTR_REGISTRATION {
-    rttr::registration::class_<edgelink::InjectSourceProvider>("edgelink::InjectSourceProvider")
-        .constructor()(rttr::policy::ctor::as_raw_ptr);
-}

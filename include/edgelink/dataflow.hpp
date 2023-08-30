@@ -2,30 +2,9 @@
 
 namespace edgelink {
 
-using MsgValue = rva::variant<          //
-    std::nullptr_t,                     // json null
-    bool,                               // json boolean
-    std::decimal::decimal64,            // json number
-    std::string,                        // json string
-    std::map<std::string, rva::self_t>, // json object, type is std::map<std::string, json_value>
-    std::vector<rva::self_t>>;          // json array, type is std::vector<json_value>
-
-using MsgPayload = std::map<std::string, MsgValue>;
-
-struct ISourceNode;
 struct INodeDescriptor;
-
-struct Msg {
-    ISourceNode* source;
-    MsgPayload payload;
-
-    Msg* clone() {
-        // TODO FIXME 改成递归的深克隆
-        return new Msg(*this);
-    }
-};
-
 struct IEngine;
+
 
 /// @brief 数据处理上下文
 class DataFlowContext {
@@ -44,6 +23,7 @@ class DataFlowContext {
 /// @brief 消息路由器
 struct IMsgRouter {
     virtual void emit(Msg* msg) = 0;
+    virtual uint64_t generate_msg_id() = 0;
 };
 
 /// @brief 数据处理引擎接口
@@ -75,12 +55,6 @@ struct ISinkNode : public IDataFlowNode {
     virtual void receive(const Msg* msg) = 0;
 };
 
-/// @brief 管道接口
-struct IPipe : public IDataFlowElement {
-    virtual IDataFlowNode* input() const = 0;
-    virtual IDataFlowNode* output() const = 0;
-};
-
 /// @brief 过滤器接口
 struct IFilter : public IDataFlowNode {
     virtual void filter(Msg* msg) const = 0;
@@ -95,7 +69,6 @@ class AbstractSource : public ISourceNode {
     IMsgRouter* router() const override { return _router; }
 
     void start() override {
-        auto x = std::decimal::decimal64(10);
         if (!_thread.joinable()) {
             _thread = std::jthread([this](std::stop_token stoken) {
                 // 线程函数
@@ -171,6 +144,30 @@ struct INodeProvider {
     virtual IDataFlowNode* create(const ::nlohmann::json& config, IMsgRouter* router) const = 0;
 
     RTTR_ENABLE()
+};
+
+template <size_t N> struct StringLiteral {
+    constexpr StringLiteral(const char (&str)[N]) { std::copy_n(str, N, value); }
+    char value[N];
+};
+
+template <typename TNode, StringLiteral TTypeName, NodeKind TKind>
+class NodeProvider : public INodeProvider, public INodeDescriptor {
+  public:
+    NodeProvider() : _type_name(TTypeName.value) {}
+
+    const INodeDescriptor* descriptor() const override { return this; }
+    const std::string_view& type_name() const override { return _type_name; }
+    inline const NodeKind kind() const override { return TKind; }
+
+    IDataFlowNode* create(const ::nlohmann::json& config, IMsgRouter* router) const override {
+        return new TNode(config, this, router);
+    }
+
+  private:
+    const std::string_view _type_name;
+
+    RTTR_ENABLE(INodeProvider)
 };
 
 }; // namespace edgelink
