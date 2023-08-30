@@ -22,7 +22,7 @@ class Engine : public IEngine {
 
   private:
     std::vector<IDataFlowNode*> _nodes;
-    std::vector<IPipe*> _pipes;
+    std::vector<Pipe*> _pipes;
     const EngineConfig _config;
     boost::sync_bounded_queue<Msg*> _msg_queue;
 

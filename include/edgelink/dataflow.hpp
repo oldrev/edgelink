@@ -148,13 +148,13 @@ class AbstractSink : public ISinkNode {
     const INodeDescriptor* _descriptor;
 };
 
-class ForwardPipe : public IPipe {
+class Pipe final {
 
   public:
-    ForwardPipe(IDataFlowNode* input, IDataFlowNode* output) : _input(input), _output(output) {}
+    Pipe(IDataFlowNode* input, IDataFlowNode* output) : _input(input), _output(output) {}
 
-    IDataFlowNode* input() const override { return _input; }
-    IDataFlowNode* output() const override { return _output; }
+    IDataFlowNode* input() const { return _input; }
+    IDataFlowNode* output() const { return _output; }
 
   private:
     IDataFlowNode* _input;

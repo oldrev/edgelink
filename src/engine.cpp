@@ -4,7 +4,7 @@
 
 using namespace std;
 
-using PipeStaticVector = boost::container::static_vector<const edgelink::IPipe*, 128>;
+using PipeStaticVector = boost::container::static_vector<const edgelink::Pipe*, 128>;
 
 namespace edgelink {
 
@@ -59,7 +59,7 @@ Engine::Engine(const nlohmann::json& json_config)
         const std::string& output_key = elem["@output"];
         auto input_node = node_map.at(input_key);
         auto output_node = node_map.at(output_key);
-        auto pipe = new ForwardPipe(input_node, output_node);
+        auto pipe = new Pipe(input_node, output_node);
         _pipes.push_back(pipe);
         spdlog::info("已创建数据流管道");
     }
