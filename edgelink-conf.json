@@ -10,15 +10,24 @@
             "@cron": "*/2 * * * * ?" // 每隔两秒执行一次
         },
         {
+            "$type": "sink.logged",
+            "@key": "sink1"
+        },
+        {
+            "$type": "sink.blackhole",
+            "@key": "sink2"
+        },
+        {
             "$type": "pipe",
             "@key": "pipe.1",
             "@input": "source1",
-            "@output": "sink1",
-            "@condition": "true"
+            "@output": "sink1"
         },
         {
-            "$type": "sink.logged",
-            "@key": "sink1"
+            "$type": "pipe",
+            "@key": "pipe.2",
+            "@input": "source1",
+            "@output": "sink2"
         }
     ]
 }

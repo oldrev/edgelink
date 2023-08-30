@@ -15,19 +15,19 @@ class Engine : public IEngine {
 
     void run() override;
 
-    void emit(Msg* msg) override;
+    void emit(std::shared_ptr<Msg> msg) override;
 
     inline uint64_t generate_msg_id() override { return _msg_id_counter.fetch_add(1); }
 
   private:
-    void do_dfs(const IDataFlowNode* current, MsgRoutingPath& path, Msg* msg);
+    void do_dfs(const IDataFlowNode* current, MsgRoutingPath& path, const std::shared_ptr<Msg>& orig_msg);
     void worker_proc(std::stop_token stoken);
 
   private:
     std::vector<IDataFlowNode*> _nodes;
     std::vector<Pipe*> _pipes;
     const EngineConfig _config;
-    boost::sync_bounded_queue<Msg*> _msg_queue;
+    boost::sync_bounded_queue<std::shared_ptr<Msg>> _msg_queue;
 
     std::map<std::string_view, const INodeProvider*> _node_providers;
 

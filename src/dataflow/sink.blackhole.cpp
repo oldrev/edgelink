@@ -14,7 +14,9 @@ class BlackholeSink : public AbstractSink {
 
     void stop() override {}
 
-    void receive(const Msg* msg) override {}
+    void receive(const std::shared_ptr<Msg>& msg) override {
+        spdlog::info("BlackholeSink: 吃掉了消息：[msg.id={0}]", msg->id);
+    }
 };
 
 RTTR_REGISTRATION {

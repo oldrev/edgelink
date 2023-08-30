@@ -14,7 +14,8 @@ class LoggedSink : public AbstractSink {
 
     void stop() override {}
 
-    void receive(const Msg* msg) override {
+    void receive(const shared_ptr<Msg>& msg) override {
+        //
         spdlog::info("LoggerSink: 收到了消息：[msg.id={0}]", msg->id);
     }
 };

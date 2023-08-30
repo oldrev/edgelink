@@ -4,12 +4,13 @@
 
 using namespace std;
 
-using PipeStaticVector = boost::container::static_vector<const edgelink::Pipe*, 128>;
+using PipeStaticVector = boost::container::static_vector<const edgelink::Pipe*, 32>;
+using CloneMsgStaticVector = boost::container::static_vector<std::shared_ptr<edgelink::Msg>, 32>;
 
 namespace edgelink {
 
 Engine::Engine(const nlohmann::json& json_config)
-    : _config{.queue_capacity = 100}, _msg_queue(boost::sync_bounded_queue<Msg*>(100)), _msg_id_counter(0) {
+    : _config{.queue_capacity = 100}, _msg_queue(boost::sync_bounded_queue<shared_ptr<Msg>>(100)), _msg_id_counter(0) {
 
     // 注册 nodes
     spdlog::info("开始注册数据流节点");
@@ -75,7 +76,7 @@ Engine::~Engine() {
     }
 }
 
-void Engine::emit(Msg* msg) {
+void Engine::emit(shared_ptr<Msg> msg) {
     // 处理消息
     // 这里只是概念验证原型
     // 消息来源调用此函数将消息存入队列，然后引擎 worker 线程取出消息进入流水线处理
@@ -125,7 +126,7 @@ void Engine::run() {
 void Engine::worker_proc(std::stop_token stoken) {
     while (!stoken.stop_requested()) {
 
-        Msg* msg;
+        shared_ptr<Msg> msg;
         try {
             _msg_queue.wait_pull_front(msg);
 
@@ -137,12 +138,10 @@ void Engine::worker_proc(std::stop_token stoken) {
             spdlog::error("处理消息时发生了未知异常");
         }
 
-        // 消息处理完就删掉
-        delete msg;
     }
 }
 
-void Engine::do_dfs(const IDataFlowNode* current, MsgRoutingPath& path, Msg* msg) {
+void Engine::do_dfs(const IDataFlowNode* current, MsgRoutingPath& path, const shared_ptr<Msg>& orig_msg) {
 
     // 将当前节点添加到路径中
     path.push_back(current);
@@ -155,41 +154,38 @@ void Engine::do_dfs(const IDataFlowNode* current, MsgRoutingPath& path, Msg* msg
         }
     }
 
+    // 根据出度把消息复制
+    CloneMsgStaticVector out_msgs;
+    out_msgs.push_back(orig_msg);
+    for (auto i = 1; i < out_pipes.size(); i++) {
+        auto new_msg = shared_ptr<Msg>(orig_msg->clone());
+        out_msgs.push_back(new_msg);
+    }
+
     for (size_t i = 0; i < out_pipes.size(); i++) {
         const auto pipe  = out_pipes[i];
         auto input = pipe->input();
         auto output = pipe->output();
+        auto msg = out_msgs[i];
 
-        // 检查目标节点是否已经在路径中，以避免循环
-        bool is_visited = false;
-        for (auto dest_node : path) {
-            if (dest_node == output) {
-                is_visited = true;
-                break;
-            }
-        }
+        switch (output->descriptor()->kind()) {
+        case NodeKind::SINK: {
+            // 遇到了收集器就停止了
+            auto target_sink_node = static_cast<ISinkNode*>(output);
+            target_sink_node->receive(msg);
+        } break;
 
-        if (!is_visited) {
+        case NodeKind::FILTER: {
+            auto target_filter_node = static_cast<IFilter*>(output);
+            // 执行过滤器
+            target_filter_node->filter(msg);
 
-            switch (output->descriptor()->kind()) {
-            case NodeKind::SINK: {
-                // 遇到了收集器就停止了
-                auto target_sink_node = static_cast<ISinkNode*>(output);
-                target_sink_node->receive(msg);
-            } break;
+            // 递归调用DFS来继续探索路径
+            this->do_dfs(pipe->output(), path, msg);
+        } break;
 
-            case NodeKind::FILTER: {
-                auto target_filter_node = static_cast<IFilter*>(output);
-                // 执行过滤器
-                target_filter_node->filter(msg);
-
-                // 递归调用DFS来继续探索路径
-                this->do_dfs(pipe->output(), path, msg);
-            } break;
-
-            default:
-                throw InvalidDataException("配置错误，Pipe 指向了了非 IFilter 或 ISinkNode 节点");
-            }
+        default:
+            throw InvalidDataException("配置错误，Pipe 指向了了非 IFilter 或 ISinkNode 节点");
         }
     }
 

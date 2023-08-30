@@ -1,5 +1,6 @@
 #pragma once
 
+#include "utils.hpp"
 #include "msg.hpp"
 #include "dataflow.hpp"
 #include "engine.hpp"
@@ -20,6 +21,7 @@ struct IDaemonApp {
 
 }; // namespace edgelink
 
+/*
 template <> struct fmt::formatter<std::decimal::decimal64> {
     // Presentation format: 'f' - fixed, 'e' - exponential.
     char presentation = 'f';
@@ -63,4 +65,5 @@ template <> struct fmt::formatter<std::decimal::decimal64> {
         return presentation == 'f' ? fmt::format_to(ctx.out(), "{:.1f}", std::decimal::decimal64_to_double(p))
                                    : fmt::format_to(ctx.out(), "{:.1e}", std::decimal::decimal64_to_double(p));
     }
-};
+
+*/

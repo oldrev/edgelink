@@ -27,11 +27,11 @@ class InjectSource : public AbstractSource {
 
         std::this_thread::sleep_for(sleep_time * 1000ms);
 
-        auto msg = new Msg{
+        auto msg = shared_ptr<Msg>(new Msg{
             .id = this->router()->generate_msg_id(),
             .source = this,
             .payload = MsgPayload(),
-        };
+        });
 
         _counter++;
         msg->payload["count"] = double(_counter);

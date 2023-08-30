@@ -20,7 +20,8 @@ using MsgPayload = nlohmann ::json;
 struct ISourceNode;
 
 /// @brief 消息结构
-struct Msg {
+class Msg {
+  public:
     const uint64_t id;
     const ISourceNode* source;
     MsgPayload payload;

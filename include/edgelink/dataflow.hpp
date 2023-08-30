@@ -4,6 +4,7 @@ namespace edgelink {
 
 struct INodeDescriptor;
 struct IEngine;
+class Msg;
 
 
 /// @brief 数据处理上下文
@@ -22,7 +23,7 @@ class DataFlowContext {
 
 /// @brief 消息路由器
 struct IMsgRouter {
-    virtual void emit(Msg* msg) = 0;
+    virtual void emit(std::shared_ptr<Msg> msg) = 0;
     virtual uint64_t generate_msg_id() = 0;
 };
 
@@ -52,12 +53,12 @@ struct ISourceNode : public IDataFlowNode {};
 
 /// @brief 数据接收器接口
 struct ISinkNode : public IDataFlowNode {
-    virtual void receive(const Msg* msg) = 0;
+    virtual void receive(const std::shared_ptr<Msg>& msg) = 0;
 };
 
 /// @brief 过滤器接口
 struct IFilter : public IDataFlowNode {
-    virtual void filter(Msg* msg) const = 0;
+    virtual void filter(const std::shared_ptr<Msg>& msg) const = 0;
 };
 
 /// @brief 抽象数据源
@@ -146,10 +147,6 @@ struct INodeProvider {
     RTTR_ENABLE()
 };
 
-template <size_t N> struct StringLiteral {
-    constexpr StringLiteral(const char (&str)[N]) { std::copy_n(str, N, value); }
-    char value[N];
-};
 
 template <typename TNode, StringLiteral TTypeName, NodeKind TKind>
 class NodeProvider : public INodeProvider, public INodeDescriptor {
