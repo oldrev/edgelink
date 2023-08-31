@@ -59,7 +59,7 @@ struct ISinkNode : public IDataFlowNode {
 };
 
 /// @brief 过滤器接口
-struct IFilter : public IDataFlowNode {
+struct IFilterNode : public IDataFlowNode {
     virtual std::shared_ptr<Msg> filter(std::shared_ptr<Msg> msg) = 0;
 };
 
@@ -124,13 +124,26 @@ class AbstractSink : public ISinkNode {
     const INodeDescriptor* _descriptor;
 };
 
-class Pipe final {
+/// @brief 抽象数据过滤器
+class AbstractFilter : public IFilterNode {
+  public:
+    AbstractFilter(const INodeDescriptor* desc, IMsgRouter* router) : _descriptor(desc), _router(router) {}
 
+    const INodeDescriptor* descriptor() const override { return _descriptor; }
+    IMsgRouter* router() const override { return _router; }
+
+  private:
+    IMsgRouter* _router;
+    const INodeDescriptor* _descriptor;
+};
+
+/// @brief 连接管道（边）
+class Pipe final {
   public:
     Pipe(IDataFlowNode* input, IDataFlowNode* output) : _input(input), _output(output) {}
 
-    IDataFlowNode* input() const { return _input; }
-    IDataFlowNode* output() const { return _output; }
+    inline IDataFlowNode* input() const { return _input; }
+    inline IDataFlowNode* output() const { return _output; }
 
   private:
     IDataFlowNode* _input;

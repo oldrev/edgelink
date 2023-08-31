@@ -167,7 +167,7 @@ void Engine::do_dfs(const IDataFlowNode* current, MsgRoutingPath& path, const sh
         } break;
 
         case NodeKind::FILTER: {
-            auto target_filter_node = static_cast<IFilter*>(output);
+            auto target_filter_node = static_cast<IFilterNode*>(output);
             // 执行过滤器
             auto filtered_msg = target_filter_node->filter(msg);
 

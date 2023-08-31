@@ -10,6 +10,10 @@
             "@cron": "*/2 * * * * ?" // 每隔两秒执行一次
         },
         {
+            "$type": "filter.queued",
+            "@key": "filter1"
+        },
+        {
             "$type": "sink.logged",
             "@key": "sink1"
         },
@@ -19,13 +23,19 @@
         },
         {
             "$type": "pipe",
-            "@key": "pipe.1",
+            "@key": "pipe1",
             "@input": "source1",
+            "@output": "filter1"
+        },
+        {
+            "$type": "pipe",
+            "@key": "pipe2",
+            "@input": "filter1",
             "@output": "sink1"
         },
         {
             "$type": "pipe",
-            "@key": "pipe.2",
+            "@key": "pipe3",
             "@input": "source1",
             "@output": "sink2"
         }
