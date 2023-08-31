@@ -11,9 +11,11 @@ namespace edgelink {
 
 class InjectSource : public AbstractSource {
   public:
+    const char* DEFAULT_CRON = "*/2 * * * * ?"; // 每隔两秒执行一次
+  public:
     InjectSource(const ::nlohmann::json& config, const INodeDescriptor* desc, IMsgRouter* router)
         : AbstractSource(desc, router), _counter(0) {
-        const std::string cron_expression = config["@cron"];
+        const std::string cron_expression = config.value("cron", DEFAULT_CRON);
         _cron = ::cron::make_cron(cron_expression);
         // TODO 这里设置参数
     }

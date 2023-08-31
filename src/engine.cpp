@@ -4,12 +4,12 @@
 
 using namespace std;
 
-using PipeStaticVector = boost::container::static_vector<const edgelink::Pipe*, 32>;
+using WireStaticVector = boost::container::static_vector<const edgelink::Wire*, 32>;
 using CloneMsgStaticVector = boost::container::static_vector<std::shared_ptr<edgelink::Msg>, 32>;
 
 namespace edgelink {
 
-Engine::Engine(const nlohmann::json& json_config) : _config{.queue_capacity = 100}, _msg_id_counter(0) {
+Engine::Engine(const nlohmann::json& json_config) : _config{}, _msg_id_counter(0) {
 
     // 注册 nodes
     spdlog::info("开始注册数据流节点");
@@ -27,16 +27,16 @@ Engine::Engine(const nlohmann::json& json_config) : _config{.queue_capacity = 10
     auto dataflow_elements = json_config["dataflow"];
 
     // 第一遍扫描先创建节点
-    std::map<std::string, IDataFlowNode*> node_map;
+    std::map<std::string, IFlowNode*> node_map;
 
     for (const auto& elem : dataflow_elements) {
         const std::string elem_type = elem["$type"];
-        if (elem_type == "pipe") { // 管道直接跳过
+        if (elem_type == "wire") { // 管道直接跳过
             continue;
         }
 
-        const std::string elem_key = elem["@key"];
-        spdlog::info("开始创建数据流节点：[$type='{0}', @key='{1}']", elem_type, elem_key);
+        const std::string elem_key = elem["key"];
+        spdlog::info("开始创建数据流节点：[$type='{0}', key='{1}']", elem_type, elem_key);
         auto provider_iter = _node_providers.find(elem_type);
         if(provider_iter ==_node_providers.end()) {
             spdlog::error("找不到数据流节点配型：'{0}'", elem_type);
@@ -50,24 +50,25 @@ Engine::Engine(const nlohmann::json& json_config) : _config{.queue_capacity = 10
     // 第二遍扫描创建管道
     for (const auto& elem : dataflow_elements) {
         const std::string elem_type = elem["$type"];
-        if (elem_type != "pipe") { // 非管道就跳过
+        if (elem_type != "wire") { // 非管道就跳过
             continue;
         }
         spdlog::info("开始创建数据流管道");
-        const std::string& input_key = elem["@input"];
-        const std::string& output_key = elem["@output"];
+        const std::string& input_key = elem["input"];
+        const std::string& output_key = elem["output"];
         auto input_node = node_map.at(input_key);
         auto output_node = node_map.at(output_key);
-        auto pipe = new Pipe(input_node, output_node);
-        _pipes.push_back(pipe);
+        auto wire = new Wire(input_node, output_node);
+        _wires.push_back(wire);
+        _node_wires[input_node].push_back(wire);
         spdlog::info("已创建数据流管道");
     }
 }
 
 Engine::~Engine() {
 
-    for (auto pipe : _pipes) {
-        delete pipe;
+    for (auto wire : _wires) {
+        delete wire;
     }
 
     for (auto node : _nodes) {
@@ -76,20 +77,8 @@ Engine::~Engine() {
 }
 
 void Engine::emit(shared_ptr<Msg> msg) {
-    // _msg_queue.wait_push_back(msg);
-
-    boost::asio::post(*_pool, [msg, this]() {
-        // 线程池中处理数据流
-        try {
-            MsgRoutingPath path;
-            this->do_dfs(msg->source, path, msg);
-        } catch (std::exception& ex) {
-            spdlog::error("处理消息时发生了异常: {0}", ex.what());
-        } catch (...) {
-            spdlog::error("处理消息时发生了未知异常");
-        }
-    });
-}
+    this->relay(msg->source, msg);
+ }
 
 void Engine::start() {
     //
@@ -99,11 +88,8 @@ void Engine::start() {
     spdlog::info("数据流引擎已启动");
 
     for (auto node : _nodes) {
-        spdlog::info("正在启动数据源节点：{0}", node->descriptor()->type_name());
-        if (node->descriptor()->kind() == NodeKind::SOURCE) {
-            auto source_node = static_cast<ISourceNode*>(node);
-            source_node->start();
-        }
+        spdlog::info("正在启动数据流节点：{0}", node->descriptor()->type_name());
+        node->start();
     }
     spdlog::info("全部节点启动完毕");
 }
@@ -132,64 +118,43 @@ void Engine::run() {
     thread.join();
 }
 
-void Engine::do_dfs(const IDataFlowNode* current, MsgRoutingPath& path, const shared_ptr<Msg>& orig_msg) {
-
-    // 将当前节点添加到路径中
-    path.push_back(current);
-
-    PipeStaticVector out_pipes;
-    // 找到以当前节点为起点的所有边
-    for (auto pipe : _pipes) {
-        if (pipe->input() == current) {
-            out_pipes.push_back(pipe);
-        }
-    }
+void Engine::relay(const IFlowNode* source, std::shared_ptr<Msg> orig_msg) const {
 
     // 根据出度把消息复制
     CloneMsgStaticVector out_msgs;
     out_msgs.push_back(orig_msg);
-    for (auto i = 1; i < out_pipes.size(); i++) {
+
+    auto wires = source->wires();    
+
+    for (auto i = 1; i < wires.size(); i++) {
         auto new_msg = shared_ptr<Msg>(orig_msg->clone());
         out_msgs.push_back(new_msg);
     }
 
-    for (size_t i = 0; i < out_pipes.size(); i++) {
-        const auto pipe  = out_pipes[i];
-        auto input = pipe->input();
-        auto output = pipe->output();
+    for (size_t i = 0; i < wires.size(); i++) {
+        const auto wire = wires[i];
         auto msg = out_msgs[i];
 
-        switch (output->descriptor()->kind()) {
-        case NodeKind::SINK: {
-            // 遇到了收集器就停止了
-            auto target_sink_node = static_cast<ISinkNode*>(output);
-            target_sink_node->receive(msg);
-        } break;
+        // 线程池中处理数据流
+        boost::asio::post(*_pool, [msg, this, wire]() {
+            //
+            switch (wire->output()->descriptor()->kind()) {
 
-        case NodeKind::FILTER: {
-            auto target_filter_node = static_cast<IFilterNode*>(output);
-            // 执行过滤器
-            auto filtered_msg = target_filter_node->filter(msg);
+            case NodeKind::FILTER: {
+                auto filter = static_cast<IFilterNode*>(wire->output());
+                filter->receive(msg);
+            } break;
 
-            // 递归调用DFS来继续探索路径
-            this->do_dfs(pipe->output(), path, filtered_msg);
-        } break;
+            case NodeKind::SINK: {
+                auto sink = static_cast<ISinkNode*>(wire->output());
+                sink->receive(msg);
+            } break;
 
-        default:
-            throw InvalidDataException("配置错误，Pipe 指向了了非 IFilter 或 ISinkNode 节点");
-        }
+            default:
+                throw InvalidDataException("错误的节点连线");
+            }
+        });
     }
-
-    // 打印路径或执行其他操作
-    /*
-    if (path.size() > 1) {
-        std::cout << "Path: ";
-        std::cout << std::endl;
-    }
-    */
-
-    // 从路径中移除当前节点，以回溯到之前的节点
-    path.pop_back();
 }
 
 }; // namespace edgelink

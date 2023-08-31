@@ -6,38 +6,39 @@
     "dataflow": [
         {
             "$type": "source.inject",
-            "@key": "source1",
-            "@cron": "*/2 * * * * ?" // 每隔两秒执行一次
+            "key": "source1",
+            "cron": "*/2 * * * * ?" // 每隔两秒执行一次
         },
         {
             "$type": "filter.queued",
-            "@key": "filter1"
+            "key": "filter1",
+            "capacity": 120
         },
         {
             "$type": "sink.logged",
-            "@key": "sink1"
+            "key": "sink1"
         },
         {
             "$type": "sink.blackhole",
-            "@key": "sink2"
+            "key": "sink2"
         },
         {
-            "$type": "pipe",
-            "@key": "pipe1",
-            "@input": "source1",
-            "@output": "filter1"
+            "$type": "wire",
+            "key": "wire1",
+            "input": "source1",
+            "output": "filter1"
         },
         {
-            "$type": "pipe",
-            "@key": "pipe2",
-            "@input": "filter1",
-            "@output": "sink1"
+            "$type": "wire",
+            "key": "wire2",
+            "input": "filter1",
+            "output": "sink1"
         },
         {
-            "$type": "pipe",
-            "@key": "pipe3",
-            "@input": "source1",
-            "@output": "sink2"
+            "$type": "wire",
+            "key": "wire3",
+            "input": "source1",
+            "output": "sink2"
         }
     ]
 }
