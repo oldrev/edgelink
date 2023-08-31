@@ -29,6 +29,8 @@ struct IMsgRouter {
 
 /// @brief 数据处理引擎接口
 struct IEngine : public IMsgRouter {
+    virtual void start() = 0;
+    virtual void stop() = 0;
     virtual void run() = 0;
 };
 
@@ -58,7 +60,7 @@ struct ISinkNode : public IDataFlowNode {
 
 /// @brief 过滤器接口
 struct IFilter : public IDataFlowNode {
-    virtual void filter(const std::shared_ptr<Msg>& msg) const = 0;
+    virtual std::shared_ptr<Msg> filter(std::shared_ptr<Msg> msg) = 0;
 };
 
 /// @brief 抽象数据源

@@ -16,6 +16,8 @@ class App {
 
     void run() {
         spdlog::info("正在启动消息引擎...");
+
+        _engine->start();
         _engine->run();
     }
 

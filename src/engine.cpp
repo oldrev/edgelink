@@ -9,8 +9,7 @@ using CloneMsgStaticVector = boost::container::static_vector<std::shared_ptr<edg
 
 namespace edgelink {
 
-Engine::Engine(const nlohmann::json& json_config)
-    : _config{.queue_capacity = 100}, _msg_queue(boost::sync_bounded_queue<shared_ptr<Msg>>(100)), _msg_id_counter(0) {
+Engine::Engine(const nlohmann::json& json_config) : _config{.queue_capacity = 100}, _msg_id_counter(0) {
 
     // 注册 nodes
     spdlog::info("开始注册数据流节点");
@@ -77,35 +76,27 @@ Engine::~Engine() {
 }
 
 void Engine::emit(shared_ptr<Msg> msg) {
-    // 处理消息
-    // 这里只是概念验证原型
-    // 消息来源调用此函数将消息存入队列，然后引擎 worker 线程取出消息进入流水线处理
+    // _msg_queue.wait_push_back(msg);
 
-    _msg_queue.wait_push_back(msg);
+    boost::asio::post(*_pool, [msg, this]() {
+        // 线程池中处理数据流
+        try {
+            MsgRoutingPath path;
+            this->do_dfs(msg->source, path, msg);
+        } catch (std::exception& ex) {
+            spdlog::error("处理消息时发生了异常: {0}", ex.what());
+        } catch (...) {
+            spdlog::error("处理消息时发生了未知异常");
+        }
+    });
 }
 
-void Engine::run() {
-
-    /*
-    vector<thread> threads;
-
-    // 创建并启动多个线程
-    for (int i = 0; i < 3; ++i) {
-        threads.emplace_back(threadFunction, i + 1);
-    }
-
-    // 等待所有线程完成
-    for (auto& thread : threads) {
-        thread.join();
-    }
-    */
-
-    /*
-    for (auto& i : _filters) {
-        spdlog::info("正在启动过滤器：[type={0}]", i.first);
-        i.second->start();
-    }
-    */
+void Engine::start() {
+    //
+    spdlog::info("开始启动数据流引擎");
+    _stop_source = make_unique<std::stop_source>();
+    _pool = make_unique<boost::asio::thread_pool>(4);
+    spdlog::info("数据流引擎已启动");
 
     for (auto node : _nodes) {
         spdlog::info("正在启动数据源节点：{0}", node->descriptor()->type_name());
@@ -115,30 +106,30 @@ void Engine::run() {
         }
     }
     spdlog::info("全部节点启动完毕");
-
-    // 引擎主线程
-    spdlog::info("正在启动引擎工作线程");
-    auto thread = std::jthread([this](std::stop_token stoken) { this->worker_proc(stoken); });
-    spdlog::info("引擎工作线程已启动");
-    thread.join();
 }
 
-void Engine::worker_proc(std::stop_token stoken) {
-    while (!stoken.stop_requested()) {
+void Engine::stop() {
+    // 给出线程池停止信号
+    spdlog::info("开始请求数据流引擎线程池停止...");
+    _stop_source->request_stop();
 
-        shared_ptr<Msg> msg;
-        try {
-            _msg_queue.wait_pull_front(msg);
+    // 等待线程池停止
+    _pool->join();
+    spdlog::info("数据流引擎线程池已停止");
+}
 
-            MsgRoutingPath path;
-            this->do_dfs(msg->source, path, msg);
-        } catch (std::exception& ex) {
-            spdlog::error("处理消息时发生了异常: {0}", ex.what());
-        } catch (...) {
-            spdlog::error("处理消息时发生了未知异常");
+void Engine::run() {
+    // 引擎主线程
+    spdlog::info("正在启动引擎工作线程");
+    auto thread = std::jthread([this]() { 
+        // 阻塞主线程
+        while(!_stop_source->stop_requested())
+        {
+            std::this_thread::sleep_for(std::chrono::seconds(1));
         }
-
-    }
+    });
+    spdlog::info("引擎工作线程已启动");
+    thread.join();
 }
 
 void Engine::do_dfs(const IDataFlowNode* current, MsgRoutingPath& path, const shared_ptr<Msg>& orig_msg) {
@@ -178,10 +169,10 @@ void Engine::do_dfs(const IDataFlowNode* current, MsgRoutingPath& path, const sh
         case NodeKind::FILTER: {
             auto target_filter_node = static_cast<IFilter*>(output);
             // 执行过滤器
-            target_filter_node->filter(msg);
+            auto filtered_msg = target_filter_node->filter(msg);
 
             // 递归调用DFS来继续探索路径
-            this->do_dfs(pipe->output(), path, msg);
+            this->do_dfs(pipe->output(), path, filtered_msg);
         } break;
 
         default:

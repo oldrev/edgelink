@@ -15,6 +15,7 @@
 #include "rva/variant.hpp"
 
 #include <boost/di.hpp>
+#include <boost/asio.hpp>
 #include <boost/url.hpp>
 #include <boost/lockfree/queue.hpp>
 #include <boost/thread/thread.hpp>
