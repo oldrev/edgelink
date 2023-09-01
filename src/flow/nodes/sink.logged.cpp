@@ -1,14 +1,14 @@
-#include "../pch.hpp"
+#include "../../pch.hpp"
 #include "edgelink/edgelink.hpp"
 
 using namespace std;
 
 namespace edgelink {
 
-class LoggedSink : public AbstractSink {
+class LoggedSink : public SinkNode {
   public:
     LoggedSink(const ::nlohmann::json& config, const INodeDescriptor* desc, IMsgRouter* router)
-        : AbstractSink(desc, router) {}
+        : SinkNode(desc, router) {}
 
     void start() override {}
 

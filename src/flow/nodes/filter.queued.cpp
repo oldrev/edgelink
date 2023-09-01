@@ -1,14 +1,14 @@
-#include "../pch.hpp"
+#include "../../pch.hpp"
 #include "edgelink/edgelink.hpp"
 
 using namespace std;
 
 namespace edgelink {
 
-class QueuedFilter : public AbstractFilter {
+class QueuedFilter : public FilterNode {
   public:
     QueuedFilter(const ::nlohmann::json& config, const INodeDescriptor* desc, IMsgRouter* router)
-        : AbstractFilter(desc, router), _queue(config.value("capacity", 100)) {
+        : FilterNode(desc, router), _queue(config.value("capacity", 100)) {
         //
     }
 

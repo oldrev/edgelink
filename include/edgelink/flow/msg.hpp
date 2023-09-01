@@ -17,13 +17,13 @@ using MsgObjectValue = std::map<std::string, MsgValue>;
 
 using MsgPayload = nlohmann ::json;
 
-struct ISourceNode;
+struct SourceNode;
 
 /// @brief 消息结构
 class Msg {
   public:
     const uint64_t id;
-    const ISourceNode* source;
+    const SourceNode* source;
     MsgPayload payload;
 
     Msg* clone() {

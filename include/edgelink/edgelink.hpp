@@ -1,8 +1,8 @@
 #pragma once
 
 #include "utils.hpp"
-#include "msg.hpp"
-#include "dataflow.hpp"
+#include "flow/msg.hpp"
+#include "flow/dataflow.hpp"
 #include "engine.hpp"
 #include "errors.hpp"
 #include "logging.hpp"

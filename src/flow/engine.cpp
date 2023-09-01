@@ -1,4 +1,4 @@
-#include "pch.hpp"
+#include "../pch.hpp"
 
 #include "edgelink/edgelink.hpp"
 
@@ -27,7 +27,7 @@ Engine::Engine(const nlohmann::json& json_config) : _config{}, _msg_id_counter(0
     auto dataflow_elements = json_config["dataflow"];
 
     // 第一遍扫描先创建节点
-    std::map<std::string, IFlowNode*> node_map;
+    std::map<std::string, FlowNode*> node_map;
 
     for (const auto& elem : dataflow_elements) {
         const std::string elem_type = elem["$type"];
@@ -118,7 +118,7 @@ void Engine::run() {
     thread.join();
 }
 
-void Engine::relay(const IFlowNode* source, std::shared_ptr<Msg> orig_msg) const {
+void Engine::relay(const FlowNode* source, std::shared_ptr<Msg> orig_msg) const {
 
     // 根据出度把消息复制
     CloneMsgStaticVector out_msgs;
@@ -141,12 +141,12 @@ void Engine::relay(const IFlowNode* source, std::shared_ptr<Msg> orig_msg) const
             switch (wire->output()->descriptor()->kind()) {
 
             case NodeKind::FILTER: {
-                auto filter = static_cast<IFilterNode*>(wire->output());
+                auto filter = static_cast<FilterNode*>(wire->output());
                 filter->receive(msg);
             } break;
 
             case NodeKind::SINK: {
-                auto sink = static_cast<ISinkNode*>(wire->output());
+                auto sink = static_cast<SinkNode*>(wire->output());
                 sink->receive(msg);
             } break;
 

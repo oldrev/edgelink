@@ -1,4 +1,4 @@
-#include "../pch.hpp"
+#include "../../pch.hpp"
 
 #include <modbus/modbus.h>
 
@@ -9,13 +9,15 @@ using namespace std;
 
 namespace edgelink {
 
-class BaseModbusSource : public AbstractSource {
-  public:
+class BaseModbusSource : public SourceNode {
+  protected:
     BaseModbusSource(const ::nlohmann::json& config, const INodeDescriptor* desc, IMsgRouter* router)
-        : AbstractSource(desc, router) {}
+        : SourceNode(desc, router) {}
+
+    void process(std::stop_token& stoken) = 0;
 };
 
-class ModbusRtuSource : public BaseModbusSource {
+class ModbusRtuSource final : public BaseModbusSource {
   public:
     ModbusRtuSource(const ::nlohmann::json& config, const INodeDescriptor* desc, IMsgRouter* router)
         : BaseModbusSource(config, desc, router) {}
@@ -24,7 +26,7 @@ class ModbusRtuSource : public BaseModbusSource {
     void process(std::stop_token& stoken) override {}
 };
 
-class ModbusTcpSource : public BaseModbusSource {
+class ModbusTcpSource final : public BaseModbusSource {
   public:
     ModbusTcpSource(const ::nlohmann::json& config, const INodeDescriptor* desc, IMsgRouter* router)
         : BaseModbusSource(config, desc, router) {}
