@@ -28,11 +28,8 @@ class InjectSource : public SourceNode {
 
         std::this_thread::sleep_for(sleep_time * 1000ms);
 
-        auto msg = shared_ptr<Msg>(new Msg{
-            .id = this->router()->generate_msg_id(),
-            .source = this,
-            .payload = MsgPayload(),
-        });
+        auto msg_id = this->router()->generate_msg_id();
+        auto msg = make_shared<Msg>(msg_id, this);
 
         _counter++;
         msg->payload["count"] = double(_counter);

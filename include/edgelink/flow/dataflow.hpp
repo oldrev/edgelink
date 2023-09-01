@@ -41,7 +41,7 @@ struct IMsgRouter {
     /// @brief 从来源节点向后路由消息
     /// @param src 
     /// @param msg
-    virtual void relay(const FlowNode* source, std::shared_ptr<Msg> msg) const = 0;
+    virtual void relay(const FlowNode* source, std::shared_ptr<Msg> msg, bool clone = true) const = 0;
 };
 
 /// @brief 数据处理引擎接口

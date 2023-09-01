@@ -117,7 +117,7 @@ void Engine::run() {
     thread.join();
 }
 
-void Engine::relay(const FlowNode* source, std::shared_ptr<Msg> orig_msg) const {
+void Engine::relay(const FlowNode* source, std::shared_ptr<Msg> orig_msg, bool clone) const {
 
     // 根据出度把消息复制
     CloneMsgStaticVector out_msgs;
@@ -126,8 +126,12 @@ void Engine::relay(const FlowNode* source, std::shared_ptr<Msg> orig_msg) const 
     auto wires = source->wires();
 
     for (auto i = 1; i < wires.size(); i++) {
-        auto new_msg = shared_ptr<Msg>(orig_msg->clone());
-        out_msgs.push_back(new_msg);
+        if (clone) {
+            auto new_msg = make_shared<Msg>(*orig_msg);
+            out_msgs.push_back(new_msg);
+        } else {
+            out_msgs.push_back(orig_msg);
+        }
     }
 
     for (size_t i = 0; i < wires.size(); i++) {

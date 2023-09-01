@@ -20,7 +20,7 @@ class Engine : public IEngine {
 
     void emit(std::shared_ptr<Msg> msg) override;
 
-    void relay(const FlowNode* source, std::shared_ptr<Msg> msg) const override;
+    void relay(const FlowNode* source, std::shared_ptr<Msg> msg, bool clone = true) const override;
 
     inline uint64_t generate_msg_id() override { return _msg_id_counter.fetch_add(1); }
 

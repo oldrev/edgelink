@@ -26,14 +26,18 @@ class Msg {
     const SourceNode* source;
     MsgPayload payload;
 
-    Msg* clone() {
-        auto new_msg = new Msg{
-            .id = this->id,
-            .source = this->source,
-            .payload = this->payload,
-        };
-        return new_msg;
-    }
+  public:
+    Msg(uint64_t id, const SourceNode* source) : id(id), source(source), payload() {}
+
+    /// @brief 拷贝构造函数
+    /// @param msg
+    explicit Msg(const Msg& msg) : id(msg.id), source(msg.source), payload(msg.payload) {}
+
+    /// @brief 指定 ID 的拷贝构造函数
+    /// @param msg 
+    /// @param id 
+    Msg(const Msg& msg, uint64_t id) : id(id), source(msg.source), payload(msg.payload) {}
+
 };
 
 }; // namespace edgelink
