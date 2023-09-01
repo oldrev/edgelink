@@ -9,8 +9,6 @@
 
 namespace edgelink {
 
-using decimal64 = std::decimal::decimal64;
-
 struct IClosable {
     virtual void close() noexcept = 0;
 };

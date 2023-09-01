@@ -38,7 +38,7 @@ Engine::Engine(const nlohmann::json& json_config) : _config{}, _msg_id_counter(0
         const std::string elem_key = elem["key"];
         spdlog::info("开始创建数据流节点：[$type='{0}', key='{1}']", elem_type, elem_key);
         auto provider_iter = _node_providers.find(elem_type);
-        if(provider_iter ==_node_providers.end()) {
+        if (provider_iter == _node_providers.end()) {
             spdlog::error("找不到数据流节点配型：'{0}'", elem_type);
             throw BadConfigException(elem_type, "无效的配置主键");
         }
@@ -77,8 +77,8 @@ Engine::~Engine() {
 }
 
 void Engine::emit(shared_ptr<Msg> msg) {
-    this->relay(msg->source, msg);
- }
+    //
+    this->relay(msg->source, msg); }
 
 void Engine::start() {
     //
@@ -107,10 +107,9 @@ void Engine::stop() {
 void Engine::run() {
     // 引擎主线程
     spdlog::info("正在启动引擎工作线程");
-    auto thread = std::jthread([this]() { 
+    auto thread = std::jthread([this]() {
         // 阻塞主线程
-        while(!_stop_source->stop_requested())
-        {
+        while (!_stop_source->stop_requested()) {
             std::this_thread::sleep_for(std::chrono::seconds(1));
         }
     });
@@ -124,7 +123,7 @@ void Engine::relay(const FlowNode* source, std::shared_ptr<Msg> orig_msg) const 
     CloneMsgStaticVector out_msgs;
     out_msgs.push_back(orig_msg);
 
-    auto wires = source->wires();    
+    auto wires = source->wires();
 
     for (auto i = 1; i < wires.size(); i++) {
         auto new_msg = shared_ptr<Msg>(orig_msg->clone());

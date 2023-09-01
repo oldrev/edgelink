@@ -5,13 +5,12 @@
 #include "edgelink/edgelink.hpp"
 
 using namespace std;
-using namespace std::decimal;
 
 namespace edgelink {
 
 class InjectSource : public SourceNode {
   public:
-    const char* DEFAULT_CRON = "*/2 * * * * ?"; // 每隔两秒执行一次
+    const char* DEFAULT_CRON = "*/5 * * * * ?"; // 默认值是每隔两秒执行一次
   public:
     InjectSource(const ::nlohmann::json& config, const INodeDescriptor* desc, IMsgRouter* router)
         : SourceNode(desc, router), _counter(0) {
