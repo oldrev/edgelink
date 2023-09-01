@@ -7,38 +7,30 @@
         {
             "$type": "source.inject",
             "key": "source1",
-            "cron": "*/2 * * * * ?" // 每隔两秒执行一次
+            "cron": "*/2 * * * * ?", // 每隔两秒执行一次
+            "wires": [
+                [
+                    "queue1"
+                ]
+            ]
         },
         {
             "$type": "filter.queued",
-            "key": "filter1",
-            "capacity": 120
+            "key": "queue1",
+            "capacity": 120,
+            "wires": [
+                ["sink1", "sink2"]
+            ]
         },
         {
             "$type": "sink.logged",
-            "key": "sink1"
+            "key": "sink1",
+            "wires": []
         },
         {
             "$type": "sink.blackhole",
-            "key": "sink2"
-        },
-        {
-            "$type": "wire",
-            "key": "wire1",
-            "input": "source1",
-            "output": "filter1"
-        },
-        {
-            "$type": "wire",
-            "key": "wire2",
-            "input": "filter1",
-            "output": "sink1"
-        },
-        {
-            "$type": "wire",
-            "key": "wire3",
-            "input": "source1",
-            "output": "sink2"
+            "key": "sink2",
+            "wires": []
         }
     ]
 }

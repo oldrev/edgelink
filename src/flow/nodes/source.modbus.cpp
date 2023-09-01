@@ -9,6 +9,7 @@ using namespace std;
 
 namespace edgelink {
 
+/*
 class BaseModbusSource : public SourceNode {
   protected:
     BaseModbusSource(const ::nlohmann::json& config, const INodeDescriptor* desc, IMsgRouter* router)
@@ -44,5 +45,6 @@ RTTR_REGISTRATION {
         "edgelink::ModbusTcpSourceProvider")
         .constructor()(rttr::policy::ctor::as_raw_ptr);
 };
+*/
 
 }; // namespace edgelink

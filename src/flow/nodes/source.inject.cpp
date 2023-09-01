@@ -12,8 +12,9 @@ class InjectSource : public SourceNode {
   public:
     const char* DEFAULT_CRON = "*/5 * * * * ?"; // 默认值是每隔两秒执行一次
   public:
-    InjectSource(const ::nlohmann::json& config, const INodeDescriptor* desc, IMsgRouter* router)
-        : SourceNode(desc, router), _counter(0) {
+    InjectSource(uint32_t id, const ::nlohmann::json& config, const INodeDescriptor* desc,
+                 const std::vector<OutputPort>& output_ports, IMsgRouter* router)
+        : SourceNode(id, desc, output_ports, router), _counter(0) {
         const std::string cron_expression = config.value("cron", DEFAULT_CRON);
         _cron = ::cron::make_cron(cron_expression);
         // TODO 这里设置参数

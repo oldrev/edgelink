@@ -7,8 +7,9 @@ namespace edgelink {
 
 class BlackholeSink : public SinkNode {
   public:
-    BlackholeSink(const ::nlohmann::json& config, const INodeDescriptor* desc, IMsgRouter* router)
-        : SinkNode(desc, router) {}
+    BlackholeSink(uint32_t id, const ::nlohmann::json& config, const INodeDescriptor* desc,
+                  const std::vector<OutputPort>& output_ports, IMsgRouter* router)
+        : SinkNode(id, desc, output_ports, router) {}
 
     void start() override {}
 

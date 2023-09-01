@@ -1,75 +1,81 @@
 #include "../pch.hpp"
 
 #include "edgelink/edgelink.hpp"
+#include "edgelink/flow/dependency-sorter.hpp"
 
 using namespace std;
 
-using WireStaticVector = boost::container::static_vector<const edgelink::Wire*, 32>;
 using CloneMsgStaticVector = boost::container::static_vector<std::shared_ptr<edgelink::Msg>, 32>;
 
 namespace edgelink {
 
 Engine::Engine(const nlohmann::json& json_config) : _config{}, _msg_id_counter(0) {
 
-    // 注册 nodes
-    spdlog::info("开始注册数据流节点");
-    auto node_provider_type = rttr::type::get<INodeProvider>();
-    auto node_providers = node_provider_type.get_derived_classes();
-    for (auto& pt : node_providers) {
-        auto provider_var = pt.create();
-        auto provider = provider_var.get_value<INodeProvider*>();
-        auto desc = provider->descriptor();
-        _node_providers[desc->type_name()] = provider;
-        spdlog::info("注册数据流节点: [class_name='{0}', type_name='{1}']", pt.get_name(), desc->type_name());
+    {
+        // 注册节点提供器
+        spdlog::info("开始注册数据流节点");
+        auto node_provider_type = rttr::type::get<INodeProvider>();
+        auto node_providers = node_provider_type.get_derived_classes();
+        for (auto& pt : node_providers) {
+            auto provider_var = pt.create();
+            auto provider = provider_var.get_value<INodeProvider*>();
+            auto desc = provider->descriptor();
+            _node_providers[desc->type_name()] = provider;
+            spdlog::info("注册数据流节点: [class_name='{0}', type_name='{1}']", pt.get_name(), desc->type_name());
+        }
     }
 
     // 这里注册测试用的
     auto dataflow_elements = json_config["dataflow"];
 
-    // 第一遍扫描先创建节点
-    std::map<std::string, FlowNode*> node_map;
+    // 创建边连接
+    DependencySorter<string> sorter;
 
+    // 先把 json 节点提取出来
+    map<const string, const nlohmann::json*> json_nodes;
     for (const auto& elem : dataflow_elements) {
-        const std::string elem_type = elem["$type"];
-        if (elem_type == "wire") { // 管道直接跳过
-            continue;
+        const string& node_key = elem.at("key");
+        json_nodes[node_key] = &elem;
+        for (const auto& port : elem.at("wires")) {
+            for (const string& endpoint : port) {
+                sorter.add_edge(node_key, endpoint);
+            }
+        }
+    }
+    auto sorted_keys = sorter.sort();
+
+    // 第一遍扫描先创建节点
+    std::map<const string_view, FlowNode*> node_map;
+
+    for (uint32_t i = 0; i < static_cast<uint32_t>(sorted_keys.size()); i++) {
+        const string& elem_key = sorted_keys[i];
+        const nlohmann::json& elem = *json_nodes.at(elem_key);
+        const std::string elem_type = elem.at("$type");
+
+        spdlog::info("开始创建数据流节点：[$type='{0}', key='{1}']", elem_type, elem_key);
+        auto ports = vector<OutputPort>();
+        for (const auto& port : elem.at("wires")) {
+            auto output_wires = vector<FlowNode*>();
+            for (const string& endpoint : port) {
+                auto out_node = node_map.at(endpoint);
+                output_wires.push_back(out_node);
+            }
+            ports.push_back(OutputPort(output_wires));
         }
 
-        const std::string elem_key = elem["key"];
-        spdlog::info("开始创建数据流节点：[$type='{0}', key='{1}']", elem_type, elem_key);
         auto provider_iter = _node_providers.find(elem_type);
         if (provider_iter == _node_providers.end()) {
             spdlog::error("找不到数据流节点配型：'{0}'", elem_type);
             throw BadConfigException(elem_type, "无效的配置主键");
         }
-        auto node = provider_iter->second->create(elem, this);
+        auto node = provider_iter->second->create(i, elem, ports, this);
         _nodes.push_back(node);
         node_map[elem_key] = node;
     }
 
-    // 第二遍扫描创建管道
-    for (const auto& elem : dataflow_elements) {
-        const std::string elem_type = elem["$type"];
-        if (elem_type != "wire") { // 非管道就跳过
-            continue;
-        }
-        spdlog::info("开始创建数据流管道");
-        const std::string& input_key = elem["input"];
-        const std::string& output_key = elem["output"];
-        auto input_node = node_map.at(input_key);
-        auto output_node = node_map.at(output_key);
-        auto wire = new Wire(input_node, output_node);
-        _wires.push_back(wire);
-        _node_wires[input_node].push_back(wire);
-        spdlog::info("已创建数据流管道");
-    }
 }
 
 Engine::~Engine() {
-
-    for (auto wire : _wires) {
-        delete wire;
-    }
 
     for (auto node : _nodes) {
         delete node;
@@ -117,46 +123,37 @@ void Engine::run() {
     thread.join();
 }
 
-void Engine::relay(const FlowNode* source, std::shared_ptr<Msg> orig_msg, bool clone) const {
+void Engine::relay(const FlowNode* source, const std::shared_ptr<Msg>& orig_msg, bool clone) const {
 
     // 根据出度把消息复制
     CloneMsgStaticVector out_msgs;
     out_msgs.push_back(orig_msg);
 
-    auto wires = source->wires();
+    auto output_ports = source->output_ports();
 
-    for (auto i = 1; i < wires.size(); i++) {
-        if (clone) {
-            auto new_msg = make_shared<Msg>(*orig_msg);
-            out_msgs.push_back(new_msg);
-        } else {
-            out_msgs.push_back(orig_msg);
+    for (auto i = 0; i < output_ports.size(); i++) {
+        auto port = output_ports.at(i);
+        for (auto j = 0; j < port.wires().size(); j++) {
+            auto endpoint = port.wires().at(i);
+            auto k = i * j;
+            auto msg = clone && k > 0 ? make_shared<Msg>(*orig_msg) : orig_msg;
+
+            // 线程池中处理数据流
+            boost::asio::post(*_pool, [msg, this, endpoint]() {
+                //
+                switch (endpoint->descriptor()->kind()) {
+
+                case NodeKind::FILTER:
+                case NodeKind::SINK:
+                case NodeKind::JUNCTION: {
+                    endpoint->receive(msg);
+                } break;
+
+                default:
+                    throw InvalidDataException("错误的节点连线");
+                }
+            });
         }
-    }
-
-    for (size_t i = 0; i < wires.size(); i++) {
-        const auto wire = wires[i];
-        auto msg = out_msgs[i];
-
-        // 线程池中处理数据流
-        boost::asio::post(*_pool, [msg, this, wire]() {
-            //
-            switch (wire->output()->descriptor()->kind()) {
-
-            case NodeKind::FILTER: {
-                auto filter = static_cast<FilterNode*>(wire->output());
-                filter->receive(msg);
-            } break;
-
-            case NodeKind::SINK: {
-                auto sink = static_cast<SinkNode*>(wire->output());
-                sink->receive(msg);
-            } break;
-
-            default:
-                throw InvalidDataException("错误的节点连线");
-            }
-        });
     }
 }
 

@@ -20,19 +20,13 @@ class Engine : public IEngine {
 
     void emit(std::shared_ptr<Msg> msg) override;
 
-    void relay(const FlowNode* source, std::shared_ptr<Msg> msg, bool clone = true) const override;
+    void relay(const FlowNode* source, const std::shared_ptr<Msg>& msg, bool clone = true) const override;
 
     inline uint64_t generate_msg_id() override { return _msg_id_counter.fetch_add(1); }
 
-    const std::vector<const Wire*>& node_wires(const FlowNode* node) const override {
-        return _node_wires.at(node);
-    }
-
   private:
     std::vector<FlowNode*> _nodes;
-    std::vector<Wire*> _wires;
     const EngineConfig _config;
-    std::map<const FlowNode*, std::vector<const Wire*>> _node_wires;
 
     std::map<std::string_view, const INodeProvider*> _node_providers;
 

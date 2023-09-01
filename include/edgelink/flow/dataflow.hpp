@@ -5,9 +5,7 @@ namespace edgelink {
 struct INodeDescriptor;
 struct IEngine;
 class Msg;
-class Wire;
 struct FlowNode;
-
 
 /// @brief 数据处理上下文
 class FlowContext {
@@ -33,15 +31,10 @@ struct IMsgRouter {
     /// @return
     virtual uint64_t generate_msg_id() = 0;
 
-    /// @brief 获取某个指定节点发出的连线
-    /// @param node 指定节点
-    /// @return 返回该节点发出的所有连线
-    virtual const std::vector<const Wire*>& node_wires(const FlowNode* node) const = 0;
-
     /// @brief 从来源节点向后路由消息
     /// @param src 
     /// @param msg
-    virtual void relay(const FlowNode* source, std::shared_ptr<Msg> msg, bool clone = true) const = 0;
+    virtual void relay(const FlowNode* source, const std::shared_ptr<Msg>& msg, bool clone = true) const = 0;
 };
 
 /// @brief 数据处理引擎接口
@@ -51,30 +44,54 @@ struct IEngine : public IMsgRouter {
     virtual void run() = 0;
 };
 
+/// @brief 节点的发出连接端口
+class OutputPort {
+public:
+  explicit OutputPort(const std::vector<FlowNode*>& wires) : _wires(wires) {}
+
+  const std::vector<FlowNode*>& wires() const { return _wires; }
+
+  static const std::vector<FlowNode*>& EMPTY() {
+      static const std::vector<FlowNode*> EMPTY_WIRES(0);
+      return EMPTY_WIRES;
+  }
+
+private:
+  std::vector<FlowNode*> _wires;
+};
+
 /// @brief 数据流处理基础元素
 struct FlowElement {};
 
 enum class NodeKind {
-    SOURCE = 0, ///< 数据源
-    SINK = 1,   ///< 数据收集器
-    FILTER = 2  ///< 过滤器
+    JUNCTION = 0, ///< 节点
+    SOURCE = 1, ///< 数据源
+    SINK = 2,   ///< 数据收集器
+    FILTER = 3  ///< 过滤器
 };
+
 
 /// @brief 数据流节点抽象类
 class FlowNode : public FlowElement {
   protected:
-    FlowNode(const INodeDescriptor* desc, IMsgRouter* router) : _descriptor(desc), _router(router) {
+    FlowNode(uint32_t id, const INodeDescriptor* desc, const std::vector<OutputPort>& output_ports,
+             IMsgRouter* router)
+        : _id(id), _descriptor(desc), _output_ports(output_ports), _router(router) {
         // constructor
     }
 
   public:
-    inline const std::vector<const Wire*>& wires() const { return _router->node_wires(this); }
+    inline const std::vector<OutputPort>& output_ports() const { return _output_ports; }
     inline const INodeDescriptor* descriptor() const { return _descriptor; }
     inline IMsgRouter* router() const { return _router; }
 
+    virtual void receive(const std::shared_ptr<Msg>& msg) = 0;
+
   private:
+    const uint32_t _id;
     IMsgRouter* _router;
     const INodeDescriptor* _descriptor;
+    const std::vector<OutputPort> _output_ports;
 
   public:
     virtual void start() = 0;
@@ -84,12 +101,18 @@ class FlowNode : public FlowElement {
 /// @brief 抽象数据源
 class SourceNode :  public FlowNode {
   protected:
-    SourceNode(const INodeDescriptor* desc, IMsgRouter* router) : FlowNode(desc, router) {}
+    SourceNode(uint32_t id, const INodeDescriptor* desc, const std::vector<OutputPort>& output_ports,
+               IMsgRouter* router)
+        : FlowNode(id, desc, output_ports, router) {}
 
   public:
     virtual bool is_running() const { return _thread.joinable(); }
     void start() override; 
-    void stop() override; 
+    void stop() override;
+
+    void receive(const std::shared_ptr<Msg>& msg) override {
+        throw InvalidDataException("错误的流设置：数据源不允许接收数据");
+    }
 
   protected:
     virtual void process(std::stop_token& stoken) = 0;
@@ -103,32 +126,17 @@ class SourceNode :  public FlowNode {
 /// @brief 抽象数据接收器
 class SinkNode : public FlowNode {
   protected:
-    SinkNode(const INodeDescriptor* desc, IMsgRouter* router) : FlowNode(desc, router) {}
-
-  public:
-    virtual void receive(const std::shared_ptr<Msg>& msg) = 0;
+    SinkNode(uint32_t id, const INodeDescriptor* desc, const std::vector<OutputPort>& output_ports,
+             IMsgRouter* router)
+        : FlowNode(id, desc, output_ports, router) {}
 };
 
 /// @brief 抽象数据过滤器
 class FilterNode : public FlowNode {
   protected:
-    FilterNode(const INodeDescriptor* desc, IMsgRouter* router) : FlowNode(desc, router) {}
-
-  public:
-    virtual void receive(const std::shared_ptr<Msg>& msg) = 0;
-};
-
-/// @brief 连接线（边）
-class Wire final {
-  public:
-    Wire(FlowNode* input, FlowNode* output) : _input(input), _output(output) {}
-
-    inline FlowNode* input() const { return _input; }
-    inline FlowNode* output() const { return _output; }
-
-  private:
-    FlowNode* _input;
-    FlowNode* _output;
+    FilterNode(uint32_t id, const INodeDescriptor* desc, const std::vector<OutputPort>& output_ports,
+               IMsgRouter* router)
+        : FlowNode(id, desc, output_ports, router) {}
 };
 
 struct INodeDescriptor {
@@ -138,7 +146,8 @@ struct INodeDescriptor {
 
 struct INodeProvider {
     virtual const INodeDescriptor* descriptor() const = 0;
-    virtual FlowNode* create(const ::nlohmann::json& config, IMsgRouter* router) const = 0;
+    virtual FlowNode* create(uint32_t id, const ::nlohmann::json& config, const std::vector<OutputPort>& output_ports,
+                             IMsgRouter* router) const = 0;
 
     RTTR_ENABLE()
 };
@@ -153,8 +162,9 @@ class NodeProvider final : public INodeProvider, public INodeDescriptor {
     const std::string_view& type_name() const override { return _type_name; }
     inline const NodeKind kind() const override { return TKind; }
 
-    FlowNode* create(const ::nlohmann::json& config, IMsgRouter* router) const override {
-        return new TNode(config, this, router);
+    FlowNode* create(uint32_t id, const ::nlohmann::json& config, const std::vector<OutputPort>& output_ports,
+                     IMsgRouter* router) const override {
+        return new TNode(id, config, this, output_ports, router);
     }
 
   private:

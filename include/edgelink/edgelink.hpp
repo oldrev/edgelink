@@ -1,10 +1,10 @@
 #pragma once
 
+#include "errors.hpp"
 #include "utils.hpp"
 #include "flow/msg.hpp"
 #include "flow/dataflow.hpp"
 #include "engine.hpp"
-#include "errors.hpp"
 #include "logging.hpp"
 
 namespace edgelink {

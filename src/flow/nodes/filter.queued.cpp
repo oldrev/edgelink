@@ -7,8 +7,9 @@ namespace edgelink {
 
 class QueuedFilter : public FilterNode {
   public:
-    QueuedFilter(const ::nlohmann::json& config, const INodeDescriptor* desc, IMsgRouter* router)
-        : FilterNode(desc, router), _queue(config.value("capacity", 100)) {
+    QueuedFilter(uint32_t id, const ::nlohmann::json& config, const INodeDescriptor* desc,
+                 const std::vector<OutputPort>& output_ports, IMsgRouter* router)
+        : FilterNode(id, desc, output_ports, router), _queue(config.value("capacity", 100)) {
         //
     }
 
