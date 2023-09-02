@@ -8,8 +8,8 @@ namespace edgelink {
 class LogNode : public SinkNode {
   public:
     LogNode(uint32_t id, const ::nlohmann::json& config, const INodeDescriptor* desc,
-            const std::vector<OutputPort>& output_ports, IMsgRouter* router)
-        : SinkNode(id, desc, output_ports, router) {}
+            const std::vector<OutputPort>&& output_ports, IFlow* router)
+        : SinkNode(id, desc, move(output_ports), router) {}
 
     void start() override {}
 

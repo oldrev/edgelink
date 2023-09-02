@@ -22,7 +22,6 @@ if(Boost_FOUND)
 endif()
 
 
-find_package(PahoMqttCpp REQUIRED)
 find_library(LIBSPDLOG NAMES spdlog REQUIRED)
 find_library(LIBFMT NAMES fmt REQUIRED)
 find_library(LIBRTTR_CORE NAMES rttr_core REQUIRED)
@@ -51,11 +50,8 @@ target_link_libraries(
     PRIVATE ${LIBSPDLOG}
     PRIVATE ${LIBFMT}
     PRIVATE ${LIBRTTR_CORE}
-    PRIVATE PahoMqttCpp::paho-mqttpp3
 )
-#add_definitions(-DBOOST_LOG_DYN_LINK)
-
-
+add_definitions(-DBOOST_LOG_DYN_LINK)
 
 
 target_precompile_headers(${PROJECT_NAME} PRIVATE src/pch.hpp)
@@ -72,3 +68,7 @@ file(MAKE_DIRECTORY ${PLUGINS_OUTPUT_DIR})
 # modbus 插件
 add_subdirectory(./plugins/modbus)
 add_dependencies(${PROJECT_NAME} "edgelink.plugins.modbus")
+
+# mqtt 插件
+add_subdirectory(./plugins/mqtt)
+add_dependencies(${PROJECT_NAME} "edgelink.plugins.mqtt")

@@ -4,7 +4,7 @@ namespace edgelink {
 
 struct IRegistry {
     //
-    virtual const std::unique_ptr<INodeProvider>& get_node_provider(const std::string_view name) const = 0;
+    virtual const std::unique_ptr<INodeProvider>& get_node_provider(const std::string_view& name) const = 0;
 };
 
 class Registry : public IRegistry {
@@ -12,7 +12,7 @@ class Registry : public IRegistry {
     Registry(const ::nlohmann::json& json_config);
     virtual ~Registry();
 
-    inline const std::unique_ptr<INodeProvider>& get_node_provider(const std::string_view name) const override {
+    inline const std::unique_ptr<INodeProvider>& get_node_provider(const std::string_view& name) const override {
         return _node_providers.at(name);
     }
 
@@ -20,7 +20,7 @@ class Registry : public IRegistry {
     void register_node_provider(const rttr::type& provider_type);
 
   private:
-    std::map<std::string_view, std::unique_ptr<INodeProvider>> _node_providers;
+    std::unordered_map<std::string_view, std::unique_ptr<INodeProvider>> _node_providers;
     std::vector<std::unique_ptr<rttr::library>> _libs;
 };
 

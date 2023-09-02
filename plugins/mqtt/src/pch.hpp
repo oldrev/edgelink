@@ -19,9 +19,15 @@
 #include <boost/di.hpp>
 #include <boost/thread/sync_bounded_queue.hpp>
 #include <boost/url.hpp>
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/uuid_io.hpp>
 
 #include <fmt/chrono.h>
 #include <fmt/core.h>
 #include <nlohmann/json.hpp>
 #include <rttr/registration>
+#include <rttr/type>
 #include <spdlog/spdlog.h>
+
+#include <mqtt/client.h>

@@ -1,22 +1,19 @@
 #include "pch.hpp"
 
-#include <boost/uuid/uuid.hpp>
-#include <boost/uuid/uuid_generators.hpp>
-#include <boost/uuid/uuid_io.hpp>
-#include <mqtt/client.h>
+#include <edgelink/plugin.hpp>
 
-#include "edgelink/transport/mqtt.hpp"
+#include "mqtt.hpp"
 
 using namespace std;
 using namespace boost;
 
-namespace edgelink {
+namespace edgelink::plugins::mqtt {
 
 MqttClient::MqttClient(const ::nlohmann::json& json_config) {
     //
     _address = json_config["test"];
     auto client_id = uuids::to_string(uuids::uuid());
-    _mqtt = make_unique<mqtt::client>(_address, client_id);
+    _mqtt = make_unique<::mqtt::client>(_address, client_id);
 }
 
 MqttClient::~MqttClient() {
@@ -28,7 +25,7 @@ MqttClient::~MqttClient() {
 void MqttClient::connect() {
     spdlog::info("开始连接 MQTT：{0}", _address);
 
-    mqtt::connect_options connOpts;
+    ::mqtt::connect_options connOpts;
     connOpts.set_keep_alive_interval(20);
     connOpts.set_clean_session(true);
     _mqtt->connect(connOpts);
@@ -43,10 +40,10 @@ void MqttClient::close() noexcept {
     }
 }
 
-void MqttClient::publish(const std::string_view& topic, mqtt::binary_ref payload, int qos) {
-    auto msg = mqtt::make_message(topic.data(), payload);
+void MqttClient::publish(const std::string_view& topic, ::mqtt::binary_ref payload, int qos) {
+    auto msg = ::mqtt::make_message(topic.data(), payload);
     msg->set_qos(qos);
     _mqtt->publish(msg);
 }
 
-}; // namespace edgelink
+}; // namespace edgelink::plugins::mqtt

@@ -80,7 +80,8 @@
         "csignal": "cpp",
         "bitset": "cpp",
         "cfenv": "cpp",
-        "coroutine": "cpp"
+        "coroutine": "cpp",
+        "strstream": "cpp"
     },
     "[python]": {
         "editor.defaultFormatter": "ms-python.black-formatter"

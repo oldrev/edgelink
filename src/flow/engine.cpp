@@ -33,7 +33,7 @@ Engine::Engine(const nlohmann::json& json_config, const IRegistry& registry) : _
     auto sorted_ids = sorter.sort();
 
     // 第一遍扫描先创建节点
-    std::map<const string_view, shared_ptr<FlowNode>> node_map;
+    std::map<const string_view, FlowNode*> node_map;
 
     for (uint32_t i = 0; i < static_cast<uint32_t>(sorted_ids.size()); i++) {
         const string& elem_id = sorted_ids[i];
@@ -42,25 +42,25 @@ Engine::Engine(const nlohmann::json& json_config, const IRegistry& registry) : _
 
         auto ports = vector<OutputPort>();
         for (const auto& port : elem.at("wires")) {
-            auto output_wires = vector<shared_ptr<FlowNode>>();
+            auto output_wires = vector<FlowNode*>();
             for (const string& endpoint : port) {
                 auto out_node = node_map.at(endpoint);
-                output_wires.push_back(out_node);
+                output_wires.emplace_back(out_node);
             }
-            ports.push_back(OutputPort(output_wires));
+            ports.emplace_back(OutputPort(move(output_wires)));
         }
 
         auto const& provider_iter = registry.get_node_provider(elem_type);
-        auto node = provider_iter->create(i, elem, ports, this);
-        _nodes.push_back(node);
-        node_map[elem_id] = node;
+        auto node = provider_iter->create(i, elem, std::move(ports), this);
         spdlog::info("已开始创建数据流节点：[type='{0}', key='{1}', id={2}]", elem_type, elem_id, node->id());
+        node_map[elem_id] = node.get();
+        _nodes.emplace_back(move(node));
     }
 }
 
 Engine::~Engine() {}
 
-void Engine::emit(shared_ptr<Msg> msg) {
+void Engine::emit(shared_ptr<Msg>& msg) {
     //
     this->relay(msg->birth_place, msg);
 }
@@ -72,7 +72,7 @@ void Engine::start() {
     _pool = make_unique<boost::asio::thread_pool>(4);
     spdlog::info("数据流引擎已启动");
 
-    for (auto node : _nodes) {
+    for (auto const& node : _nodes) {
         spdlog::info("正在启动数据流节点：{0}", node->descriptor()->type_name());
         node->start();
     }
