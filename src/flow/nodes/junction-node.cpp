@@ -8,8 +8,8 @@ namespace edgelink {
 class JunctionNode : public FlowNode {
   public:
     JunctionNode(uint32_t id, const ::nlohmann::json& config, const INodeDescriptor* desc,
-                 const std::vector<OutputPort>&& output_ports, IFlow* router)
-        : FlowNode(id, desc, move(output_ports), router) {}
+                 const std::vector<OutputPort>&& output_ports, IFlow* flow)
+        : FlowNode(id, desc, move(output_ports), flow) {}
 
     void start() override {}
 
@@ -17,7 +17,7 @@ class JunctionNode : public FlowNode {
 
     void receive(const shared_ptr<Msg>& msg) override {
         // 直接分发消息
-        this->router()->relay(this, msg, true);
+        this->flow()->relay(this, msg, true);
     }
 };
 

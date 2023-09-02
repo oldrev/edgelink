@@ -13,8 +13,8 @@ class InjectNode : public SourceNode {
     const char* DEFAULT_CRON = "*/5 * * * * ?"; // 默认值是每隔两秒执行一次
   public:
     InjectNode(uint32_t id, const ::nlohmann::json& config, const INodeDescriptor* desc,
-               const std::vector<OutputPort>&& output_ports, IFlow* router)
-        : SourceNode(id, desc, move(output_ports), router), _counter(0) {
+               const std::vector<OutputPort>&& output_ports, IFlow* flow)
+        : SourceNode(id, desc, move(output_ports), flow), _counter(0) {
         const std::string cron_expression = config.value("cron", DEFAULT_CRON);
         _cron = ::cron::make_cron(cron_expression);
         // TODO 这里设置参数
@@ -29,13 +29,13 @@ class InjectNode : public SourceNode {
 
         std::this_thread::sleep_for(sleep_time * 1000ms);
 
-        auto msg_id = this->router()->generate_msg_id();
+        auto msg_id = this->flow()->generate_msg_id();
         auto msg = make_shared<Msg>(msg_id, this);
 
         _counter++;
         msg->payload["count"] = double(_counter);
 
-        this->router()->emit(msg);
+        this->flow()->emit(msg);
         spdlog::info("InjectNode > 数据已注入：[msg.id={0}]", msg->id);
     }
 

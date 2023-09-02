@@ -8,8 +8,8 @@ namespace edgelink {
 class QueueNode : public FilterNode {
   public:
     QueueNode(uint32_t id, const ::nlohmann::json& config, const INodeDescriptor* desc,
-              const std::vector<OutputPort>&& output_ports, IFlow* router)
-        : FilterNode(id, desc, move(output_ports), router), _queue(config.value("capacity", 100)) {
+              const std::vector<OutputPort>&& output_ports, IFlow* flow)
+        : FilterNode(id, desc, move(output_ports), flow), _queue(config.value("capacity", 100)) {
         //
     }
 
@@ -20,7 +20,7 @@ class QueueNode : public FilterNode {
                 while (!stoken.stop_requested()) {
                     shared_ptr<Msg> msg = nullptr;
                     _queue.wait_pull_front(msg);
-                    this->router()->relay(this, msg);
+                    this->flow()->relay(this, msg);
                 }
             });
         }

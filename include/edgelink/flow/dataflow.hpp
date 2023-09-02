@@ -71,22 +71,23 @@ enum class NodeKind {
 /// @brief 数据流节点抽象类
 class FlowNode : public FlowElement {
   protected:
-    FlowNode(uint32_t id, const INodeDescriptor* desc, const std::vector<OutputPort>&& output_ports, IFlow* router)
-        : _id(id), _descriptor(desc), _output_ports(output_ports), _router(router) {
+    FlowNode(uint32_t id, const INodeDescriptor* desc, const std::vector<OutputPort>&& output_ports, IFlow* flow)
+        : _id(id), _descriptor(desc), _output_ports(output_ports), _flow(flow) {
         // constructor
     }
 
   public:
     inline uint32_t id() const { return _id; }
     inline const std::vector<OutputPort>& output_ports() const { return _output_ports; }
+    inline const size_t output_count() const { return _output_ports.size(); }
     inline const INodeDescriptor* descriptor() const { return _descriptor; }
-    inline IFlow* router() const { return _router; }
+    inline IFlow* flow() const { return _flow; }
 
     virtual void receive(const std::shared_ptr<Msg>& msg) = 0;
 
   private:
     const uint32_t _id;
-    IFlow* _router;
+    IFlow* _flow;
     const INodeDescriptor* _descriptor;
     const std::vector<OutputPort> _output_ports;
 
@@ -98,8 +99,8 @@ class FlowNode : public FlowElement {
 /// @brief 抽象数据源
 class SourceNode : public FlowNode {
   protected:
-    SourceNode(uint32_t id, const INodeDescriptor* desc, const std::vector<OutputPort>&& output_ports, IFlow* router)
-        : FlowNode(id, desc, std::move(output_ports), router) {}
+    SourceNode(uint32_t id, const INodeDescriptor* desc, const std::vector<OutputPort>&& output_ports, IFlow* flow)
+        : FlowNode(id, desc, std::move(output_ports), flow) {}
 
   public:
     virtual bool is_running() const { return _thread.joinable(); }
@@ -122,15 +123,15 @@ class SourceNode : public FlowNode {
 /// @brief 抽象数据接收器
 class SinkNode : public FlowNode {
   protected:
-    SinkNode(uint32_t id, const INodeDescriptor* desc, const std::vector<OutputPort>&& output_ports, IFlow* router)
-        : FlowNode(id, desc, std::move(output_ports), router) {}
+    SinkNode(uint32_t id, const INodeDescriptor* desc, const std::vector<OutputPort>&& output_ports, IFlow* flow)
+        : FlowNode(id, desc, std::move(output_ports), flow) {}
 };
 
 /// @brief 抽象数据过滤器
 class FilterNode : public FlowNode {
   protected:
-    FilterNode(uint32_t id, const INodeDescriptor* desc, const std::vector<OutputPort>&& output_ports, IFlow* router)
-        : FlowNode(id, desc, std::move(output_ports), router) {}
+    FilterNode(uint32_t id, const INodeDescriptor* desc, const std::vector<OutputPort>&& output_ports, IFlow* flow)
+        : FlowNode(id, desc, std::move(output_ports), flow) {}
 };
 
 struct INodeDescriptor {
@@ -144,7 +145,7 @@ struct INodeDescriptor {
 struct INodeProvider {
     virtual const INodeDescriptor* descriptor() const = 0;
     virtual std::unique_ptr<FlowNode> create(uint32_t id, const ::nlohmann::json& config,
-                                             const std::vector<OutputPort>&& output_ports, IFlow* router) const = 0;
+                                             const std::vector<OutputPort>&& output_ports, IFlow* flow) const = 0;
 
   private:
     RTTR_ENABLE()
@@ -160,8 +161,8 @@ class NodeProvider final : public INodeProvider, public INodeDescriptor {
     inline const NodeKind kind() const override { return TKind; }
 
     std::unique_ptr<FlowNode> create(uint32_t id, const ::nlohmann::json& config,
-                                     const std::vector<OutputPort>&& output_ports, IFlow* router) const override {
-        return std::make_unique<TNode>(id, config, this, std::move(output_ports), router);
+                                     const std::vector<OutputPort>&& output_ports, IFlow* flow) const override {
+        return std::make_unique<TNode>(id, config, this, std::move(output_ports), flow);
     }
 
   private:
