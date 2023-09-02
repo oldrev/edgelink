@@ -23,7 +23,6 @@ endif()
 
 
 find_package(PahoMqttCpp REQUIRED)
-find_library(LIBMODBUS NAMES modbus REQUIRED)
 find_library(LIBSPDLOG NAMES spdlog REQUIRED)
 find_library(LIBFMT NAMES fmt REQUIRED)
 find_library(LIBRTTR_CORE NAMES rttr_core REQUIRED)
@@ -49,7 +48,6 @@ target_compile_options(${PROJECT_NAME} PRIVATE -fno-rtti)
 target_link_libraries(
     ${PROJECT_NAME}
     PRIVATE ${Boost_LIBRARIES}
-    PRIVATE ${LIBMODBUS}
     PRIVATE ${LIBSPDLOG}
     PRIVATE ${LIBFMT}
     PRIVATE ${LIBRTTR_CORE}
@@ -58,7 +56,19 @@ target_link_libraries(
 #add_definitions(-DBOOST_LOG_DYN_LINK)
 
 
+
+
 target_precompile_headers(${PROJECT_NAME} PRIVATE src/pch.hpp)
 
 # 添加复制操作，将配置文件复制到输出目录
 configure_file(./edgelink-conf.json ${EXECUTABLE_OUTPUT_PATH}/edgelink-conf.json COPYONLY)
+
+
+# 包含插件子项目
+
+set(PLUGINS_OUTPUT_DIR "${EXECUTABLE_OUTPUT_PATH}/plugins" CACHE INTERNAL "Plugins directory")
+file(MAKE_DIRECTORY ${PLUGINS_OUTPUT_DIR})
+
+# modbus 插件
+add_subdirectory(./plugins/modbus)
+add_dependencies(${PROJECT_NAME} "edgelink.plugins.modbus")

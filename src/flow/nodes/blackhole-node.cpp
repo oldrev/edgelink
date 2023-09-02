@@ -23,7 +23,7 @@ class BlackholeNode : public SinkNode {
 RTTR_REGISTRATION {
     rttr::registration::class_<NodeProvider<BlackholeNode, "blackhole", NodeKind::SINK>>(
         "edgelink::BlackholeNodeProvider")
-        .constructor()(rttr::policy::ctor::as_std_shared_ptr);
+        .constructor()(rttr::policy::ctor::as_raw_ptr);
 };
 
 }; // namespace edgelink

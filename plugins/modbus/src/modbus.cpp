@@ -1,13 +1,14 @@
-#include "../pch.hpp"
+#include "pch.hpp"
 
+#include <edgelink/plugin.hpp>
 #include <modbus/modbus.h>
 
-#include "edgelink/edgelink.hpp"
-#include "edgelink/transport/modbus.hpp"
+#include "modbus.hpp"
 
 using namespace std;
+using namespace edgelink;
 
-namespace edgelink {
+namespace edgelink::plugins::modbus {
 
 ModbusClient::ModbusClient(const std::string_view& url, int baud, char parity, int data_bits, int stop_bits)
     : _modbus(nullptr), baud(baud), parity(parity), dataBits(data_bits), stopBits(stop_bits) {
@@ -66,4 +67,4 @@ void ModbusClient::write_single_register(int address, uint16_t value) {
     }
 }
 
-}; // namespace edgelink
+}; // namespace edgelink::plugins::modbus

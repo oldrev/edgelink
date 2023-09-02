@@ -10,7 +10,7 @@ using MsgRoutingPath = boost::container::static_vector<const IFlowNode*, 32>;
 
 class Engine : public IEngine {
   public:
-    explicit Engine(const ::nlohmann::json& json_config);
+    explicit Engine(const ::nlohmann::json& json_config, const IRegistry& registry);
     virtual ~Engine();
 
     void run() override;
@@ -27,8 +27,6 @@ class Engine : public IEngine {
   private:
     std::vector<std::shared_ptr<FlowNode>> _nodes;
     const EngineConfig _config;
-
-    std::map<std::string_view, std::shared_ptr<INodeProvider>> _node_providers;
 
     std::atomic<uint64_t> _msg_id_counter; // 初始化计数器为0
 

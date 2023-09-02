@@ -34,7 +34,6 @@ int main(int argc, char* argv[]) {
     std::cout << "EdgeLink 物联网边缘数据采集系统" << std::endl;
     std::cout << std::endl;
 
-
     // 初始化日志系统
     init_logging();
 
@@ -47,16 +46,16 @@ int main(int argc, char* argv[]) {
     } catch (std::exception& ex) {
         spdlog::critical("读取配置文件错误：{0}", ex.what());
         return -1;
-    }
-    catch(...) {
+    } catch (...) {
         spdlog::critical("未知错误");
         return -1;
     }
 
-    const auto injector = di::make_injector(                         //
-        di::bind<>().to(json_config), //
-        di::bind<App>().in(di::singleton),                           // App
-        di::bind<Engine>().in(di::singleton)                         // Engine
+    const auto injector = di::make_injector(                   //
+        di::bind<>().to(json_config),                          //
+        di::bind<App>().in(di::singleton),                     // App
+        di::bind<Engine>().in(di::singleton),                  // Engine
+        di::bind<IRegistry>().to<Registry>().in(di::singleton) // Engine
     );
 
     auto app = injector.create<App>();

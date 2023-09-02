@@ -20,3 +20,6 @@ Makefile.in
 *.o
 *.stamp
 /build/
+
+./logs
+./logs/

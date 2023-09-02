@@ -47,7 +47,7 @@ class QueueNode : public FilterNode {
 
 RTTR_REGISTRATION {
     rttr::registration::class_<NodeProvider<QueueNode, "queue", NodeKind::FILTER>>("edgelink::QueueNodeProvider")
-        .constructor()(rttr::policy::ctor::as_std_shared_ptr);
+        .constructor()(rttr::policy::ctor::as_raw_ptr);
 };
 
 }; // namespace edgelink

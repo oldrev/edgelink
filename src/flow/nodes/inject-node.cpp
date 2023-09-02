@@ -45,9 +45,8 @@ class InjectNode : public SourceNode {
 };
 
 RTTR_REGISTRATION {
-    rttr::registration::class_<NodeProvider<InjectNode, "inject", NodeKind::SOURCE>>(
-        "edgelink::InjectNodeProvider")
-        .constructor()(rttr::policy::ctor::as_std_shared_ptr);
+    rttr::registration::class_<NodeProvider<InjectNode, "inject", NodeKind::SOURCE>>("edgelink::InjectNodeProvider")
+        .constructor()(rttr::policy::ctor::as_raw_ptr);
 };
 
 }; // namespace edgelink

@@ -9,3 +9,4 @@ DerivePointerAlignment: false
 PointerAlignment: Left
 IndentWidth: 4
 ColumnLimit: 120
+SortIncludes: false

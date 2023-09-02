@@ -9,21 +9,9 @@ using CloneMsgStaticVector = boost::container::static_vector<std::shared_ptr<edg
 
 namespace edgelink {
 
-Engine::Engine(const nlohmann::json& json_config) : _config{}, _msg_id_counter(0) {
+Engine::Engine(const nlohmann::json& json_config, const IRegistry& registry) : _config{}, _msg_id_counter(0) {
 
-    {
-        // 注册节点提供器
-        spdlog::info("开始注册数据流节点");
-        auto node_provider_type = rttr::type::get<INodeProvider>();
-        auto node_providers = node_provider_type.get_derived_classes();
-        for (auto& pt : node_providers) {
-            auto provider_var = pt.create();
-            auto provider = provider_var.get_value<shared_ptr<INodeProvider>>();
-            auto desc = provider->descriptor();
-            _node_providers[desc->type_name()] = provider;
-            spdlog::info("注册数据流节点: [class_name='{0}', type_name='{1}']", pt.get_name(), desc->type_name());
-        }
-    }
+    auto node_provider_type = rttr::type::get<INodeProvider>();
 
     // 这里注册测试用的
     auto dataflow_elements = json_config["dataflow"];
@@ -62,12 +50,8 @@ Engine::Engine(const nlohmann::json& json_config) : _config{}, _msg_id_counter(0
             ports.push_back(OutputPort(output_wires));
         }
 
-        auto provider_iter = _node_providers.find(elem_type);
-        if (provider_iter == _node_providers.end()) {
-            spdlog::error("找不到数据流节点配型：'{0}'", elem_type);
-            throw BadConfigException(elem_type, "无效的配置主键");
-        }
-        auto node = provider_iter->second->create(i, elem, ports, this);
+        auto const& provider_iter = registry.get_node_provider(elem_type);
+        auto node = provider_iter->create(i, elem, ports, this);
         _nodes.push_back(node);
         node_map[elem_id] = node;
         spdlog::info("已开始创建数据流节点：[type='{0}', key='{1}', id={2}]", elem_type, elem_id, node->id());

@@ -25,7 +25,7 @@ class LogNode : public SinkNode {
 
 RTTR_REGISTRATION {
     rttr::registration::class_<NodeProvider<LogNode, "log", NodeKind::SINK>>("edgelink::LogNodeProvider")
-        .constructor()(rttr::policy::ctor::as_std_shared_ptr);
+        .constructor()(rttr::policy::ctor::as_raw_ptr);
 };
 
 }; // namespace edgelink

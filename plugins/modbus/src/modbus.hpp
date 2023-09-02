@@ -1,23 +1,24 @@
 #pragma once
 
-namespace edgelink {
+namespace edgelink::plugins::modbus {
 
 enum class ModbusTransport {
     RTU = 0,
     TCP = 1,
 };
 
-class ModbusException : public IOException {
+class ModbusException : public edgelink::IOException {
   public:
-    ModbusException(const std::string& message, int error_code) : IOException(message), _error_code(error_code) {}
-    ModbusException(const char* message, int error_code) : IOException(message), _error_code(error_code) {}
+    ModbusException(const std::string& message, int error_code)
+        : edgelink::IOException(message), _error_code(error_code) {}
+    ModbusException(const char* message, int error_code) : edgelink::IOException(message), _error_code(error_code) {}
     int error_code() const { return _error_code; }
 
   private:
     int _error_code;
 };
 
-class ModbusClient : public IClosable {
+class ModbusClient : public edgelink::IClosable {
   public:
     ModbusClient(const std::string_view& url, int baud, char parity, int data_bits, int stop_bits);
     ~ModbusClient();
@@ -36,5 +37,4 @@ class ModbusClient : public IClosable {
     int stopBits;
     ModbusTransport _transport;
 };
-
-}; // namespace edgelink
+}; 

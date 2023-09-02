@@ -1,17 +1,16 @@
 #pragma once
 
+#include "common.hpp"
 #include "errors.hpp"
-#include "utils.hpp"
-#include "flow/msg.hpp"
-#include "flow/dataflow.hpp"
-#include "engine.hpp"
 #include "logging.hpp"
+#include "utils.hpp"
+
+#include "flow/dataflow.hpp"
+#include "flow/msg.hpp"
+#include "registry.hpp"
+#include "engine.hpp"
 
 namespace edgelink {
-
-struct IClosable {
-    virtual void close() noexcept = 0;
-};
 
 struct IDaemonApp {
     virtual void run() = 0;

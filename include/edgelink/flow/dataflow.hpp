@@ -1,5 +1,7 @@
 #pragma once
 
+#include "edgelink/utils.hpp"
+
 namespace edgelink {
 
 struct INodeDescriptor;
@@ -142,6 +144,7 @@ struct INodeDescriptor {
     virtual const std::string_view& type_name() const = 0;
     virtual const NodeKind kind() const = 0;
 
+  private:
     RTTR_ENABLE()
 };
 
@@ -150,6 +153,7 @@ struct INodeProvider {
     virtual std::shared_ptr<FlowNode> create(uint32_t id, const ::nlohmann::json& config,
                                              const std::vector<OutputPort>& output_ports, IMsgRouter* router) const = 0;
 
+  private:
     RTTR_ENABLE()
 };
 
