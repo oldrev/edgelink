@@ -28,7 +28,7 @@ class ModbusLogNode : public SinkNode {
 };
 
 RTTR_PLUGIN_REGISTRATION {
-    rttr::registration::class_<NodeProvider<ModbusLogNode, "log", NodeKind::SINK>>(
+    rttr::registration::class_<NodeProvider<ModbusLogNode, "modbus.log", NodeKind::SINK>>(
         "edgelink::plugins::modbus::ModbusLogNodeProvider")
         .constructor()(rttr::policy::ctor::as_raw_ptr);
 };

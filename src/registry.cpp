@@ -38,7 +38,6 @@ Registry::Registry(const ::nlohmann::json& json_config) : _node_providers(), _li
         for (auto type : lib->get_types()) {
             if (type.is_derived_from<INodeProvider>() && !type.is_pointer() && type.is_class()) {
                 this->register_node_provider(type);
-                spdlog::info("注册插件 '{0}' 中的类型：{1}", lib_path, type.get_name());
             }
         }
         // 把插件也注册进去
@@ -46,11 +45,18 @@ Registry::Registry(const ::nlohmann::json& json_config) : _node_providers(), _li
     }
 }
 
+Registry::~Registry() {
+    for (auto const& lib : _libs) {
+        spdlog::info("开始卸载插件动态库：{0}", lib->get_file_name());
+        lib->unload();
+    }
+}
+
 void Registry::register_node_provider(const rttr::type& provider_type) {
     auto provider_var = provider_type.create();
     auto provider = unique_ptr<INodeProvider>(provider_var.get_value<INodeProvider*>());
     auto desc = provider->descriptor();
-    spdlog::info("注册数据流节点: [{0}]", desc->type_name());
+    spdlog::info("注册数据流节点提供器: [{0}]", desc->type_name());
     _node_providers.emplace(desc->type_name(), std::move(provider));
 }
 

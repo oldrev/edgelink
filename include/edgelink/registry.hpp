@@ -10,6 +10,7 @@ struct IRegistry {
 class Registry : public IRegistry {
   public:
     Registry(const ::nlohmann::json& json_config);
+    virtual ~Registry();
 
     inline const std::unique_ptr<INodeProvider>& get_node_provider(const std::string_view name) const override {
         return _node_providers.at(name);
