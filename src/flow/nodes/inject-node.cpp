@@ -8,12 +8,12 @@ using namespace std;
 
 namespace edgelink {
 
-class InjectSource : public SourceNode {
+class InjectNode : public SourceNode {
   public:
     const char* DEFAULT_CRON = "*/5 * * * * ?"; // 默认值是每隔两秒执行一次
   public:
-    InjectSource(uint32_t id, const ::nlohmann::json& config, const INodeDescriptor* desc,
-                 const std::vector<OutputPort>& output_ports, IMsgRouter* router)
+    InjectNode(uint32_t id, const ::nlohmann::json& config, const INodeDescriptor* desc,
+               const std::vector<OutputPort>& output_ports, IMsgRouter* router)
         : SourceNode(id, desc, output_ports, router), _counter(0) {
         const std::string cron_expression = config.value("cron", DEFAULT_CRON);
         _cron = ::cron::make_cron(cron_expression);
@@ -36,7 +36,7 @@ class InjectSource : public SourceNode {
         msg->payload["count"] = double(_counter);
 
         this->router()->emit(msg);
-        spdlog::info("InjectSource > 数据已注入：[msg.id={0}]", msg->id);
+        spdlog::info("InjectNode > 数据已注入：[msg.id={0}]", msg->id);
     }
 
   private:
@@ -45,9 +45,9 @@ class InjectSource : public SourceNode {
 };
 
 RTTR_REGISTRATION {
-    rttr::registration::class_<NodeProvider<InjectSource, "source.inject", NodeKind::SOURCE>>(
-        "edgelink::LoggedSinkProvider")
-        .constructor()(rttr::policy::ctor::as_raw_ptr);
+    rttr::registration::class_<NodeProvider<InjectNode, "inject", NodeKind::SOURCE>>(
+        "edgelink::InjectNodeProvider")
+        .constructor()(rttr::policy::ctor::as_std_shared_ptr);
 };
 
 }; // namespace edgelink

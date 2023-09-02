@@ -18,7 +18,7 @@ Engine::Engine(const nlohmann::json& json_config) : _config{}, _msg_id_counter(0
         auto node_providers = node_provider_type.get_derived_classes();
         for (auto& pt : node_providers) {
             auto provider_var = pt.create();
-            auto provider = provider_var.get_value<INodeProvider*>();
+            auto provider = provider_var.get_value<shared_ptr<INodeProvider>>();
             auto desc = provider->descriptor();
             _node_providers[desc->type_name()] = provider;
             spdlog::info("注册数据流节点: [class_name='{0}', type_name='{1}']", pt.get_name(), desc->type_name());
@@ -34,28 +34,27 @@ Engine::Engine(const nlohmann::json& json_config) : _config{}, _msg_id_counter(0
     // 先把 json 节点提取出来
     map<const string, const nlohmann::json*> json_nodes;
     for (const auto& elem : dataflow_elements) {
-        const string& node_key = elem.at("key");
-        json_nodes[node_key] = &elem;
+        const string& node_id = elem.at("id");
+        json_nodes[node_id] = &elem;
         for (const auto& port : elem.at("wires")) {
             for (const string& endpoint : port) {
-                sorter.add_edge(node_key, endpoint);
+                sorter.add_edge(node_id, endpoint);
             }
         }
     }
-    auto sorted_keys = sorter.sort();
+    auto sorted_ids = sorter.sort();
 
     // 第一遍扫描先创建节点
-    std::map<const string_view, FlowNode*> node_map;
+    std::map<const string_view, shared_ptr<FlowNode>> node_map;
 
-    for (uint32_t i = 0; i < static_cast<uint32_t>(sorted_keys.size()); i++) {
-        const string& elem_key = sorted_keys[i];
-        const nlohmann::json& elem = *json_nodes.at(elem_key);
-        const std::string elem_type = elem.at("$type");
+    for (uint32_t i = 0; i < static_cast<uint32_t>(sorted_ids.size()); i++) {
+        const string& elem_id = sorted_ids[i];
+        const nlohmann::json& elem = *json_nodes.at(elem_id);
+        const std::string elem_type = elem.at("type");
 
-        spdlog::info("开始创建数据流节点：[$type='{0}', key='{1}']", elem_type, elem_key);
         auto ports = vector<OutputPort>();
         for (const auto& port : elem.at("wires")) {
-            auto output_wires = vector<FlowNode*>();
+            auto output_wires = vector<shared_ptr<FlowNode>>();
             for (const string& endpoint : port) {
                 auto out_node = node_map.at(endpoint);
                 output_wires.push_back(out_node);
@@ -70,21 +69,17 @@ Engine::Engine(const nlohmann::json& json_config) : _config{}, _msg_id_counter(0
         }
         auto node = provider_iter->second->create(i, elem, ports, this);
         _nodes.push_back(node);
-        node_map[elem_key] = node;
-    }
-
-}
-
-Engine::~Engine() {
-
-    for (auto node : _nodes) {
-        delete node;
+        node_map[elem_id] = node;
+        spdlog::info("已开始创建数据流节点：[type='{0}', key='{1}', id={2}]", elem_type, elem_id, node->id());
     }
 }
+
+Engine::~Engine() {}
 
 void Engine::emit(shared_ptr<Msg> msg) {
     //
-    this->relay(msg->source, msg); }
+    this->relay(msg->birth_place, msg);
+}
 
 void Engine::start() {
     //
@@ -123,37 +118,31 @@ void Engine::run() {
     thread.join();
 }
 
-void Engine::relay(const FlowNode* source, const std::shared_ptr<Msg>& orig_msg, bool clone) const {
+void Engine::relay(const FlowNode* source, const std::shared_ptr<Msg>& orig_msg, size_t port, bool clone) const {
 
     // 根据出度把消息复制
-    CloneMsgStaticVector out_msgs;
-    out_msgs.push_back(orig_msg);
-
     auto output_ports = source->output_ports();
 
-    for (auto i = 0; i < output_ports.size(); i++) {
-        auto port = output_ports.at(i);
-        for (auto j = 0; j < port.wires().size(); j++) {
-            auto endpoint = port.wires().at(i);
-            auto k = i * j;
-            auto msg = clone && k > 0 ? make_shared<Msg>(*orig_msg) : orig_msg;
+    auto output_port = output_ports.at(port);
+    for (auto j = 0; j < output_port.wires().size(); j++) {
+        auto endpoint = output_port.wires().at(j);
+        auto msg = clone && j > 0 ? make_shared<Msg>(*orig_msg) : orig_msg;
 
-            // 线程池中处理数据流
-            boost::asio::post(*_pool, [msg, this, endpoint]() {
-                //
-                switch (endpoint->descriptor()->kind()) {
+        // 线程池中处理数据流
+        boost::asio::post(*_pool, [msg, this, endpoint]() {
+            //
+            switch (endpoint->descriptor()->kind()) {
 
-                case NodeKind::FILTER:
-                case NodeKind::SINK:
-                case NodeKind::JUNCTION: {
-                    endpoint->receive(msg);
-                } break;
+            case NodeKind::FILTER:
+            case NodeKind::SINK:
+            case NodeKind::JUNCTION: {
+                endpoint->receive(msg);
+            } break;
 
-                default:
-                    throw InvalidDataException("错误的节点连线");
-                }
-            });
-        }
+            default:
+                throw InvalidDataException("错误的节点连线");
+            }
+        });
     }
 }
 

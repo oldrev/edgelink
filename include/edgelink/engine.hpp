@@ -4,8 +4,7 @@ namespace edgelink {
 
 struct IFlowNode;
 
-struct EngineConfig {
-};
+struct EngineConfig {};
 
 using MsgRoutingPath = boost::container::static_vector<const IFlowNode*, 32>;
 
@@ -20,15 +19,16 @@ class Engine : public IEngine {
 
     void emit(std::shared_ptr<Msg> msg) override;
 
-    void relay(const FlowNode* source, const std::shared_ptr<Msg>& msg, bool clone = true) const override;
+    void relay(const FlowNode* source, const std::shared_ptr<Msg>& msg, size_t port = 0,
+               bool clone = true) const override;
 
     inline uint64_t generate_msg_id() override { return _msg_id_counter.fetch_add(1); }
 
   private:
-    std::vector<FlowNode*> _nodes;
+    std::vector<std::shared_ptr<FlowNode>> _nodes;
     const EngineConfig _config;
 
-    std::map<std::string_view, const INodeProvider*> _node_providers;
+    std::map<std::string_view, std::shared_ptr<INodeProvider>> _node_providers;
 
     std::atomic<uint64_t> _msg_id_counter; // 初始化计数器为0
 

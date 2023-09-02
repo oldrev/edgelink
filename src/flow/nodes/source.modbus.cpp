@@ -39,11 +39,11 @@ class ModbusTcpSource final : public BaseModbusSource {
 RTTR_REGISTRATION {
     rttr::registration::class_<NodeProvider<ModbusRtuSource, "source.modbus.rtu", NodeKind::SOURCE>>(
         "edgelink::ModbusRtuSourceProvider")
-        .constructor()(rttr::policy::ctor::as_raw_ptr);
+        .constructor()(rttr::policy::ctor::as_std_shared_ptr);
 
     rttr::registration::class_<NodeProvider<ModbusTcpSource, "source.modbus.tcp", NodeKind::SOURCE>>(
         "edgelink::ModbusTcpSourceProvider")
-        .constructor()(rttr::policy::ctor::as_raw_ptr);
+        .constructor()(rttr::policy::ctor::as_std_shared_ptr);
 };
 */
 

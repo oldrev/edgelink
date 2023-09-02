@@ -17,27 +17,27 @@ using MsgObjectValue = std::map<std::string, MsgValue>;
 
 using MsgPayload = nlohmann ::json;
 
-struct SourceNode;
+struct FlowNode;
 
 /// @brief 消息结构
 class Msg {
   public:
     const uint64_t id;
-    const SourceNode* source;
+    const FlowNode* birth_place;
+    std::optional<std::chrono::system_clock::time_point> birth_time;
     MsgPayload payload;
 
   public:
-    Msg(uint64_t id, const SourceNode* source) : id(id), source(source), payload() {}
+    Msg(uint64_t id, const FlowNode* birth_place) : id(id), birth_place(birth_place), payload() {}
 
     /// @brief 拷贝构造函数
     /// @param msg
-    explicit Msg(const Msg& msg) : id(msg.id), source(msg.source), payload(msg.payload) {}
+    explicit Msg(const Msg& msg) : id(msg.id), birth_place(msg.birth_place), payload(msg.payload) {}
 
     /// @brief 指定 ID 的拷贝构造函数
-    /// @param msg 
-    /// @param id 
-    Msg(const Msg& msg, uint64_t id) : id(id), source(msg.source), payload(msg.payload) {}
-
+    /// @param msg
+    /// @param id
+    Msg(const Msg& msg, uint64_t id) : id(id), birth_place(msg.birth_place), payload(msg.payload) {}
 };
 
 }; // namespace edgelink

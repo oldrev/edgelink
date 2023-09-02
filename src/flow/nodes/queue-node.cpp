@@ -5,10 +5,10 @@ using namespace std;
 
 namespace edgelink {
 
-class QueuedFilter : public FilterNode {
+class QueueNode : public FilterNode {
   public:
-    QueuedFilter(uint32_t id, const ::nlohmann::json& config, const INodeDescriptor* desc,
-                 const std::vector<OutputPort>& output_ports, IMsgRouter* router)
+    QueueNode(uint32_t id, const ::nlohmann::json& config, const INodeDescriptor* desc,
+              const std::vector<OutputPort>& output_ports, IMsgRouter* router)
         : FilterNode(id, desc, output_ports, router), _queue(config.value("capacity", 100)) {
         //
     }
@@ -34,7 +34,7 @@ class QueuedFilter : public FilterNode {
     }
 
     void receive(const std::shared_ptr<Msg>& msg) override {
-        spdlog::info("QueuedFilter > 收到了消息：[msg.id={0}]", msg->id);
+        spdlog::info("QueueNode > 收到了消息：[msg.id={0}]", msg->id);
         _queue.wait_push_back(msg);
     }
 
@@ -46,9 +46,8 @@ class QueuedFilter : public FilterNode {
 };
 
 RTTR_REGISTRATION {
-    rttr::registration::class_<NodeProvider<QueuedFilter, "filter.queued", NodeKind::FILTER>>(
-        "edgelink::QueuedFilterProvider")
-        .constructor()(rttr::policy::ctor::as_raw_ptr);
+    rttr::registration::class_<NodeProvider<QueueNode, "queue", NodeKind::FILTER>>("edgelink::QueueNodeProvider")
+        .constructor()(rttr::policy::ctor::as_std_shared_ptr);
 };
 
 }; // namespace edgelink

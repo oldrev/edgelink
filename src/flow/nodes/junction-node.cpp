@@ -22,9 +22,9 @@ class JunctionNode : public FlowNode {
 };
 
 RTTR_REGISTRATION {
-    rttr::registration::class_<NodeProvider<JunctionNode, "node.junction", NodeKind::JUNCTION>>(
+    rttr::registration::class_<NodeProvider<JunctionNode, "junction", NodeKind::JUNCTION>>(
         "edgelink::JunctionNodeProvider")
-        .constructor()(rttr::policy::ctor::as_raw_ptr);
+        .constructor()(rttr::policy::ctor::as_std_shared_ptr);
 };
 
 }; // namespace edgelink
