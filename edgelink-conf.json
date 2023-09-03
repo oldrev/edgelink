@@ -7,7 +7,7 @@
         {
             "type": "inject",
             "id": "source1",
-            "cron": "*/2 * * * * ?", // 每隔两秒执行一次
+            "cron": "*/1 * * * * ?", // 每隔两秒执行一次
             "wires": [
                 [
                     "func1"
@@ -17,10 +17,13 @@
         {
             "type": "function",
             "id": "func1",
-            "func": "msg.payload = 'Hello, World!';",
+            "func": "msg.payload = 'Hello, World!'; var msg2 = cloneMsg(msg); msg2.payload = 'Hello!, EdgeLink!'; return [msg, msg2];",
             "wires": [
                 [
                     "queue1"
+                ],
+                [
+                    "sink3"
                 ]
             ]
         },
@@ -43,6 +46,11 @@
         {
             "type": "blackhole",
             "id": "sink2",
+            "wires": []
+        },
+        {
+            "type": "log",
+            "id": "sink3",
             "wires": []
         }
     ]

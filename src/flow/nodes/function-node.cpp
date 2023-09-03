@@ -5,19 +5,30 @@ using namespace edgelink;
 
 class EvalEnv final {
   public:
-    explicit EvalEnv(const string& msg_json_text) : _msg_json_text(msg_json_text) {
-        //
-    }
+    EvalEnv() {}
+
+    EvalEnv(FlowNode* node, const string&& msg_json_text) : _node(node), _msg_json_text(std::move(msg_json_text)) {}
 
     const string& msg_json_text() const { return _msg_json_text; }
 
+    uint32_t generate_msg_id() { return _node->flow()->generate_msg_id(); }
+    uint32_t node_id() const { return _node->id(); }
+
     template <class Inspector> static void inspect(Inspector& i) {
-        i.construct(&std::make_shared<EvalEnv, const string&>);
-        i.property("msg_json_text", &EvalEnv::msg_json_text);
+        i.construct(&make_shared<EvalEnv>);
+        i.property("msgJsonText", &EvalEnv::msg_json_text);
+        i.property("nodeID", &EvalEnv::node_id);
+        i.method("generateMsgID", &EvalEnv::generate_msg_id);
+    }
+
+    static shared_ptr<EvalEnv> create(FlowNode* node, shared_ptr<Msg> msg) {
+        auto ptr = make_shared<EvalEnv>(node, move(msg->data().dump()));
+        return ptr;
     }
 
   private:
-    string _msg_json_text;
+    FlowNode* _node;
+    const string _msg_json_text;
 };
 
 DUK_CPP_DEF_CLASS_NAME(EvalEnv);
@@ -39,18 +50,48 @@ class FunctionNode : public FlowNode {
         duk::Context ctx;
         ctx.registerClass<EvalEnv>();
 
-        auto eval_env = EvalEnv(msg->data().dump());
+        auto eval_env = EvalEnv::create(this, msg);
         ctx.addGlobal("evalEnv", eval_env);
 
-        auto js_code = fmt::format("var msg = JSON.parse(evalEnv.msg_json_text); {0}; JSON.stringify(msg)", _func);
+        auto js_code = fmt::format(R"(
+            function jsonDeepClone(v) {{ return JSON.parse(JSON.stringify(v)); }}
+
+            function cloneMsg(v) {{ 
+                var newMsg = jsonDeepClone(v); 
+                newMsg.id = evalEnv.generateMsgID(); 
+                return newMsg; 
+            }}
+
+            var msg = JSON.parse(evalEnv.msgJsonText); 
+
+            var __func_node_proc = function() {{
+                {0}; 
+            }};
+
+            JSON.stringify(__func_node_proc());
+            )",
+                                   _func);
 
         string result_json;
         ctx.evalString(result_json, js_code.c_str());
+        auto js_result = nlohmann::json::parse(result_json);
 
-        auto evaled_msg = make_shared<Msg>(nlohmann::json::parse(result_json));
-
-        // 直接分发消息
-        this->flow()->relay(this->id(), evaled_msg, 0, true);
+        if (js_result.type() == nlohmann::json::value_t::array) { // 多个端口消息的情况
+            int port = 0;
+            for (auto msg_json : js_result) {
+                // 直接分发消息，只有是对象的才分发
+                if (msg_json.type() == nlohmann::json::value_t::object) {
+                    auto evaled_msg = make_shared<Msg>(move(msg_json));
+                    this->flow()->relay(this->id(), evaled_msg, port, true);
+                }
+                port++;
+            }
+        } else if (js_result.type() == nlohmann::json::value_t::array) { // 单个端口消息的情况
+            auto evaled_msg = make_shared<Msg>(move(result_json));
+            this->flow()->relay(this->id(), evaled_msg, 0, true);
+        } else { // 其他类型不支持
+            spdlog::error("不支持的消息格式：{0}", result_json);
+        }
     }
 
   private:
