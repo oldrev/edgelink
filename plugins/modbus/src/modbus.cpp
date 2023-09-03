@@ -1,7 +1,4 @@
-#include "pch.hpp"
-
 #include <edgelink/plugin.hpp>
-#include <modbus/modbus.h>
 
 #include "modbus.hpp"
 

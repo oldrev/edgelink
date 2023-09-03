@@ -17,12 +17,12 @@ class Engine : public IEngine {
     void start() override;
     void stop() override;
 
-    void emit(std::shared_ptr<Msg>& msg) override;
+    void emit(uint32_t source_node_id, std::shared_ptr<Msg> msg) override;
 
-    void relay(const FlowNode* source, const std::shared_ptr<Msg>& msg, size_t port = 0,
-               bool clone = true) const override;
+    void relay(uint32_t source_node_id, std::shared_ptr<Msg> msg, size_t port, bool clone) const override;
 
     inline uint64_t generate_msg_id() override { return _msg_id_counter.fetch_add(1); }
+    inline FlowNode* get_node(uint32_t id) const override { return _nodes[static_cast<size_t>(id)].get(); }
 
   private:
     std::vector<std::unique_ptr<FlowNode>> _nodes;

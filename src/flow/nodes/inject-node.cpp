@@ -1,6 +1,3 @@
-#include "../../pch.hpp"
-
-#include <croncpp/croncpp.h>
 
 #include "edgelink/edgelink.hpp"
 
@@ -14,7 +11,7 @@ class InjectNode : public SourceNode {
   public:
     InjectNode(uint32_t id, const ::nlohmann::json& config, const INodeDescriptor* desc,
                const std::vector<OutputPort>&& output_ports, IFlow* flow)
-        : SourceNode(id, desc, move(output_ports), flow), _counter(0) {
+        : SourceNode(id, desc, move(output_ports), flow) {
         const std::string cron_expression = config.value("cron", DEFAULT_CRON);
         _cron = ::cron::make_cron(cron_expression);
         // TODO 这里设置参数
@@ -30,17 +27,16 @@ class InjectNode : public SourceNode {
         std::this_thread::sleep_for(sleep_time * 1000ms);
 
         auto msg_id = this->flow()->generate_msg_id();
-        auto msg = make_shared<Msg>(msg_id, this);
+        auto msg = make_shared<Msg>(msg_id, this->id());
 
-        _counter++;
-        msg->payload["count"] = double(_counter);
+        if (spdlog::get_level() >= spdlog::level::info) {
+            spdlog::info("InjectNode > 数据已注入：[msg={0}]", msg->data().dump());
+        }
 
-        this->flow()->emit(msg);
-        spdlog::info("InjectNode > 数据已注入：[msg.id={0}]", msg->id);
+        this->flow()->emit(this->id(), msg);
     }
 
   private:
-    int _counter;
     cron::cronexpr _cron;
 };
 

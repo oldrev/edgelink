@@ -1,5 +1,7 @@
 #pragma once
 
+#include <edgelink/plugin.hpp>
+
 namespace edgelink::plugins::mqtt {
 
 /**

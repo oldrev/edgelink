@@ -5,8 +5,8 @@
 #include "logging.hpp"
 #include "utils.hpp"
 
-#include "flow/dataflow.hpp"
 #include "flow/msg.hpp"
+#include "flow/dataflow.hpp"
 #include "registry.hpp"
 #include "engine.hpp"
 

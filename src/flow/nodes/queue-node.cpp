@@ -1,4 +1,3 @@
-#include "../../pch.hpp"
 #include "edgelink/edgelink.hpp"
 
 using namespace std;
@@ -18,9 +17,9 @@ class QueueNode : public FilterNode {
             _thread = std::jthread([this](std::stop_token stoken) {
                 // 线程函数
                 while (!stoken.stop_requested()) {
-                    shared_ptr<Msg> msg = nullptr;
+                    shared_ptr<Msg> msg;
                     _queue.wait_pull_front(msg);
-                    this->flow()->relay(this, msg);
+                    this->flow()->relay(this->id(), msg, 0, true);
                 }
             });
         }
@@ -33,15 +32,15 @@ class QueueNode : public FilterNode {
         }
     }
 
-    void receive(const std::shared_ptr<Msg>& msg) override {
-        spdlog::info("QueueNode > 收到了消息：[msg.id={0}]", msg->id);
+    void receive(shared_ptr<Msg> msg) override {
+        //
         _queue.wait_push_back(msg);
     }
 
     bool is_running() const { return _thread.joinable(); }
 
   private:
-    boost::sync_bounded_queue<std::shared_ptr<Msg>> _queue;
+    boost::sync_bounded_queue<shared_ptr<Msg>> _queue;
     std::jthread _thread; // 一个数据源一个线程
 };
 

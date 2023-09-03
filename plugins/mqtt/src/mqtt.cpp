@@ -1,6 +1,3 @@
-#include "pch.hpp"
-
-#include <edgelink/plugin.hpp>
 
 #include "mqtt.hpp"
 

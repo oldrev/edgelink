@@ -1,5 +1,3 @@
-#include "pch.hpp"
-
 #include "edgelink/edgelink.hpp"
 #include "edgelink/plugin.hpp"
 

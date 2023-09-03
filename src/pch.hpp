@@ -20,6 +20,7 @@
 #include <boost/di.hpp>
 #include <boost/thread/sync_bounded_queue.hpp>
 #include <boost/url.hpp>
+#include <croncpp/croncpp.h>
 
 #include <fmt/chrono.h>
 #include <fmt/core.h>
@@ -27,6 +28,9 @@
 #include <rttr/registration>
 #include <rttr/type>
 #include <spdlog/spdlog.h>
+
+#include <duktape.h>
+#include <duktape-cpp/DuktapeCpp.h>
 
 /*
 #include "edgelink/edgelink.hpp"

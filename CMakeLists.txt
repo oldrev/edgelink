@@ -9,9 +9,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # 设置 C++ 编译器为 ccache
 set(CMAKE_CXX_COMPILER_LAUNCHER ccache)
-
-# 设置 C 编译器为 ccache
 set(CMAKE_C_COMPILER_LAUNCHER ccache)
+
+# 按代码尺寸优化
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -Os")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Os")
+endif()
 
 
 # 查找Boost库
@@ -25,11 +29,12 @@ endif()
 find_library(LIBSPDLOG NAMES spdlog REQUIRED)
 find_library(LIBFMT NAMES fmt REQUIRED)
 find_library(LIBRTTR_CORE NAMES rttr_core REQUIRED)
+find_library(LIBDUKTAPE NAMES duktape REQUIRED)
 
 
 include_directories(
     ./include
-    ./libs/async_mqtt-1.0.9/include
+    ./libs/duktape-cpp/src
 )
 
 file(GLOB_RECURSE SOURCES "src/*.c" "src/*.cpp")
@@ -50,6 +55,7 @@ target_link_libraries(
     PRIVATE ${LIBSPDLOG}
     PRIVATE ${LIBFMT}
     PRIVATE ${LIBRTTR_CORE}
+    PRIVATE ${LIBDUKTAPE}
 )
 add_definitions(-DBOOST_LOG_DYN_LINK)
 

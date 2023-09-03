@@ -1,4 +1,3 @@
-#include "../../pch.hpp"
 #include "edgelink/edgelink.hpp"
 
 using namespace std;
@@ -15,11 +14,11 @@ class LogNode : public SinkNode {
 
     void stop() override {}
 
-    void receive(const shared_ptr<Msg>& msg) override {
+    void receive(shared_ptr<Msg> msg) override {
         //
-        spdlog::info("LogNode > 收到了消息：[msg.id={0}, msg.birth_place=(id={1}, type='{2}')]，消息载荷：\n{3}",
-                     msg->id, msg->birth_place->id(), msg->birth_place->descriptor()->type_name(),
-                     msg->payload.dump(4));
+        uint32_t node_id = msg->data().at("birthPlaceID");
+        auto birth_place = this->flow()->get_node(node_id);
+        spdlog::info("LogNode > 收到了消息：\n{0}", msg->data().dump(4));
     }
 };
 

@@ -6,7 +6,6 @@ namespace edgelink {
 
 struct INodeDescriptor;
 struct IEngine;
-class Msg;
 struct FlowNode;
 
 /// @brief 数据处理上下文
@@ -26,8 +25,8 @@ class FlowContext {
 /// @brief 消息流
 struct IFlow {
 
-    /// @brief 向路由器里发送产生的第一手消息
-    virtual void emit(std::shared_ptr<Msg>& msg) = 0;
+    /// @brief 向流里发送产生的第一手消息
+    virtual void emit(uint32_t source_node_id, std::shared_ptr<Msg> msg) = 0;
 
     /// @brief 生成消息 ID
     /// @return
@@ -36,8 +35,9 @@ struct IFlow {
     /// @brief 从来源节点向后路由消息
     /// @param src
     /// @param msg
-    virtual void relay(const FlowNode* source, const std::shared_ptr<Msg>& msg, size_t port = 0,
-                       bool clone = true) const = 0;
+    virtual void relay(uint32_t source_node_id, std::shared_ptr<Msg> msg, size_t port, bool clone) const = 0;
+
+    virtual FlowNode* get_node(uint32_t id) const = 0;
 };
 
 /// @brief 数据处理引擎接口
@@ -50,7 +50,7 @@ struct IEngine : public IFlow {
 /// @brief 节点的发出连接端口
 class OutputPort {
   public:
-    explicit OutputPort(const std::vector<FlowNode*>&& wires) : _wires(wires) {}
+    explicit OutputPort(const std::vector<FlowNode*>&& wires) : _wires(std::move(wires)) {}
 
     const std::vector<FlowNode*>& wires() const { return _wires; }
 
@@ -72,7 +72,7 @@ enum class NodeKind {
 class FlowNode : public FlowElement {
   protected:
     FlowNode(uint32_t id, const INodeDescriptor* desc, const std::vector<OutputPort>&& output_ports, IFlow* flow)
-        : _id(id), _descriptor(desc), _output_ports(output_ports), _flow(flow) {
+        : _id(id), _descriptor(desc), _output_ports(std::move(output_ports)), _flow(flow) {
         // constructor
     }
 
@@ -83,7 +83,7 @@ class FlowNode : public FlowElement {
     inline const INodeDescriptor* descriptor() const { return _descriptor; }
     inline IFlow* flow() const { return _flow; }
 
-    virtual void receive(const std::shared_ptr<Msg>& msg) = 0;
+    virtual void receive(std::shared_ptr<Msg> msg) = 0;
 
   private:
     const uint32_t _id;
@@ -107,7 +107,8 @@ class SourceNode : public FlowNode {
     void start() override;
     void stop() override;
 
-    void receive(const std::shared_ptr<Msg>& msg) override {
+    void receive(std::shared_ptr<Msg> msg) override {
+        //
         throw InvalidDataException("错误的流设置：数据源不允许接收数据");
     }
 

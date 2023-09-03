@@ -1,4 +1,3 @@
-#include "../../pch.hpp"
 #include "edgelink/edgelink.hpp"
 
 using namespace std;
@@ -15,8 +14,10 @@ class BlackholeNode : public SinkNode {
 
     void stop() override {}
 
-    void receive(const std::shared_ptr<Msg>& msg) override {
-        spdlog::info("BlackholeNode > 吃掉了消息：[msg.id={0}]", msg->id);
+    void receive(shared_ptr<Msg> msg) override {
+        //
+        uint32_t msg_id = msg->data().at("id");
+        spdlog::info("BlackholeNode > 吃掉了消息：[msg.id={0}]", msg_id);
     }
 };
 

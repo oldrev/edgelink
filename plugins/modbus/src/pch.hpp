@@ -25,3 +25,5 @@
 #include <nlohmann/json.hpp>
 #include <rttr/registration>
 #include <spdlog/spdlog.h>
+
+#include <modbus/modbus.h>

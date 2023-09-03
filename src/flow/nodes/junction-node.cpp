@@ -1,4 +1,3 @@
-#include "../../pch.hpp"
 #include "edgelink/edgelink.hpp"
 
 using namespace std;
@@ -15,9 +14,9 @@ class JunctionNode : public FlowNode {
 
     void stop() override {}
 
-    void receive(const shared_ptr<Msg>& msg) override {
+    void receive(shared_ptr<Msg> msg) override {
         // 直接分发消息
-        this->flow()->relay(this, msg, true);
+        this->flow()->relay(this->id(), msg, 0, true);
     }
 };
 

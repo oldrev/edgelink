@@ -10,6 +10,16 @@
             "cron": "*/2 * * * * ?", // 每隔两秒执行一次
             "wires": [
                 [
+                    "func1"
+                ]
+            ]
+        },
+        {
+            "type": "function",
+            "id": "func1",
+            "func": "msg.payload = 'Hello, World!';",
+            "wires": [
+                [
                     "queue1"
                 ]
             ]

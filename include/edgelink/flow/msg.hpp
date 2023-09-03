@@ -15,29 +15,39 @@ using MsgValue = rva::variant<          //
 using MsgObjectValue = std::map<std::string, MsgValue>;
 */
 
-using MsgPayload = nlohmann ::json;
-
 struct FlowNode;
 
-/// @brief 消息结构
-class Msg {
+class Msg final {
   public:
-    const uint64_t id;
-    const FlowNode* birth_place;
-    std::optional<std::chrono::system_clock::time_point> birth_time;
-    MsgPayload payload;
+    Msg(uint32_t id, uint32_t birth_place_id)
+        : _data(
+              std::move(nlohmann::json::object({{"id", id}, {"birthPlaceID", birth_place_id}, {"payload", nullptr}}))) {
+    }
 
-  public:
-    Msg(uint64_t id, const FlowNode* birth_place) : id(id), birth_place(birth_place), payload() {}
+    Msg(const Msg& other) : _data(other._data) {}
 
-    /// @brief 拷贝构造函数
-    /// @param msg
-    explicit Msg(const Msg& msg) : id(msg.id), birth_place(msg.birth_place), payload(msg.payload) {}
+    Msg(const Msg&& other) : _data(std::move(other._data)) {}
 
-    /// @brief 指定 ID 的拷贝构造函数
-    /// @param msg
-    /// @param id
-    Msg(const Msg& msg, uint64_t id) : id(id), birth_place(msg.birth_place), payload(msg.payload) {}
+    explicit Msg(const nlohmann::json& data) : _data(data) {}
+
+    explicit Msg(const nlohmann::json&& data) : _data(std::move(data)) {}
+
+    inline nlohmann::json& data() { return _data; }
+
+    inline uint32_t id() const {
+        uint32_t id = _data.at("id");
+        return id;
+    }
+
+    inline uint32_t birth_place_id() const {
+        uint32_t bid = _data.at("birthPlaceID");
+        return bid;
+    }
+
+  private:
+    nlohmann::json _data;
 };
+
+using MsgPtr = std::shared_ptr<Msg>;
 
 }; // namespace edgelink

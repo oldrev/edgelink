@@ -1,5 +1,3 @@
-#include "../pch.hpp"
-
 #include "edgelink/edgelink.hpp"
 #include "edgelink/flow/dependency-sorter.hpp"
 
@@ -41,13 +39,14 @@ Engine::Engine(const nlohmann::json& json_config, const IRegistry& registry) : _
         const std::string elem_type = elem.at("type");
 
         auto ports = vector<OutputPort>();
-        for (const auto& port : elem.at("wires")) {
+        for (const auto& port_config : elem.at("wires")) {
             auto output_wires = vector<FlowNode*>();
-            for (const string& endpoint : port) {
+            for (const string& endpoint : port_config) {
                 auto out_node = node_map.at(endpoint);
-                output_wires.emplace_back(out_node);
+                output_wires.push_back(out_node);
             }
-            ports.emplace_back(OutputPort(move(output_wires)));
+            auto port = OutputPort(move(output_wires));
+            ports.emplace_back(move(port));
         }
 
         auto const& provider_iter = registry.get_node_provider(elem_type);
@@ -60,9 +59,14 @@ Engine::Engine(const nlohmann::json& json_config, const IRegistry& registry) : _
 
 Engine::~Engine() {}
 
-void Engine::emit(shared_ptr<Msg>& msg) {
+void Engine::emit(uint32_t source_node_id, shared_ptr<Msg> msg) {
     //
-    this->relay(msg->birth_place, msg);
+    auto source = this->get_node(source_node_id);
+    auto output_ports = source->output_ports();
+    for (size_t i = 0; i < output_ports.size(); i++) {
+        this->relay(source_node_id, msg, i, true);
+        // 根据出度把消息复制
+    }
 }
 
 void Engine::start() {
@@ -102,8 +106,8 @@ void Engine::run() {
     thread.join();
 }
 
-void Engine::relay(const FlowNode* source, const std::shared_ptr<Msg>& orig_msg, size_t port, bool clone) const {
-
+void Engine::relay(uint32_t source_node_id, shared_ptr<Msg> orig_msg, size_t port, bool clone) const {
+    auto source = this->get_node(source_node_id);
     // 根据出度把消息复制
     auto output_ports = source->output_ports();
 
