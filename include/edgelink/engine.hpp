@@ -13,7 +13,6 @@ class Engine : public IEngine {
     explicit Engine(const ::nlohmann::json& json_config, const IRegistry& registry);
     virtual ~Engine();
 
-    Awaitable<void> run_async() override;
     Awaitable<void> start_async() override;
     Awaitable<void> stop_async() override;
 

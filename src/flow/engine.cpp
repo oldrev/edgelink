@@ -59,7 +59,10 @@ Engine::Engine(const nlohmann::json& json_config, const IRegistry& registry) : _
     }
 }
 
-Engine::~Engine() {}
+Engine::~Engine() {
+    //
+    spdlog::info("数据流引擎关闭中...");
+}
 
 Awaitable<void> Engine::emit_async(uint32_t source_node_id, std::shared_ptr<Msg> msg) {
     //
@@ -91,20 +94,6 @@ Awaitable<void> Engine::stop_async() {
     _stop_source->request_stop();
 
     spdlog::info("数据流引擎线程池已停止");
-    co_return;
-}
-
-Awaitable<void> Engine::run_async() {
-    auto executor = co_await this_coro::executor;
-    // 引擎主线程
-    spdlog::info("正在启动引擎工作协程");
-    // 阻塞主线程
-    asio::steady_timer timer(executor, std::chrono::seconds(1));
-    while (!_stop_source->stop_requested()) {
-        // 协程 IDLE
-        co_await timer.async_wait(asio::use_awaitable);
-    }
-    spdlog::info("引擎工作协程已启动");
     co_return;
 }
 

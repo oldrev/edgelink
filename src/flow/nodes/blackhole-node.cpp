@@ -18,6 +18,7 @@ class BlackholeNode : public SinkNode {
         //
         uint32_t msg_id = msg->data().at("id");
         spdlog::info("BlackholeNode > 吃掉了消息：[msg.id={0}]", msg_id);
+        co_return;
     }
 };
 

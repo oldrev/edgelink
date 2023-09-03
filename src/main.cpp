@@ -1,8 +1,11 @@
 #include "edgelink/edgelink.hpp"
 #include "edgelink/logging.hpp"
 
+#include <boost/asio/experimental/promise.hpp>
+
 using namespace std;
 using namespace boost;
+namespace this_coro = boost::asio::this_coro;
 
 // paho.mqtt.cpp 库客户端是线程安全的，可以多个线程同时访问，但是 set_xxx_callback() 设置的回调禁止阻塞
 
@@ -13,9 +16,33 @@ class App {
     App(std::shared_ptr<nlohmann::json>& json_config, std::shared_ptr<Engine> engine) : _engine(engine) {}
 
     Awaitable<void> run_async() {
-        spdlog::info("正在启动消息引擎...");
+
+        auto executor = co_await this_coro::executor;
+        // auto self = shared_from_this();
+
         co_await _engine->start_async();
-        co_await _engine->run_async();
+        spdlog::info("数据流引擎启动完毕...");
+
+        co_await this->idle_loop();
+    }
+
+    Awaitable<void> idle_loop() {
+        auto executor = co_await this_coro::executor;
+        auto cs = co_await boost::asio::this_coro::cancellation_state;
+        // 引擎主线程
+        spdlog::info("正在启动 IDLE 协程");
+        // 阻塞主线程
+        asio::steady_timer timer(executor, std::chrono::seconds(1));
+        for (;;) {
+            if (cs.cancelled() != boost::asio::cancellation_type::none) {
+                spdlog::info("IDLE 协程停止中...");
+                break;
+            }
+            // 协程 IDLE
+            co_await timer.async_wait(asio::use_awaitable);
+        }
+        spdlog::info("IDLE 协程已结束");
+        co_return;
     }
 
   private:
@@ -64,11 +91,12 @@ int main(int argc, char* argv[]) {
         asio::signal_set signals(io_context, SIGINT, SIGTERM);
         signals.async_wait([&](auto, auto) {
             io_context.stop();
-            std::terminate();
+            // std::terminate();
         });
         asio::co_spawn(io_context, app.run_async(), asio::detached);
 
         io_context.run();
+        spdlog::info("系统协程系统已停止，开始进行清理...");
     } catch (std::exception& ex) {
         spdlog::critical("程序异常！错误消息：{0}", ex.what());
         return -1;

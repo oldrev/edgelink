@@ -45,7 +45,6 @@ struct IFlow {
 struct IEngine : public IFlow {
     virtual Awaitable<void> start_async() = 0;
     virtual Awaitable<void> stop_async() = 0;
-    virtual Awaitable<void> run_async() = 0;
 };
 
 /// @brief 节点的发出连接端口
