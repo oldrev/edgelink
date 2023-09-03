@@ -10,15 +10,16 @@ class LogNode : public SinkNode {
             const std::vector<OutputPort>&& output_ports, IFlow* flow)
         : SinkNode(id, desc, move(output_ports), flow) {}
 
-    void start() override {}
+    Awaitable<void> start_async() override { co_return; }
 
-    void stop() override {}
+    Awaitable<void> stop_async() override { co_return; }
 
-    void receive(shared_ptr<Msg> msg) override {
+    Awaitable<void> receive_async(shared_ptr<Msg> msg) override {
         //
         uint32_t node_id = msg->data().at("birthPlaceID");
         auto birth_place = this->flow()->get_node(node_id);
         spdlog::info("LogNode > 收到了消息：\n{0}", msg->data().dump(4));
+        co_return;
     }
 };
 

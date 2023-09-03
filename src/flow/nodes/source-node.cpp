@@ -1,27 +1,29 @@
 #include "edgelink/edgelink.hpp"
 
 using namespace std;
+using namespace boost;
+namespace this_coro = boost::asio::this_coro;
 
 namespace edgelink {
 
-void SourceNode::start() {
-    if (!_thread.joinable()) {
-        _thread = std::jthread([this](std::stop_token stoken) {
-            // 线程函数
-            while (!stoken.stop_requested()) {
-                this->process(stoken);
-                // std::cout << "Thread is running..." << std::endl;
-                // std::this_thread::sleep_for(std::chrono::seconds(1));
-            }
-        });
-    }
+Awaitable<void> SourceNode::start_async() {
+    // 线程函数
+
+    auto executor = co_await this_coro::executor;
+
+    auto loop = std::bind(&SourceNode::work_loop, this);
+    asio::co_spawn(executor, loop, asio::detached);
+    co_return;
 }
 
-void SourceNode::stop() {
-    if (_thread.joinable()) {
-        _thread.request_stop();
-        _thread.join();
+Awaitable<void> SourceNode::stop_async() { co_return; }
+
+Awaitable<void> SourceNode::work_loop() {
+    auto stoken = _stop.get_token();
+    while (!_stop.stop_requested()) {
+        co_await this->process_async(stoken);
     }
+    co_return;
 }
 
 }; // namespace edgelink

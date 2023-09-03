@@ -12,11 +12,10 @@ class App {
   public:
     App(std::shared_ptr<nlohmann::json>& json_config, std::shared_ptr<Engine> engine) : _engine(engine) {}
 
-    void run() {
+    Awaitable<void> run_async() {
         spdlog::info("正在启动消息引擎...");
-
-        _engine->start();
-        _engine->run();
+        co_await _engine->start_async();
+        co_await _engine->run_async();
     }
 
   private:
@@ -60,7 +59,16 @@ int main(int argc, char* argv[]) {
 
     // 启动主程序
     try {
-        app.run();
+        asio::io_context io_context(4);
+
+        asio::signal_set signals(io_context, SIGINT, SIGTERM);
+        signals.async_wait([&](auto, auto) {
+            io_context.stop();
+            std::terminate();
+        });
+        asio::co_spawn(io_context, app.run_async(), asio::detached);
+
+        io_context.run();
     } catch (std::exception& ex) {
         spdlog::critical("程序异常！错误消息：{0}", ex.what());
         return -1;

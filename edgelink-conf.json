@@ -20,20 +20,9 @@
             "func": "msg.payload = 'Hello, World!'; var msg2 = cloneMsg(msg); msg2.payload = 'Hello!, EdgeLink!'; return [msg, msg2];",
             "wires": [
                 [
-                    "queue1"
+                    "sink1"
                 ],
                 [
-                    "sink3"
-                ]
-            ]
-        },
-        {
-            "type": "queue",
-            "id": "queue1",
-            "capacity": 120,
-            "wires": [
-                [
-                    "sink1",
                     "sink2"
                 ]
             ]
@@ -44,13 +33,8 @@
             "wires": []
         },
         {
-            "type": "blackhole",
-            "id": "sink2",
-            "wires": []
-        },
-        {
             "type": "log",
-            "id": "sink3",
+            "id": "sink2",
             "wires": []
         }
     ]

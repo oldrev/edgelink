@@ -15,11 +15,11 @@ class ModbusLogNode : public SinkNode {
                   const std::vector<OutputPort>&& output_ports, IFlow* flow)
         : edgelink::SinkNode(id, desc, move(output_ports), flow) {}
 
-    void start() override {}
+    Awaitable<void> start_async() override { co_return; }
 
-    void stop() override {}
+    Awaitable<void> stop_async() override { co_return; }
 
-    void receive(shared_ptr<Msg> msg) override {
+    Awaitable<void> receive_async(shared_ptr<Msg> msg) override {
         //
         spdlog::info("ModBusLogNode > 收到了消息：\n{0}", msg->data().at("payload"));
     }

@@ -2,6 +2,7 @@
 #include "edgelink/edgelink.hpp"
 
 using namespace std;
+namespace this_coro = boost::asio::this_coro;
 
 namespace edgelink {
 
@@ -18,13 +19,14 @@ class InjectNode : public SourceNode {
     }
 
   protected:
-    void process(std::stop_token& stoken) override {
+    Awaitable<void> process_async(std::stop_token& stoken) override {
+
+        auto executor = co_await this_coro::executor;
 
         std::time_t now = std::time(0);
         std::time_t next = ::cron::cron_next(_cron, now);
         auto sleep_time = (next - now);
-
-        std::this_thread::sleep_for(sleep_time * 1000ms);
+        spdlog::info("InjectNode > time={0} next={1} now={2}", sleep_time, next, now);
 
         auto msg_id = this->flow()->generate_msg_id();
         auto msg = make_shared<Msg>(msg_id, this->id());
@@ -33,7 +35,10 @@ class InjectNode : public SourceNode {
             spdlog::info("InjectNode > 数据已注入：[msg={0}]", msg->data().dump());
         }
 
-        this->flow()->emit(this->id(), msg);
+        co_await this->flow()->emit_async(this->id(), msg);
+
+        boost::asio::steady_timer timer(executor, std::chrono::milliseconds(1000));
+        co_await timer.async_wait(boost::asio::use_awaitable);
     }
 
   private:

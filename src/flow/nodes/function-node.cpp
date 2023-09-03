@@ -42,11 +42,11 @@ class FunctionNode : public FlowNode {
         _func = config.at("func");
     }
 
-    void start() override {}
+    Awaitable<void> start_async() override { co_return; }
 
-    void stop() override {}
+    Awaitable<void> stop_async() override { co_return; }
 
-    void receive(shared_ptr<Msg> msg) override {
+    Awaitable<void> receive_async(shared_ptr<Msg> msg) override {
         duk::Context ctx;
         ctx.registerClass<EvalEnv>();
 
@@ -82,13 +82,13 @@ class FunctionNode : public FlowNode {
                 // 直接分发消息，只有是对象的才分发
                 if (msg_json.type() == nlohmann::json::value_t::object) {
                     auto evaled_msg = make_shared<Msg>(move(msg_json));
-                    this->flow()->relay(this->id(), evaled_msg, port, true);
+                    co_await this->flow()->relay_async(this->id(), evaled_msg, port, true);
                 }
                 port++;
             }
         } else if (js_result.type() == nlohmann::json::value_t::array) { // 单个端口消息的情况
             auto evaled_msg = make_shared<Msg>(move(result_json));
-            this->flow()->relay(this->id(), evaled_msg, 0, true);
+            co_await this->flow()->relay_async(this->id(), evaled_msg, 0, true);
         } else { // 其他类型不支持
             spdlog::error("不支持的消息格式：{0}", result_json);
         }

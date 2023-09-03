@@ -13,13 +13,14 @@ class Engine : public IEngine {
     explicit Engine(const ::nlohmann::json& json_config, const IRegistry& registry);
     virtual ~Engine();
 
-    void run() override;
-    void start() override;
-    void stop() override;
+    Awaitable<void> run_async() override;
+    Awaitable<void> start_async() override;
+    Awaitable<void> stop_async() override;
 
-    void emit(uint32_t source_node_id, std::shared_ptr<Msg> msg) override;
+    Awaitable<void> emit_async(uint32_t source_node_id, std::shared_ptr<Msg> msg) override;
 
-    void relay(uint32_t source_node_id, std::shared_ptr<Msg> msg, size_t port, bool clone) const override;
+    Awaitable<void> relay_async(uint32_t source_node_id, std::shared_ptr<Msg> msg, size_t port,
+                                bool clone) const override;
 
     inline uint64_t generate_msg_id() override { return _msg_id_counter.fetch_add(1); }
     inline FlowNode* get_node(uint32_t id) const override { return _nodes[static_cast<size_t>(id)].get(); }
@@ -31,7 +32,6 @@ class Engine : public IEngine {
     std::atomic<uint64_t> _msg_id_counter; // 初始化计数器为0
 
     std::unique_ptr<std::stop_source> _stop_source;
-    std::unique_ptr<boost::asio::thread_pool> _pool;
 };
 
 }; // namespace edgelink

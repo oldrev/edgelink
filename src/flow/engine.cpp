@@ -2,6 +2,8 @@
 #include "edgelink/flow/dependency-sorter.hpp"
 
 using namespace std;
+using namespace boost;
+namespace this_coro = boost::asio::this_coro;
 
 using CloneMsgStaticVector = boost::container::static_vector<std::shared_ptr<edgelink::Msg>, 32>;
 
@@ -45,68 +47,69 @@ Engine::Engine(const nlohmann::json& json_config, const IRegistry& registry) : _
                 auto out_node = node_map.at(endpoint);
                 output_wires.push_back(out_node);
             }
-            auto port = OutputPort(move(output_wires));
-            ports.emplace_back(move(port));
+            auto port = OutputPort(std::move(output_wires));
+            ports.emplace_back(std::move(port));
         }
 
         auto const& provider_iter = registry.get_node_provider(elem_type);
         auto node = provider_iter->create(i, elem, std::move(ports), this);
         spdlog::info("已开始创建数据流节点：[type='{0}', key='{1}', id={2}]", elem_type, elem_id, node->id());
         node_map[elem_id] = node.get();
-        _nodes.emplace_back(move(node));
+        _nodes.emplace_back(std::move(node));
     }
 }
 
 Engine::~Engine() {}
 
-void Engine::emit(uint32_t source_node_id, shared_ptr<Msg> msg) {
+Awaitable<void> Engine::emit_async(uint32_t source_node_id, std::shared_ptr<Msg> msg) {
     //
     auto source = this->get_node(source_node_id);
     auto output_ports = source->output_ports();
     for (size_t i = 0; i < output_ports.size(); i++) {
-        this->relay(source_node_id, msg, i, true);
+        co_await this->relay_async(source_node_id, msg, i, true);
         // 根据出度把消息复制
     }
 }
 
-void Engine::start() {
+Awaitable<void> Engine::start_async() {
     //
     spdlog::info("开始启动数据流引擎");
     _stop_source = make_unique<std::stop_source>();
-    _pool = make_unique<boost::asio::thread_pool>(4);
     spdlog::info("数据流引擎已启动");
 
     for (auto const& node : _nodes) {
         spdlog::info("正在启动数据流节点：{0}", node->descriptor()->type_name());
-        node->start();
+        co_await node->start_async();
+        spdlog::info("数据流节点 '{0}' 已启动", node->descriptor()->type_name());
     }
     spdlog::info("全部节点启动完毕");
 }
 
-void Engine::stop() {
+Awaitable<void> Engine::stop_async() {
     // 给出线程池停止信号
     spdlog::info("开始请求数据流引擎线程池停止...");
     _stop_source->request_stop();
 
-    // 等待线程池停止
-    _pool->join();
     spdlog::info("数据流引擎线程池已停止");
+    co_return;
 }
 
-void Engine::run() {
+Awaitable<void> Engine::run_async() {
+    auto executor = co_await this_coro::executor;
     // 引擎主线程
-    spdlog::info("正在启动引擎工作线程");
-    auto thread = std::jthread([this]() {
-        // 阻塞主线程
-        while (!_stop_source->stop_requested()) {
-            std::this_thread::sleep_for(std::chrono::seconds(1));
-        }
-    });
-    spdlog::info("引擎工作线程已启动");
-    thread.join();
+    spdlog::info("正在启动引擎工作协程");
+    // 阻塞主线程
+    asio::steady_timer timer(executor, std::chrono::seconds(1));
+    while (!_stop_source->stop_requested()) {
+        // 协程 IDLE
+        co_await timer.async_wait(asio::use_awaitable);
+    }
+    spdlog::info("引擎工作协程已启动");
+    co_return;
 }
 
-void Engine::relay(uint32_t source_node_id, shared_ptr<Msg> orig_msg, size_t port, bool clone) const {
+Awaitable<void> Engine::relay_async(uint32_t source_node_id, std::shared_ptr<Msg> orig_msg, size_t port,
+                                    bool clone) const {
     auto source = this->get_node(source_node_id);
     // 根据出度把消息复制
     auto output_ports = source->output_ports();
@@ -114,24 +117,23 @@ void Engine::relay(uint32_t source_node_id, shared_ptr<Msg> orig_msg, size_t por
     auto output_port = output_ports.at(port);
     for (auto j = 0; j < output_port.wires().size(); j++) {
         auto endpoint = output_port.wires().at(j);
-        auto msg = clone && j > 0 ? make_shared<Msg>(*orig_msg) : orig_msg;
+        auto msg = clone && j > 0 ? std::make_shared<Msg>(*orig_msg) : orig_msg;
 
         // 线程池中处理数据流
-        boost::asio::post(*_pool, [msg, this, endpoint]() {
-            //
-            switch (endpoint->descriptor()->kind()) {
+        //
+        switch (endpoint->descriptor()->kind()) {
 
-            case NodeKind::FILTER:
-            case NodeKind::SINK:
-            case NodeKind::JUNCTION: {
-                endpoint->receive(msg);
-            } break;
+        case NodeKind::FILTER:
+        case NodeKind::SINK:
+        case NodeKind::JUNCTION: {
+            co_await endpoint->receive_async(msg);
+        } break;
 
-            default:
-                throw InvalidDataException("错误的节点连线");
-            }
-        });
+        default:
+            throw InvalidDataException("错误的节点连线");
+        }
     }
+    co_return;
 }
 
 }; // namespace edgelink

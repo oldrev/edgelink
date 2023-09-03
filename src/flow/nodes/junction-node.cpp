@@ -10,13 +10,13 @@ class JunctionNode : public FlowNode {
                  const std::vector<OutputPort>&& output_ports, IFlow* flow)
         : FlowNode(id, desc, move(output_ports), flow) {}
 
-    void start() override {}
+    Awaitable<void> start_async() override { co_return; }
 
-    void stop() override {}
+    Awaitable<void> stop_async() override { co_return; }
 
-    void receive(shared_ptr<Msg> msg) override {
+    Awaitable<void> receive_async(shared_ptr<Msg> msg) override {
         // 直接分发消息
-        this->flow()->relay(this->id(), msg, 0, true);
+        co_await this->flow()->relay_async(this->id(), msg, 0, true);
     }
 };
 

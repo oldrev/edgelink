@@ -26,7 +26,7 @@ class FlowContext {
 struct IFlow {
 
     /// @brief 向流里发送产生的第一手消息
-    virtual void emit(uint32_t source_node_id, std::shared_ptr<Msg> msg) = 0;
+    virtual Awaitable<void> emit_async(uint32_t source_node_id, std::shared_ptr<Msg> msg) = 0;
 
     /// @brief 生成消息 ID
     /// @return
@@ -35,16 +35,17 @@ struct IFlow {
     /// @brief 从来源节点向后路由消息
     /// @param src
     /// @param msg
-    virtual void relay(uint32_t source_node_id, std::shared_ptr<Msg> msg, size_t port, bool clone) const = 0;
+    virtual Awaitable<void> relay_async(uint32_t source_node_id, std::shared_ptr<Msg> msg, size_t port,
+                                        bool clone) const = 0;
 
     virtual FlowNode* get_node(uint32_t id) const = 0;
 };
 
 /// @brief 数据处理引擎接口
 struct IEngine : public IFlow {
-    virtual void start() = 0;
-    virtual void stop() = 0;
-    virtual void run() = 0;
+    virtual Awaitable<void> start_async() = 0;
+    virtual Awaitable<void> stop_async() = 0;
+    virtual Awaitable<void> run_async() = 0;
 };
 
 /// @brief 节点的发出连接端口
@@ -83,7 +84,7 @@ class FlowNode : public FlowElement {
     inline const INodeDescriptor* descriptor() const { return _descriptor; }
     inline IFlow* flow() const { return _flow; }
 
-    virtual void receive(std::shared_ptr<Msg> msg) = 0;
+    virtual Awaitable<void> receive_async(std::shared_ptr<Msg> msg) = 0;
 
   private:
     const uint32_t _id;
@@ -92,8 +93,8 @@ class FlowNode : public FlowElement {
     const std::vector<OutputPort> _output_ports;
 
   public:
-    virtual void start() = 0;
-    virtual void stop() = 0;
+    virtual Awaitable<void> start_async() = 0;
+    virtual Awaitable<void> stop_async() = 0;
 };
 
 /// @brief 抽象数据源
@@ -104,16 +105,19 @@ class SourceNode : public FlowNode {
 
   public:
     virtual bool is_running() const { return _thread.joinable(); }
-    void start() override;
-    void stop() override;
+    Awaitable<void> start_async() override;
+    Awaitable<void> stop_async() override;
 
-    void receive(std::shared_ptr<Msg> msg) override {
+    Awaitable<void> receive_async(std::shared_ptr<Msg> msg) override {
         //
         throw InvalidDataException("错误的流设置：数据源不允许接收数据");
     }
 
+    Awaitable<void> work_loop();
+
   protected:
-    virtual void process(std::stop_token& stoken) = 0;
+    virtual Awaitable<void> process_async(std::stop_token& stoken) = 0;
+    std::stop_source _stop;
 
     std::jthread& thread() { return _thread; }
 
