@@ -23,11 +23,6 @@ class InjectNode : public SourceNode {
 
         auto executor = co_await this_coro::executor;
 
-        std::time_t now = std::time(0);
-        std::time_t next = ::cron::cron_next(_cron, now);
-        auto sleep_time = (next - now);
-        spdlog::info("InjectNode > time={0} next={1} now={2}", sleep_time, next, now);
-
         auto msg_id = this->flow()->generate_msg_id();
         auto msg = make_shared<Msg>(msg_id, this->id());
 
@@ -37,7 +32,11 @@ class InjectNode : public SourceNode {
 
         co_await this->flow()->emit_async(this->id(), msg);
 
-        boost::asio::steady_timer timer(executor, std::chrono::milliseconds(1000));
+        std::time_t now = std::time(0);
+        std::time_t next = ::cron::cron_next(_cron, now);
+        auto sleep_time = (next - now);
+
+        boost::asio::steady_timer timer(executor, std::chrono::seconds(sleep_time));
         co_await timer.async_wait(boost::asio::use_awaitable);
     }
 
