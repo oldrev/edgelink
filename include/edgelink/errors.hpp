@@ -13,7 +13,7 @@ class IOException : public std::exception {
     const char* what() const noexcept override { return _message.c_str(); }
 
   private:
-    std::string _message;
+    const std::string _message;
 };
 
 class BadConfigException : public std::exception {
@@ -27,13 +27,25 @@ class BadConfigException : public std::exception {
     std::string _key;
 };
 
+class BadFlowConfigException : public std::exception {
+  public:
+    BadFlowConfigException(const std::string& message) : _message(message) {}
+
+    BadFlowConfigException(const BadFlowConfigException&& other) : _message(std::move(other._message)) {}
+
+    const char* what() const noexcept override { return _message.c_str(); }
+
+  private:
+    const std::string _message;
+};
+
 class InvalidDataException : public std::exception {
   public:
     InvalidDataException(const std::string& message) : _message(message) {}
     const char* what() const noexcept override { return _message.c_str(); }
 
   private:
-    std::string _message;
+    const std::string _message;
 };
 
 }; // namespace edgelink

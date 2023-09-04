@@ -32,7 +32,7 @@ Engine::Engine(const nlohmann::json& json_config, const IRegistry& registry) : _
     auto sorted_ids = sorter.sort();
 
     // 第一遍扫描先创建节点
-    std::map<const std::string_view, FlowNode*> node_map;
+    std::map<const std::string_view, IFlowNode*> node_map;
 
     for (uint32_t i = 0; i < static_cast<uint32_t>(sorted_ids.size()); i++) {
         const std::string& elem_id = sorted_ids[i];
@@ -41,7 +41,7 @@ Engine::Engine(const nlohmann::json& json_config, const IRegistry& registry) : _
 
         auto ports = std::vector<OutputPort>();
         for (const auto& port_config : elem.at("wires")) {
-            auto output_wires = std::vector<FlowNode*>();
+            auto output_wires = std::vector<IFlowNode*>();
             for (const std::string& endpoint : port_config) {
                 auto out_node = node_map.at(endpoint);
                 output_wires.push_back(out_node);

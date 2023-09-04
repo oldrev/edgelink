@@ -1,7 +1,8 @@
 #include "edgelink/edgelink.hpp"
 #include "edgelink/logging.hpp"
 
-#include <boost/asio/experimental/promise.hpp>
+#include "edgelink/flow/details/flow.hpp"
+#include "edgelink/flow/details/flow-factory.hpp"
 
 using namespace boost;
 namespace this_coro = boost::asio::this_coro;
@@ -74,11 +75,12 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
-    const auto injector = di::make_injector(                   //
-        di::bind<>().to(json_config),                          //
-        di::bind<App>().in(di::singleton),                     // App
-        di::bind<Engine>().in(di::singleton),                  // Engine
-        di::bind<IRegistry>().to<Registry>().in(di::singleton) // Engine
+    const auto injector = di::make_injector(
+        di::bind<>().to(json_config),                                                         // App
+        di::bind<App>().in(di::singleton),                                                    // App
+        di::bind<Engine>().in(di::singleton),                                                 // Engine
+        di::bind<IRegistry>().to<Registry>().in(di::singleton),                               // Registry
+        di::bind<IFlowFactory>().to<edgelink::flow::details::FlowFactory>().in(di::singleton) // Engine
     );
 
     auto app = injector.create<App>();

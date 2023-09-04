@@ -1,17 +1,17 @@
 #pragma once
 
+#include "edgelink/utils.hpp"
+
 namespace edgelink {
 
-struct IFlowNode;
+class FlowNode;
+struct IRegistry;
 
-struct EngineConfig {};
+class Flow : public IFlow {
 
-using MsgRoutingPath = boost::container::static_vector<const IFlowNode*, 32>;
-
-class Engine : public IEngine {
   public:
-    explicit Engine(const ::nlohmann::json& json_config, const IRegistry& registry);
-    virtual ~Engine();
+    Flow(const std::string& id);
+    virtual ~Flow();
 
     const std::string& id() const override { return _id; }
 
@@ -26,14 +26,15 @@ class Engine : public IEngine {
     inline uint64_t generate_msg_id() override { return _msg_id_counter.fetch_add(1); }
     inline IFlowNode* get_node(uint32_t id) const override { return _nodes[static_cast<size_t>(id)].get(); }
 
+    inline void emplace_node(std::unique_ptr<IFlowNode>&& node) { _nodes.emplace_back(std::move(node)); }
+
   private:
+    const std::string _id;
     std::vector<std::unique_ptr<IFlowNode>> _nodes;
-    const EngineConfig _config;
 
     std::atomic<uint64_t> _msg_id_counter; // 初始化计数器为0
 
     std::unique_ptr<std::stop_source> _stop_source;
-    const std::string _id;
 };
 
 }; // namespace edgelink

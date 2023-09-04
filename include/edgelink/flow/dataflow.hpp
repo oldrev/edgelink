@@ -6,7 +6,7 @@ namespace edgelink {
 
 struct INodeDescriptor;
 struct IEngine;
-struct FlowNode;
+class IFlowNode;
 
 /// @brief 数据处理上下文
 class FlowContext {
@@ -25,6 +25,8 @@ class FlowContext {
 /// @brief 消息流
 struct IFlow {
 
+    virtual const std::string& id() const = 0;
+
     /// @brief 向流里发送产生的第一手消息
     virtual Awaitable<void> emit_async(uint32_t source_node_id, std::shared_ptr<Msg> msg) = 0;
 
@@ -38,24 +40,34 @@ struct IFlow {
     virtual Awaitable<void> relay_async(uint32_t source_node_id, std::shared_ptr<Msg> msg, size_t port,
                                         bool clone) const = 0;
 
-    virtual FlowNode* get_node(uint32_t id) const = 0;
+    virtual IFlowNode* get_node(uint32_t id) const = 0;
+
+    /// @brief 启动流
+    /// @return
+    virtual Awaitable<void> start_async() = 0;
+
+    /// @brief 停止流
+    /// @return
+    virtual Awaitable<void> stop_async() = 0;
 };
 
 /// @brief 数据处理引擎接口
-struct IEngine : public IFlow {
-    virtual Awaitable<void> start_async() = 0;
-    virtual Awaitable<void> stop_async() = 0;
+struct IEngine : public IFlow {};
+
+/// @brief 流工厂
+struct IFlowFactory {
+    std::vector<std::unique_ptr<IFlow>> create_flows(const nlohmann::json& flows_config);
 };
 
 /// @brief 节点的发出连接端口
 class OutputPort {
   public:
-    explicit OutputPort(const std::vector<FlowNode*>&& wires) : _wires(std::move(wires)) {}
+    explicit OutputPort(const std::vector<IFlowNode*>&& wires) : _wires(std::move(wires)) {}
 
-    const std::vector<FlowNode*>& wires() const { return _wires; }
+    const std::vector<IFlowNode*>& wires() const { return _wires; }
 
   private:
-    const std::vector<FlowNode*> _wires;
+    const std::vector<IFlowNode*> _wires;
 };
 
 /// @brief 数据流处理基础元素
@@ -69,7 +81,19 @@ enum class NodeKind {
 };
 
 /// @brief 数据流节点抽象类
-class FlowNode : public FlowElement {
+struct IFlowNode : public FlowElement {
+    virtual uint32_t id() const = 0;
+    virtual const std::vector<OutputPort>& output_ports() const = 0;
+    virtual const size_t output_count() const = 0;
+    virtual const INodeDescriptor* descriptor() const = 0;
+    virtual IFlow* flow() const = 0;
+    virtual Awaitable<void> receive_async(std::shared_ptr<Msg> msg) = 0;
+    virtual Awaitable<void> start_async() = 0;
+    virtual Awaitable<void> stop_async() = 0;
+};
+
+/// @brief 数据流节点抽象类
+class FlowNode : public IFlowNode {
   protected:
     FlowNode(uint32_t id, const INodeDescriptor* desc, const std::vector<OutputPort>&& output_ports, IFlow* flow)
         : _id(id), _descriptor(desc), _output_ports(std::move(output_ports)), _flow(flow) {
@@ -77,11 +101,11 @@ class FlowNode : public FlowElement {
     }
 
   public:
-    inline uint32_t id() const { return _id; }
-    inline const std::vector<OutputPort>& output_ports() const { return _output_ports; }
-    inline const size_t output_count() const { return _output_ports.size(); }
-    inline const INodeDescriptor* descriptor() const { return _descriptor; }
-    inline IFlow* flow() const { return _flow; }
+    uint32_t id() const override { return _id; }
+    const std::vector<OutputPort>& output_ports() const override { return _output_ports; }
+    const size_t output_count() const override { return _output_ports.size(); }
+    const INodeDescriptor* descriptor() const override { return _descriptor; }
+    IFlow* flow() const override { return _flow; }
 
     virtual Awaitable<void> receive_async(std::shared_ptr<Msg> msg) = 0;
 
@@ -148,8 +172,8 @@ struct INodeDescriptor {
 
 struct INodeProvider {
     virtual const INodeDescriptor* descriptor() const = 0;
-    virtual std::unique_ptr<FlowNode> create(uint32_t id, const ::nlohmann::json& config,
-                                             const std::vector<OutputPort>&& output_ports, IFlow* flow) const = 0;
+    virtual std::unique_ptr<IFlowNode> create(uint32_t id, const ::nlohmann::json& config,
+                                              const std::vector<OutputPort>&& output_ports, IFlow* flow) const = 0;
 
   private:
     RTTR_ENABLE()
@@ -164,8 +188,8 @@ class NodeProvider final : public INodeProvider, public INodeDescriptor {
     const std::string_view& type_name() const override { return _type_name; }
     inline const NodeKind kind() const override { return TKind; }
 
-    std::unique_ptr<FlowNode> create(uint32_t id, const ::nlohmann::json& config,
-                                     const std::vector<OutputPort>&& output_ports, IFlow* flow) const override {
+    std::unique_ptr<IFlowNode> create(uint32_t id, const ::nlohmann::json& config,
+                                      const std::vector<OutputPort>&& output_ports, IFlow* flow) const override {
         return std::make_unique<TNode>(id, config, this, std::move(output_ports), flow);
     }
 

@@ -7,6 +7,7 @@
 
 #include "flow/msg.hpp"
 #include "flow/dataflow.hpp"
+#include "flow/details/flow.hpp"
 #include "registry.hpp"
 #include "engine.hpp"
 
