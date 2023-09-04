@@ -1,7 +1,3 @@
-#include "pch.hpp"
-
-#include <modbus/modbus.h>
-
 #include <edgelink/plugin.hpp>
 
 using namespace edgelink;
