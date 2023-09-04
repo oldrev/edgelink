@@ -2,6 +2,8 @@
 
 namespace edgelink {
 
+using MsgID = uint32_t;
+
 /*
 /// @brief 消息值
 using MsgValue = rva::variant<          //
@@ -19,7 +21,7 @@ struct FlowNode;
 
 class Msg final {
   public:
-    Msg(uint32_t id, uint32_t birth_place_id)
+    Msg(MsgID id, FlowNodeID birth_place_id)
         : _data(
               std::move(nlohmann::json::object({{"id", id}, {"birthPlaceID", birth_place_id}, {"payload", nullptr}}))) {
     }
@@ -34,14 +36,24 @@ class Msg final {
 
     inline nlohmann::json& data() { return _data; }
 
-    inline uint32_t id() const {
-        uint32_t id = _data.at("id");
+    inline MsgID id() const {
+        MsgID id = _data.at("id");
         return id;
     }
 
-    inline uint32_t birth_place_id() const {
-        uint32_t bid = _data.at("birthPlaceID");
+    inline FlowNodeID birth_place_id() const {
+        FlowNodeID bid = _data.at("birthPlaceID");
         return bid;
+    }
+
+    static MsgID generate_msg_id() {
+        static std::atomic<uint32_t> msg_id_counter(0); // 初始化计数器为0
+        if (msg_id_counter.load() >= 0xFFFFFFF0) {
+            msg_id_counter.store(0);
+            return msg_id_counter.fetch_add(1);
+        } else {
+            return msg_id_counter.fetch_add(1);
+        }
     }
 
   private:

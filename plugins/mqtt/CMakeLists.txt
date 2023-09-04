@@ -11,6 +11,7 @@ add_library(${PLUGIN_MQTT} SHARED ${SOURCES})
 target_include_directories(${PLUGIN_MQTT} 
     PRIVATE ${Boost_INCLUDE_DIRS}
     PRIVATE ${../include}
+    PRIVATE ../libs/signals/src
 )
 
 target_link_libraries(

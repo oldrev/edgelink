@@ -8,7 +8,7 @@ namespace edgelink {
 /// @brief 此类暂时不可用
 class QueueNode : public FilterNode {
   public:
-    QueueNode(uint32_t id, const ::nlohmann::json& config, const INodeDescriptor* desc,
+    QueueNode(FlowNodeID id, const ::nlohmann::json& config, const INodeDescriptor* desc,
               const std::vector<OutputPort>&& output_ports, IFlow* flow)
         : FilterNode(id, desc, std::move(output_ports), flow), _queue(config.value("capacity", 100)) {
         //

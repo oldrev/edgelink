@@ -16,7 +16,7 @@ Flow::~Flow() {
     spdlog::info("数据流关闭中...");
 }
 
-Awaitable<void> Flow::emit_async(uint32_t source_node_id, std::shared_ptr<Msg> msg) {
+Awaitable<void> Flow::emit_async(FlowNodeID source_node_id, std::shared_ptr<Msg> msg) {
     //
     auto source = this->get_node(source_node_id);
     auto output_ports = source->output_ports();
@@ -49,7 +49,7 @@ Awaitable<void> Flow::stop_async() {
     co_return;
 }
 
-Awaitable<void> Flow::relay_async(uint32_t source_node_id, std::shared_ptr<Msg> orig_msg, size_t port,
+Awaitable<void> Flow::relay_async(FlowNodeID source_node_id, std::shared_ptr<Msg> orig_msg, size_t port,
                                   bool clone) const {
     auto source = this->get_node(source_node_id);
     // 根据出度把消息复制

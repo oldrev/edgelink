@@ -21,13 +21,12 @@ class Flow : public IFlow {
     Awaitable<void> start_async() override;
     Awaitable<void> stop_async() override;
 
-    Awaitable<void> emit_async(uint32_t source_node_id, std::shared_ptr<Msg> msg) override;
+    Awaitable<void> emit_async(FlowNodeID source_node_id, std::shared_ptr<Msg> msg) override;
 
-    Awaitable<void> relay_async(uint32_t source_node_id, std::shared_ptr<Msg> msg, size_t port,
+    Awaitable<void> relay_async(FlowNodeID source_node_id, std::shared_ptr<Msg> msg, size_t port,
                                 bool clone) const override;
 
-    inline uint64_t generate_msg_id() override { return _msg_id_counter.fetch_add(1); }
-    inline IFlowNode* get_node(uint32_t id) const override { return _nodes[static_cast<size_t>(id)].get(); }
+    inline IFlowNode* get_node(FlowNodeID id) const override { return _nodes[static_cast<size_t>(id)].get(); }
 
     inline void emplace_node(std::unique_ptr<IFlowNode>&& node) { _nodes.emplace_back(std::move(node)); }
 

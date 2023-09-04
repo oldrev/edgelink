@@ -4,7 +4,7 @@ namespace edgelink {
 
 class JunctionNode : public FlowNode {
   public:
-    JunctionNode(uint32_t id, const ::nlohmann::json& config, const INodeDescriptor* desc,
+    JunctionNode(FlowNodeID id, const ::nlohmann::json& config, const INodeDescriptor* desc,
                  const std::vector<OutputPort>&& output_ports, IFlow* flow)
         : FlowNode(id, desc, std::move(output_ports), flow) {}
 

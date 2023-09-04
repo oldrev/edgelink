@@ -5,6 +5,7 @@
 #include "edgelink/utils.hpp"
 #include "edgelink/logging.hpp"
 
+#include "edgelink/flow/common.hpp"
 #include "edgelink/flow/msg.hpp"
 #include "edgelink/flow/dataflow.hpp"
 

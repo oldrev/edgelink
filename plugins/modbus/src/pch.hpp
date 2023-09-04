@@ -20,6 +20,8 @@
 #include <boost/thread/sync_bounded_queue.hpp>
 #include <boost/url.hpp>
 
+#include <signals.h>
+
 #include <fmt/chrono.h>
 #include <fmt/core.h>
 #include <nlohmann/json.hpp>

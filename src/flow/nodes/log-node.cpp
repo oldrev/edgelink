@@ -4,7 +4,7 @@ namespace edgelink {
 
 class LogNode : public SinkNode {
   public:
-    LogNode(uint32_t id, const ::nlohmann::json& config, const INodeDescriptor* desc,
+    LogNode(FlowNodeID id, const ::nlohmann::json& config, const INodeDescriptor* desc,
             const std::vector<OutputPort>&& output_ports, IFlow* flow)
         : SinkNode(id, desc, std::move(output_ports), flow) {}
 
@@ -14,7 +14,7 @@ class LogNode : public SinkNode {
 
     Awaitable<void> receive_async(std::shared_ptr<Msg> msg) override {
         //
-        uint32_t node_id = msg->data().at("birthPlaceID");
+        FlowNodeID node_id = msg->data().at("birthPlaceID");
         auto birth_place = this->flow()->get_node(node_id);
         spdlog::info("LogNode > 收到了消息：\n{0}", msg->data().dump(4));
         co_return;

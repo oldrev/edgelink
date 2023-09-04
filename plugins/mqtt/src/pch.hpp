@@ -23,6 +23,8 @@
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
 
+#include <signals.h>
+
 #include <fmt/chrono.h>
 #include <fmt/core.h>
 #include <nlohmann/json.hpp>

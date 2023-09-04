@@ -9,7 +9,7 @@ class InjectNode : public SourceNode {
   public:
     const char* DEFAULT_CRON = "*/5 * * * * ?"; // 默认值是每隔两秒执行一次
   public:
-    InjectNode(uint32_t id, const ::nlohmann::json& config, const INodeDescriptor* desc,
+    InjectNode(FlowNodeID id, const ::nlohmann::json& config, const INodeDescriptor* desc,
                const std::vector<OutputPort>&& output_ports, IFlow* flow)
         : SourceNode(id, desc, move(output_ports), flow) {
         const std::string cron_expression = config.value("cron", DEFAULT_CRON);
@@ -22,7 +22,7 @@ class InjectNode : public SourceNode {
 
         auto executor = co_await this_coro::executor;
 
-        auto msg_id = this->flow()->generate_msg_id();
+        auto msg_id = Msg::generate_msg_id();
         auto msg = std::make_shared<Msg>(msg_id, this->id());
 
         if (spdlog::get_level() >= spdlog::level::info) {
@@ -37,6 +37,7 @@ class InjectNode : public SourceNode {
 
         boost::asio::steady_timer timer(executor, std::chrono::seconds(sleep_time));
         co_await timer.async_wait(boost::asio::use_awaitable);
+        co_return;
     }
 
   private:

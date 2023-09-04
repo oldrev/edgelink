@@ -23,22 +23,22 @@ class App {
         co_await _engine->start_async();
         spdlog::info("数据流引擎启动完毕...");
 
-        co_await this->idle_loop();
+        // co_await this->idle_loop();
     }
 
     Awaitable<void> idle_loop() {
         auto executor = co_await this_coro::executor;
         auto cs = co_await boost::asio::this_coro::cancellation_state;
-        // 引擎主线程
+        // 引擎
         spdlog::info("正在启动 IDLE 协程");
-        // 阻塞主线程
-        asio::steady_timer timer(executor, std::chrono::seconds(1));
+        // 阻塞
         for (;;) {
             if (cs.cancelled() != boost::asio::cancellation_type::none) {
                 spdlog::info("IDLE 协程停止中...");
                 break;
             }
             // 协程 IDLE
+            asio::steady_timer timer(executor, std::chrono::seconds(1));
             co_await timer.async_wait(asio::use_awaitable);
         }
         spdlog::info("IDLE 协程已结束");

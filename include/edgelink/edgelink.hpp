@@ -5,6 +5,7 @@
 #include "logging.hpp"
 #include "utils.hpp"
 
+#include "flow/common.hpp"
 #include "flow/msg.hpp"
 #include "flow/dataflow.hpp"
 #include "flow/details/flow.hpp"

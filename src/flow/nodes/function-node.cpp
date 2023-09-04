@@ -11,8 +11,8 @@ class EvalEnv final {
 
     const std::string& msg_json_text() const { return _msg_json_text; }
 
-    uint32_t generate_msg_id() { return _node->flow()->generate_msg_id(); }
-    uint32_t node_id() const { return _node->id(); }
+    MsgID generate_msg_id() { return Msg::generate_msg_id(); }
+    FlowNodeID node_id() const { return _node->id(); }
 
     template <class Inspector> static void inspect(Inspector& i) {
         i.construct(&std::make_shared<EvalEnv>);
@@ -36,7 +36,7 @@ DUK_CPP_DEF_CLASS_NAME(EvalEnv);
 class FunctionNode : public FlowNode {
 
   public:
-    FunctionNode(uint32_t id, const ::nlohmann::json& config, const INodeDescriptor* desc,
+    FunctionNode(FlowNodeID id, const ::nlohmann::json& config, const INodeDescriptor* desc,
                  const std::vector<OutputPort>&& output_ports, IFlow* flow)
         : FlowNode(id, desc, std::move(output_ports), flow) {
         _func = config.at("func");

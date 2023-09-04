@@ -56,7 +56,7 @@ std::unique_ptr<IFlow> FlowFactory::create_flow(const nlohmann::json& flows_conf
 
     std::map<const std::string_view, IFlowNode*> node_map;
 
-    for (uint32_t i = 0; i < static_cast<uint32_t>(sorted_ids.size()); i++) {
+    for (FlowNodeID i = 0; i < static_cast<FlowNodeID>(sorted_ids.size()); i++) {
         const std::string& elem_id = sorted_ids[i];
         const nlohmann::json& elem = *json_nodes.at(elem_id);
         const std::string elem_type = elem.at("type");

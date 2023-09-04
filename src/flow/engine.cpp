@@ -8,7 +8,7 @@ using CloneMsgStaticVector = boost::container::static_vector<std::shared_ptr<edg
 
 namespace edgelink {
 
-Engine::Engine(const nlohmann::json& json_config, const IRegistry& registry) : _config{}, _msg_id_counter(0) {
+Engine::Engine(const nlohmann::json& json_config, const IRegistry& registry) : _config{} {
 
     auto node_provider_type = rttr::type::get<INodeProvider>();
 
@@ -34,7 +34,7 @@ Engine::Engine(const nlohmann::json& json_config, const IRegistry& registry) : _
     // 第一遍扫描先创建节点
     std::map<const std::string_view, IFlowNode*> node_map;
 
-    for (uint32_t i = 0; i < static_cast<uint32_t>(sorted_ids.size()); i++) {
+    for (FlowNodeID i = 0; i < static_cast<FlowNodeID>(sorted_ids.size()); i++) {
         const std::string& elem_id = sorted_ids[i];
         const nlohmann::json& elem = *json_nodes.at(elem_id);
         const std::string elem_type = elem.at("type");
@@ -63,7 +63,7 @@ Engine::~Engine() {
     spdlog::info("数据流引擎关闭中...");
 }
 
-Awaitable<void> Engine::emit_async(uint32_t source_node_id, std::shared_ptr<Msg> msg) {
+Awaitable<void> Engine::emit_async(FlowNodeID source_node_id, std::shared_ptr<Msg> msg) {
     //
     auto source = this->get_node(source_node_id);
     auto output_ports = source->output_ports();
@@ -96,7 +96,7 @@ Awaitable<void> Engine::stop_async() {
     co_return;
 }
 
-Awaitable<void> Engine::relay_async(uint32_t source_node_id, std::shared_ptr<Msg> orig_msg, size_t port,
+Awaitable<void> Engine::relay_async(FlowNodeID source_node_id, std::shared_ptr<Msg> orig_msg, size_t port,
                                     bool clone) const {
     auto source = this->get_node(source_node_id);
     // 根据出度把消息复制

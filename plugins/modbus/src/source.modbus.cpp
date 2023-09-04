@@ -10,7 +10,7 @@ namespace edgelink::plugins::modbus {
 
 class ModbusLogNode : public SinkNode {
   public:
-    ModbusLogNode(uint32_t id, const ::nlohmann::json& config, const INodeDescriptor* desc,
+    ModbusLogNode(FlowNodeID id, const ::nlohmann::json& config, const INodeDescriptor* desc,
                   const std::vector<OutputPort>&& output_ports, IFlow* flow)
         : edgelink::SinkNode(id, desc, move(output_ports), flow) {}
 

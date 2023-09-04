@@ -31,13 +31,17 @@ find_library(LIBFMT NAMES fmt REQUIRED)
 find_library(LIBRTTR_CORE NAMES rttr_core REQUIRED)
 find_library(LIBDUKTAPE NAMES duktape REQUIRED)
 
-
 include_directories(
     ./include
     ./libs/duktape-cpp/src
+    ./libs/signals/src
 )
 
-file(GLOB_RECURSE SOURCES "src/*.c" "src/*.cpp")
+file(GLOB_RECURSE SOURCES 
+    "src/*.c" 
+    "src/*.cpp"
+    "./libs/signals/src/signals.cpp"
+)
 
 
 #include(FetchContent) # 引入该CMake模块

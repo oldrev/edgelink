@@ -28,19 +28,15 @@ struct IFlow {
     virtual const std::string& id() const = 0;
 
     /// @brief 向流里发送产生的第一手消息
-    virtual Awaitable<void> emit_async(uint32_t source_node_id, std::shared_ptr<Msg> msg) = 0;
-
-    /// @brief 生成消息 ID
-    /// @return
-    virtual uint64_t generate_msg_id() = 0;
+    virtual Awaitable<void> emit_async(FlowNodeID source_node_id, std::shared_ptr<Msg> msg) = 0;
 
     /// @brief 从来源节点向后路由消息
     /// @param src
     /// @param msg
-    virtual Awaitable<void> relay_async(uint32_t source_node_id, std::shared_ptr<Msg> msg, size_t port,
+    virtual Awaitable<void> relay_async(FlowNodeID source_node_id, std::shared_ptr<Msg> msg, size_t port,
                                         bool clone) const = 0;
 
-    virtual IFlowNode* get_node(uint32_t id) const = 0;
+    virtual IFlowNode* get_node(FlowNodeID id) const = 0;
 
     /// @brief 启动流
     /// @return
@@ -49,6 +45,15 @@ struct IFlow {
     /// @brief 停止流
     /// @return
     virtual Awaitable<void> stop_async() = 0;
+
+    // onSend - passed an array of SendEvent objects. The messages inside these objects are exactly what the node has
+    // passed to node.send - meaning there could be duplicate references to the same message object.
+    // preRoute - called once for each SendEvent object in turn
+    // preDeliver - the local router has identified the node it is going to send to. At this point, the message has been
+    // cloned if needed. postDeliver - the message has been dispatched to be delivered asynchronously (unless the sync
+    // delivery flag is set, in which case it would be continue as synchronous delivery) onReceive - a node is about to
+    // receive a message postReceive - the message has been passed to the node's input handler onDone, onError - the
+    // node has completed with a message or logged an error
 };
 
 /// @brief 数据处理引擎接口
@@ -82,7 +87,7 @@ enum class NodeKind {
 
 /// @brief 数据流节点抽象类
 struct IFlowNode : public FlowElement {
-    virtual uint32_t id() const = 0;
+    virtual FlowNodeID id() const = 0;
     virtual const std::vector<OutputPort>& output_ports() const = 0;
     virtual const size_t output_count() const = 0;
     virtual const INodeDescriptor* descriptor() const = 0;
@@ -95,13 +100,13 @@ struct IFlowNode : public FlowElement {
 /// @brief 数据流节点抽象类
 class FlowNode : public IFlowNode {
   protected:
-    FlowNode(uint32_t id, const INodeDescriptor* desc, const std::vector<OutputPort>&& output_ports, IFlow* flow)
+    FlowNode(FlowNodeID id, const INodeDescriptor* desc, const std::vector<OutputPort>&& output_ports, IFlow* flow)
         : _id(id), _descriptor(desc), _output_ports(std::move(output_ports)), _flow(flow) {
         // constructor
     }
 
   public:
-    uint32_t id() const override { return _id; }
+    FlowNodeID id() const override { return _id; }
     const std::vector<OutputPort>& output_ports() const override { return _output_ports; }
     const size_t output_count() const override { return _output_ports.size(); }
     const INodeDescriptor* descriptor() const override { return _descriptor; }
@@ -110,7 +115,7 @@ class FlowNode : public IFlowNode {
     virtual Awaitable<void> receive_async(std::shared_ptr<Msg> msg) = 0;
 
   private:
-    const uint32_t _id;
+    const FlowNodeID _id;
     IFlow* _flow;
     const INodeDescriptor* _descriptor;
     const std::vector<OutputPort> _output_ports;
@@ -123,7 +128,7 @@ class FlowNode : public IFlowNode {
 /// @brief 抽象数据源
 class SourceNode : public FlowNode {
   protected:
-    SourceNode(uint32_t id, const INodeDescriptor* desc, const std::vector<OutputPort>&& output_ports, IFlow* flow)
+    SourceNode(FlowNodeID id, const INodeDescriptor* desc, const std::vector<OutputPort>&& output_ports, IFlow* flow)
         : FlowNode(id, desc, std::move(output_ports), flow) {}
 
   public:
@@ -151,14 +156,14 @@ class SourceNode : public FlowNode {
 /// @brief 抽象数据接收器
 class SinkNode : public FlowNode {
   protected:
-    SinkNode(uint32_t id, const INodeDescriptor* desc, const std::vector<OutputPort>&& output_ports, IFlow* flow)
+    SinkNode(FlowNodeID id, const INodeDescriptor* desc, const std::vector<OutputPort>&& output_ports, IFlow* flow)
         : FlowNode(id, desc, std::move(output_ports), flow) {}
 };
 
 /// @brief 抽象数据过滤器
 class FilterNode : public FlowNode {
   protected:
-    FilterNode(uint32_t id, const INodeDescriptor* desc, const std::vector<OutputPort>&& output_ports, IFlow* flow)
+    FilterNode(FlowNodeID id, const INodeDescriptor* desc, const std::vector<OutputPort>&& output_ports, IFlow* flow)
         : FlowNode(id, desc, std::move(output_ports), flow) {}
 };
 
@@ -172,7 +177,7 @@ struct INodeDescriptor {
 
 struct INodeProvider {
     virtual const INodeDescriptor* descriptor() const = 0;
-    virtual std::unique_ptr<IFlowNode> create(uint32_t id, const ::nlohmann::json& config,
+    virtual std::unique_ptr<IFlowNode> create(FlowNodeID id, const ::nlohmann::json& config,
                                               const std::vector<OutputPort>&& output_ports, IFlow* flow) const = 0;
 
   private:
@@ -188,7 +193,7 @@ class NodeProvider final : public INodeProvider, public INodeDescriptor {
     const std::string_view& type_name() const override { return _type_name; }
     inline const NodeKind kind() const override { return TKind; }
 
-    std::unique_ptr<IFlowNode> create(uint32_t id, const ::nlohmann::json& config,
+    std::unique_ptr<IFlowNode> create(FlowNodeID id, const ::nlohmann::json& config,
                                       const std::vector<OutputPort>&& output_ports, IFlow* flow) const override {
         return std::make_unique<TNode>(id, config, this, std::move(output_ports), flow);
     }
