@@ -36,6 +36,17 @@ class EvalEnv final {
 
 DUK_CPP_DEF_CLASS_NAME(EvalEnv);
 
+static const char* JS_PRELUDE = R"(
+function jsonDeepClone(v) { return JSON.parse(JSON.stringify(v)); }
+
+function cloneMsg(v) {
+    var newMsg = jsonDeepClone(v); 
+    newMsg.id = evalEnv.generateMsgID(); 
+    return newMsg; 
+}
+
+)";
+
 class FunctionNode : public FlowNode {
 
   public:
@@ -43,6 +54,11 @@ class FunctionNode : public FlowNode {
                  const std::vector<OutputPort>&& output_ports, IFlow* flow)
         : FlowNode(id, desc, std::move(output_ports), flow) {
         _func = config.at("func").as_string();
+
+        _ctx.registerClass<EvalEnv>();
+
+        // 加载前置代码
+        _ctx.evalStringNoRes(JS_PRELUDE);
     }
 
     Awaitable<void> start_async() override { co_return; }
@@ -50,33 +66,27 @@ class FunctionNode : public FlowNode {
     Awaitable<void> stop_async() override { co_return; }
 
     Awaitable<void> receive_async(std::shared_ptr<Msg> msg) override {
-        duk::Context ctx;
-        ctx.registerClass<EvalEnv>();
+
+        // 保存 Duktape 状态到全局 stash
+        duk_push_global_stash(_ctx);
+        duk_dup(_ctx, 0); // 复制当前的 Duktape 状态到 stash
+        duk_put_prop_string(_ctx, -2, "__savedContext");
+        duk_pop(_ctx); // 弹出全局 stash
 
         auto eval_env = EvalEnv::create(this, msg);
-        ctx.addGlobal("evalEnv", eval_env);
+        _ctx.addGlobal("evalEnv", eval_env);
 
         auto js_code = fmt::format(R"(
-            function jsonDeepClone(v) {{ return JSON.parse(JSON.stringify(v)); }}
-
-            function cloneMsg(v) {{ 
-                var newMsg = jsonDeepClone(v); 
-                newMsg.id = evalEnv.generateMsgID(); 
-                return newMsg; 
-            }}
-
             var msg = JSON.parse(evalEnv.msgJsonText); 
-
-            var __func_node_proc = function() {{
-                {0}; 
-            }};
-
+            var __func_node_proc = function() {{ {0}; }};
             JSON.stringify(__func_node_proc());
             )",
                                    _func);
 
         boost::json::string result_json;
-        ctx.evalString(result_json, js_code.c_str());
+        _ctx.evalString(result_json, js_code.c_str());
+
+        // 后续处理执行成果
         auto js_result = boost::json::parse(result_json);
 
         if (js_result.kind() == boost::json::kind::array) { // 多个端口消息的情况
@@ -98,10 +108,17 @@ class FunctionNode : public FlowNode {
         } else { // 其他类型不支持
             spdlog::error("不支持的消息格式：{0}", result_json);
         }
+
+        // 恢复之前保存的 Duktape 状态
+        duk_push_global_stash(_ctx);
+        duk_get_prop_string(_ctx, -1, "__savedContext"); // 获取保存的状态
+        duk_dup(_ctx, -1);                               // 复制 stash 中的状态到当前堆栈
+        duk_pop_2(_ctx);                                 // 弹出全局 stash 和恢复的状态
     }
 
   private:
     std::string _func;
+    duk::Context _ctx;
 };
 
 RTTR_REGISTRATION {
