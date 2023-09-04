@@ -44,6 +44,13 @@ file(GLOB_RECURSE SOURCES
 )
 
 
+add_library(edgelink_common_sources OBJECT
+    "./libs/signals/src/signals.cpp"
+)
+set_target_properties(edgelink_common_sources PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
+
+
 #include(FetchContent) # 引入该CMake模块
 
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)

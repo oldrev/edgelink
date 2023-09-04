@@ -1,6 +1,9 @@
 #include "edgelink/edgelink.hpp"
 
+#include "edgelink/scripting/duktape.hpp"
+
 using namespace edgelink;
+using namespace edgelink::scripting;
 
 class EvalEnv final {
   public:
@@ -72,7 +75,7 @@ class FunctionNode : public FlowNode {
             )",
                                    _func);
 
-        std::string result_json; // TODO 改成 json::string
+        boost::json::string result_json;
         ctx.evalString(result_json, js_code.c_str());
         auto js_result = boost::json::parse(result_json);
 
