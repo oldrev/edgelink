@@ -1,7 +1,5 @@
 #pragma once
 
-namespace edgelink::scripting {}; // namespace edgelink::scripting
-
 namespace duk {
 
 template <> struct Type<boost::json::string> {
@@ -145,3 +143,34 @@ template <> struct Type<boost::json::array> {
 };
 
 }; // namespace duk
+
+namespace edgelink::scripting {
+
+/// @brief Duktape 执行保护器，通过 RAII 模式允许自动清除全局变量，这样就可以自动恢复 JS 解析器状态使用一个 JS
+/// 解析器实例互不干扰地解析多段 JS 代码
+class DuktapeStashingGuard {
+  public:
+    DuktapeStashingGuard(const DuktapeStashingGuard&&) = delete;
+    DuktapeStashingGuard(const DuktapeStashingGuard&) = delete;
+
+    DuktapeStashingGuard(duk_context* ctx) : _ctx(ctx) {
+        // 保存 Duktape 状态到全局 stash
+        duk_push_global_stash(_ctx);
+        duk_dup(_ctx, 0); // 复制当前的 Duktape 状态到 stash
+        duk_put_prop_string(_ctx, -2, "__savedContext");
+        duk_pop(_ctx); // 弹出全局 stash
+    }
+
+    ~DuktapeStashingGuard() {
+        // 恢复之前保存的 Duktape 状态
+        duk_push_global_stash(_ctx);
+        duk_get_prop_string(_ctx, -1, "__savedContext"); // 获取保存的状态
+        duk_dup(_ctx, -1);                               // 复制 stash 中的状态到当前堆栈
+        duk_pop_2(_ctx);                                 // 弹出全局 stash 和恢复的状态
+    }
+
+  private:
+    duk_context* _ctx;
+};
+
+}; // namespace edgelink::scripting

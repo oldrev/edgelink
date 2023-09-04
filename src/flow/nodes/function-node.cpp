@@ -66,12 +66,7 @@ class FunctionNode : public FlowNode {
     Awaitable<void> stop_async() override { co_return; }
 
     Awaitable<void> receive_async(std::shared_ptr<Msg> msg) override {
-
-        // 保存 Duktape 状态到全局 stash
-        duk_push_global_stash(_ctx);
-        duk_dup(_ctx, 0); // 复制当前的 Duktape 状态到 stash
-        duk_put_prop_string(_ctx, -2, "__savedContext");
-        duk_pop(_ctx); // 弹出全局 stash
+        edgelink::scripting::DuktapeStashingGuard stash_guard(_ctx);
 
         auto eval_env = EvalEnv::create(this, msg);
         _ctx.addGlobal("evalEnv", eval_env);
@@ -108,12 +103,6 @@ class FunctionNode : public FlowNode {
         } else { // 其他类型不支持
             spdlog::error("不支持的消息格式：{0}", result_json);
         }
-
-        // 恢复之前保存的 Duktape 状态
-        duk_push_global_stash(_ctx);
-        duk_get_prop_string(_ctx, -1, "__savedContext"); // 获取保存的状态
-        duk_dup(_ctx, -1);                               // 复制 stash 中的状态到当前堆栈
-        duk_pop_2(_ctx);                                 // 弹出全局 stash 和恢复的状态
     }
 
   private:
