@@ -10,7 +10,7 @@ using MsgRoutingPath = boost::container::static_vector<const IFlowNode*, 32>;
 
 class Engine : public IEngine {
   public:
-    explicit Engine(const ::nlohmann::json& json_config, const IRegistry& registry);
+    explicit Engine(const boost::json::object& json_config, const IRegistry& registry);
     virtual ~Engine();
 
     const std::string& id() const override { return _id; }
@@ -23,7 +23,7 @@ class Engine : public IEngine {
     Awaitable<void> relay_async(FlowNodeID source_node_id, std::shared_ptr<Msg> msg, size_t port,
                                 bool clone) const override;
 
-     inline IFlowNode* get_node(FlowNodeID id) const override { return _nodes[static_cast<size_t>(id)].get(); }
+    inline IFlowNode* get_node(FlowNodeID id) const override { return _nodes[static_cast<size_t>(id)].get(); }
 
   private:
     std::vector<std::unique_ptr<IFlowNode>> _nodes;

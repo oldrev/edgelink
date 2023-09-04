@@ -13,7 +13,7 @@ namespace edgelink {
 
 class App {
   public:
-    App(std::shared_ptr<nlohmann::json>& json_config, std::shared_ptr<Engine> engine) : _engine(engine) {}
+    App(std::shared_ptr<boost::json::object>& json_config, std::shared_ptr<Engine> engine) : _engine(engine) {}
 
     Awaitable<void> run_async() {
 
@@ -63,10 +63,12 @@ int main(int argc, char* argv[]) {
 
     spdlog::info("日志子系统已初始化");
 
-    std::shared_ptr<::nlohmann::json> json_config = nullptr;
+    std::shared_ptr<boost::json::object> json_config = nullptr;
     try {
         std::ifstream config_file("./edgelink-conf.json");
-        json_config = std::make_shared<::nlohmann::json>(::nlohmann::json::parse(config_file, nullptr, true, true));
+        auto parsed =
+            boost::json::parse(config_file, {}, {.allow_comments = true, .allow_trailing_commas = true}).as_object();
+        json_config = std::make_shared<boost::json::object>(std::move(parsed));
     } catch (std::exception& ex) {
         spdlog::critical("读取配置文件错误：{0}", ex.what());
         return -1;

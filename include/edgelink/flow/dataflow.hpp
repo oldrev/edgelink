@@ -61,7 +61,7 @@ struct IEngine : public IFlow {};
 
 /// @brief 流工厂
 struct IFlowFactory {
-    std::vector<std::unique_ptr<IFlow>> create_flows(const nlohmann::json& flows_config);
+    std::vector<std::unique_ptr<IFlow>> create_flows(const boost::json::array& flows_config);
 };
 
 /// @brief 节点的发出连接端口
@@ -177,7 +177,7 @@ struct INodeDescriptor {
 
 struct INodeProvider {
     virtual const INodeDescriptor* descriptor() const = 0;
-    virtual std::unique_ptr<IFlowNode> create(FlowNodeID id, const ::nlohmann::json& config,
+    virtual std::unique_ptr<IFlowNode> create(FlowNodeID id, const boost::json::object& config,
                                               const std::vector<OutputPort>&& output_ports, IFlow* flow) const = 0;
 
   private:
@@ -193,7 +193,7 @@ class NodeProvider final : public INodeProvider, public INodeDescriptor {
     const std::string_view& type_name() const override { return _type_name; }
     inline const NodeKind kind() const override { return TKind; }
 
-    std::unique_ptr<IFlowNode> create(FlowNodeID id, const ::nlohmann::json& config,
+    std::unique_ptr<IFlowNode> create(FlowNodeID id, const boost::json::object& config,
                                       const std::vector<OutputPort>&& output_ports, IFlow* flow) const override {
         return std::make_unique<TNode>(id, config, this, std::move(output_ports), flow);
     }

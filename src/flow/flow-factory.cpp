@@ -10,14 +10,15 @@ namespace edgelink::flow::details {
 
 FlowFactory::FlowFactory(const IRegistry& registry) : _registry(registry) {}
 
-std::vector<std::unique_ptr<IFlow>> FlowFactory::create_flows(const nlohmann::json& flows_config) {
+std::vector<std::unique_ptr<IFlow>> FlowFactory::create_flows(const boost::json::array& flows_config) {
     auto node_provider_type = rttr::type::get<INodeProvider>();
 
     // 这里注册测试用的
     // auto dataflow_elements = flows_config["dataflow"];
     std::vector<std::unique_ptr<IFlow>> flows;
-    for (auto json_node : flows_config) {
-        const std::string& type = json_node.at("type");
+    for (const auto& json_node_value : flows_config) {
+        const auto& json_node = json_node_value.as_object();
+        const std::string type(json_node.at("type").as_string());
         if (type == "tab") {
             auto flow = this->create_flow(flows_config, json_node);
             flows.emplace_back(std::move(flow));
@@ -26,25 +27,30 @@ std::vector<std::unique_ptr<IFlow>> FlowFactory::create_flows(const nlohmann::js
     return flows;
 }
 
-std::unique_ptr<IFlow> FlowFactory::create_flow(const nlohmann::json& flows_config, const nlohmann::json& flow_node) {
+std::unique_ptr<IFlow> FlowFactory::create_flow(const boost::json::array& flows_config,
+                                                const boost::json::object& flow_node) {
 
     // 创建边连接
-    DependencySorter<std::string> sorter;
+    DependencySorter<boost::json::string> sorter;
 
-    auto flow_node_id = flow_node.at("id");
+    auto flow_node_id = flow_node.at("id").as_string();
     // 创建一个空的流
-    auto flow = std::make_unique<Flow>(flow_node_id);
+    auto flow = std::make_unique<Flow>(std::string(flow_node_id));
 
     // 提取属于指定流节点的下级节点
-    std::map<const std::string, const nlohmann::json*> json_nodes;
-    for (const auto& elem : flows_config) {
-        const std::string z = elem.value("z", "");
+    std::map<const boost::json::string, const boost::json::object*> json_nodes;
+    for (const auto& elem_value : flows_config) {
+        const auto& elem = elem_value.as_object();
+        if (!elem.contains("z")) {
+            continue;
+        }
+        const auto& z = elem.at("z").as_string();
         if (z == flow_node_id) {
-            const std::string& node_id = elem.at("id");
+            const auto& node_id = elem.at("id").as_string();
             json_nodes[node_id] = &elem;
-            for (const auto& port : elem.at("wires")) {
-                for (const std::string& endpoint : port) {
-                    sorter.add_edge(node_id, endpoint);
+            for (const auto& port : elem.at("wires").as_array()) {
+                for (const auto& endpoint : port.as_array()) {
+                    sorter.add_edge(node_id, endpoint.as_string());
                 }
             }
         }
@@ -54,18 +60,18 @@ std::unique_ptr<IFlow> FlowFactory::create_flow(const nlohmann::json& flows_conf
 
     auto sorted_ids = sorter.sort();
 
-    std::map<const std::string_view, IFlowNode*> node_map;
+    std::map<const boost::json::string, IFlowNode*> node_map;
 
     for (FlowNodeID i = 0; i < static_cast<FlowNodeID>(sorted_ids.size()); i++) {
-        const std::string& elem_id = sorted_ids[i];
-        const nlohmann::json& elem = *json_nodes.at(elem_id);
-        const std::string elem_type = elem.at("type");
+        const auto& elem_id = sorted_ids[i];
+        const boost::json::object& elem = *json_nodes.at(elem_id);
+        const auto& elem_type = elem.at("type").as_string();
 
         auto ports = std::vector<OutputPort>();
-        for (const auto& port_config : elem.at("wires")) {
+        for (const auto& port_config : elem.at("wires").as_array()) {
             auto output_wires = std::vector<IFlowNode*>();
-            for (const std::string& endpoint : port_config) {
-                auto out_node = node_map.at(endpoint);
+            for (const auto& endpoint : port_config.as_array()) {
+                auto out_node = node_map.at(endpoint.as_string());
                 output_wires.push_back(out_node);
             }
             auto port = OutputPort(std::move(output_wires));

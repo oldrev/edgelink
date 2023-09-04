@@ -22,29 +22,32 @@ struct FlowNode;
 class Msg final {
   public:
     Msg(MsgID id, FlowNodeID birth_place_id)
-        : _data(
-              std::move(nlohmann::json::object({{"id", id}, {"birthPlaceID", birth_place_id}, {"payload", nullptr}}))) {
-    }
+        : _data(std::move(boost::json::object({{"id", id}, {"birthPlaceID", birth_place_id}, {"payload", nullptr}}))) {}
 
     Msg(const Msg& other) : _data(other._data) {}
 
     Msg(const Msg&& other) : _data(std::move(other._data)) {}
 
-    explicit Msg(const nlohmann::json& data) : _data(data) {}
+    explicit Msg(const boost::json::object& data) : _data(data) {}
 
-    explicit Msg(const nlohmann::json&& data) : _data(std::move(data)) {}
+    explicit Msg(const boost::json::object&& data) : _data(std::move(data)) {}
 
-    inline nlohmann::json& data() { return _data; }
+    inline boost::json::object& data() { return _data; }
 
     inline MsgID id() const {
-        MsgID id = _data.at("id");
+        MsgID id = _data.at("id").to_number<MsgID>();
         return id;
     }
 
     inline FlowNodeID birth_place_id() const {
-        FlowNodeID bid = _data.at("birthPlaceID");
+        FlowNodeID bid = _data.at("birthPlaceID").to_number<FlowNodeID>();
         return bid;
     }
+
+    inline const boost::json::string to_json_string() const {
+        return boost::json::string(std::move(boost::json::serialize(_data)));
+    }
+    inline const std::string to_string() const { return boost::json::serialize(_data); }
 
     static MsgID generate_msg_id() {
         static std::atomic<uint32_t> msg_id_counter(0); // 初始化计数器为0
@@ -57,7 +60,7 @@ class Msg final {
     }
 
   private:
-    nlohmann::json _data;
+    boost::json::object _data;
 };
 
 using MsgPtr = std::shared_ptr<Msg>;

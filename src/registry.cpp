@@ -2,7 +2,7 @@
 
 namespace edgelink {
 
-Registry::Registry(const ::nlohmann::json& json_config) : _node_providers(), _libs() {
+Registry::Registry(const boost::json::object& json_config) : _node_providers(), _libs() {
 
     auto node_provider_type = rttr::type::get<INodeProvider>();
 

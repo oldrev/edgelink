@@ -5,9 +5,9 @@ using namespace boost;
 
 namespace edgelink::plugins::mqtt {
 
-MqttClient::MqttClient(const ::nlohmann::json& json_config) {
+MqttClient::MqttClient(const boost::json::object& json_config) {
     //
-    _address = json_config["test"];
+    _address = std::move(std::string(json_config.at("test").as_string()));
     auto client_id = uuids::to_string(uuids::uuid());
     _mqtt = make_unique<::mqtt::client>(_address, client_id);
 }

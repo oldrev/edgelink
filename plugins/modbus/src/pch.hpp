@@ -19,12 +19,12 @@
 #include <boost/di.hpp>
 #include <boost/thread/sync_bounded_queue.hpp>
 #include <boost/url.hpp>
+#include <boost/json.hpp>
 
 #include <signals.h>
 
 #include <fmt/chrono.h>
 #include <fmt/core.h>
-#include <nlohmann/json.hpp>
 #include <rttr/registration>
 #include <spdlog/spdlog.h>
 

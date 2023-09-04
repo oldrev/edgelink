@@ -22,12 +22,12 @@
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
+#include <boost/json.hpp>
 
 #include <signals.h>
 
 #include <fmt/chrono.h>
 #include <fmt/core.h>
-#include <nlohmann/json.hpp>
 #include <rttr/registration>
 #include <rttr/type>
 #include <spdlog/spdlog.h>

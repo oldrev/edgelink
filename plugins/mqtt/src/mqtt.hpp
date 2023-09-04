@@ -9,7 +9,7 @@ namespace edgelink::plugins::mqtt {
  */
 class MqttClient : public ::mqtt::callback, public edgelink::IClosable {
   public:
-    MqttClient(const ::nlohmann::json& json_config);
+    MqttClient(const boost::json::object& json_config);
     virtual ~MqttClient();
     void connect();
     void close() noexcept override;

@@ -4,7 +4,7 @@ namespace edgelink {
 
 class BlackholeNode : public SinkNode {
   public:
-    BlackholeNode(FlowNodeID id, const ::nlohmann::json& config, const INodeDescriptor* desc,
+    BlackholeNode(FlowNodeID id, const boost::json::object& config, const INodeDescriptor* desc,
                   const std::vector<OutputPort>&& output_ports, IFlow* flow)
         : SinkNode(id, desc, std::move(output_ports), flow) {}
 
@@ -14,7 +14,7 @@ class BlackholeNode : public SinkNode {
 
     Awaitable<void> receive_async(std::shared_ptr<Msg> msg) override {
         //
-        FlowNodeID msg_id = msg->data().at("id");
+        FlowNodeID msg_id = msg->data().at("id").to_number<FlowNodeID>();
         spdlog::info("BlackholeNode > 吃掉了消息：[msg.id={0}]", msg_id);
         co_return;
     }

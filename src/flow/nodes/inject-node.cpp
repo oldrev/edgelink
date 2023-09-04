@@ -9,12 +9,11 @@ class InjectNode : public SourceNode {
   public:
     const char* DEFAULT_CRON = "*/5 * * * * ?"; // 默认值是每隔两秒执行一次
   public:
-    InjectNode(FlowNodeID id, const ::nlohmann::json& config, const INodeDescriptor* desc,
+    InjectNode(FlowNodeID id, const boost::json::object& config, const INodeDescriptor* desc,
                const std::vector<OutputPort>&& output_ports, IFlow* flow)
-        : SourceNode(id, desc, move(output_ports), flow) {
-        const std::string cron_expression = config.value("cron", DEFAULT_CRON);
-        _cron = ::cron::make_cron(cron_expression);
-        // TODO 这里设置参数
+        : SourceNode(id, desc, move(output_ports), flow),
+          _cron(::cron::make_cron(config.contains("cron") ? config.at("cron").as_string() : DEFAULT_CRON)) {
+        //
     }
 
   protected:
@@ -26,7 +25,7 @@ class InjectNode : public SourceNode {
         auto msg = std::make_shared<Msg>(msg_id, this->id());
 
         if (spdlog::get_level() >= spdlog::level::info) {
-            spdlog::info("InjectNode > 数据已注入：[msg={0}]", msg->data().dump());
+            spdlog::info("InjectNode > 数据已注入：[msg={0}]", boost::json::serialize(msg->data()));
         }
 
         co_await this->flow()->emit_async(this->id(), msg);

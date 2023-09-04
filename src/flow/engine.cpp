@@ -8,24 +8,26 @@ using CloneMsgStaticVector = boost::container::static_vector<std::shared_ptr<edg
 
 namespace edgelink {
 
-Engine::Engine(const nlohmann::json& json_config, const IRegistry& registry) : _config{} {
+Engine::Engine(const boost::json::object& json_config, const IRegistry& registry) : _config{} {
 
     auto node_provider_type = rttr::type::get<INodeProvider>();
 
     // 这里注册测试用的
-    auto dataflow_elements = json_config["dataflow"];
+    auto dataflow_elements = json_config.at("dataflow").as_array();
 
     // 创建边连接
-    DependencySorter<std::string> sorter;
+    DependencySorter<boost::json::string> sorter;
 
     // 先把 json 节点提取出来
-    std::map<const std::string, const nlohmann::json*> json_nodes;
-    for (const auto& elem : dataflow_elements) {
-        const std::string& node_id = elem.at("id");
+    std::map<const boost::json::string, const boost::json::object*> json_nodes;
+    for (const auto& elem_value : dataflow_elements) {
+        const auto& elem = elem_value.as_object();
+        const auto& node_id = elem.at("id").as_string();
         json_nodes[node_id] = &elem;
-        for (const auto& port : elem.at("wires")) {
-            for (const std::string& endpoint : port) {
-                sorter.add_edge(node_id, endpoint);
+        const auto& wires = elem.at("wires").as_array();
+        for (const auto& port : wires) {
+            for (const auto& endpoint : port.as_array()) {
+                sorter.add_edge(node_id, endpoint.as_string());
             }
         }
     }
@@ -35,15 +37,16 @@ Engine::Engine(const nlohmann::json& json_config, const IRegistry& registry) : _
     std::map<const std::string_view, IFlowNode*> node_map;
 
     for (FlowNodeID i = 0; i < static_cast<FlowNodeID>(sorted_ids.size()); i++) {
-        const std::string& elem_id = sorted_ids[i];
-        const nlohmann::json& elem = *json_nodes.at(elem_id);
-        const std::string elem_type = elem.at("type");
+        const auto& elem_id = sorted_ids[i];
+        const boost::json::object& elem = *json_nodes.at(elem_id);
+        const auto& elem_type = elem.at("type").as_string();
 
         auto ports = std::vector<OutputPort>();
-        for (const auto& port_config : elem.at("wires")) {
+        const auto& wires = elem.at("wires").as_array();
+        for (const auto& port_config : wires) {
             auto output_wires = std::vector<IFlowNode*>();
-            for (const std::string& endpoint : port_config) {
-                auto out_node = node_map.at(endpoint);
+            for (const auto& endpoint : port_config.as_array()) {
+                auto out_node = node_map.at(endpoint.as_string());
                 output_wires.push_back(out_node);
             }
             auto port = OutputPort(std::move(output_wires));

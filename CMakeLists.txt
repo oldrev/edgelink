@@ -19,7 +19,7 @@ endif()
 
 
 # 查找Boost库
-find_package(Boost REQUIRED COMPONENTS system log regex log_setup url  thread)
+find_package(Boost REQUIRED COMPONENTS system log regex log_setup url thread json)
 set(Boost_MINIMUM_REQUIRED 1.81.0)
 if(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})

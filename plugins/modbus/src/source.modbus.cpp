@@ -10,7 +10,7 @@ namespace edgelink::plugins::modbus {
 
 class ModbusLogNode : public SinkNode {
   public:
-    ModbusLogNode(FlowNodeID id, const ::nlohmann::json& config, const INodeDescriptor* desc,
+    ModbusLogNode(FlowNodeID id, const boost::json::object& config, const INodeDescriptor* desc,
                   const std::vector<OutputPort>&& output_ports, IFlow* flow)
         : edgelink::SinkNode(id, desc, move(output_ports), flow) {}
 
@@ -20,7 +20,7 @@ class ModbusLogNode : public SinkNode {
 
     Awaitable<void> receive_async(std::shared_ptr<Msg> msg) override {
         //
-        spdlog::info("ModBusLogNode > 收到了消息：\n{0}", msg->data().at("payload"));
+        spdlog::info("ModBusLogNode > 收到了消息：\n{0}", msg->to_string());
         co_return;
     }
 };
