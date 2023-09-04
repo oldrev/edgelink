@@ -1,7 +1,6 @@
 #include "edgelink/edgelink.hpp"
 #include "edgelink/flow/dependency-sorter.hpp"
 
-using namespace std;
 using namespace boost;
 namespace this_coro = boost::asio::this_coro;
 
@@ -17,15 +16,15 @@ Engine::Engine(const nlohmann::json& json_config, const IRegistry& registry) : _
     auto dataflow_elements = json_config["dataflow"];
 
     // 创建边连接
-    DependencySorter<string> sorter;
+    DependencySorter<std::string> sorter;
 
     // 先把 json 节点提取出来
-    map<const string, const nlohmann::json*> json_nodes;
+    std::map<const std::string, const nlohmann::json*> json_nodes;
     for (const auto& elem : dataflow_elements) {
-        const string& node_id = elem.at("id");
+        const std::string& node_id = elem.at("id");
         json_nodes[node_id] = &elem;
         for (const auto& port : elem.at("wires")) {
-            for (const string& endpoint : port) {
+            for (const std::string& endpoint : port) {
                 sorter.add_edge(node_id, endpoint);
             }
         }
@@ -33,17 +32,17 @@ Engine::Engine(const nlohmann::json& json_config, const IRegistry& registry) : _
     auto sorted_ids = sorter.sort();
 
     // 第一遍扫描先创建节点
-    std::map<const string_view, FlowNode*> node_map;
+    std::map<const std::string_view, FlowNode*> node_map;
 
     for (uint32_t i = 0; i < static_cast<uint32_t>(sorted_ids.size()); i++) {
-        const string& elem_id = sorted_ids[i];
+        const std::string& elem_id = sorted_ids[i];
         const nlohmann::json& elem = *json_nodes.at(elem_id);
         const std::string elem_type = elem.at("type");
 
-        auto ports = vector<OutputPort>();
+        auto ports = std::vector<OutputPort>();
         for (const auto& port_config : elem.at("wires")) {
-            auto output_wires = vector<FlowNode*>();
-            for (const string& endpoint : port_config) {
+            auto output_wires = std::vector<FlowNode*>();
+            for (const std::string& endpoint : port_config) {
                 auto out_node = node_map.at(endpoint);
                 output_wires.push_back(out_node);
             }
@@ -77,7 +76,7 @@ Awaitable<void> Engine::emit_async(uint32_t source_node_id, std::shared_ptr<Msg>
 Awaitable<void> Engine::start_async() {
     //
     spdlog::info("开始启动数据流引擎");
-    _stop_source = make_unique<std::stop_source>();
+    _stop_source = std::make_unique<std::stop_source>();
     spdlog::info("数据流引擎已启动");
 
     for (auto const& node : _nodes) {

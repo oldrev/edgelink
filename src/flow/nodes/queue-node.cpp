@@ -1,6 +1,5 @@
 #include "edgelink/edgelink.hpp"
 
-using namespace std;
 using namespace boost;
 namespace this_coro = boost::asio::this_coro;
 

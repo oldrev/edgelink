@@ -3,7 +3,6 @@
 
 #include <boost/asio/experimental/promise.hpp>
 
-using namespace std;
 using namespace boost;
 namespace this_coro = boost::asio::this_coro;
 

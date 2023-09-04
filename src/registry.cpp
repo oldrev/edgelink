@@ -1,7 +1,5 @@
 #include "edgelink/edgelink.hpp"
 
-using namespace std;
-
 namespace edgelink {
 
 Registry::Registry(const ::nlohmann::json& json_config) : _node_providers(), _libs() {
@@ -19,7 +17,7 @@ Registry::Registry(const ::nlohmann::json& json_config) : _node_providers(), _li
     }
 
     spdlog::info("开始注册插件数据流节点...");
-    string path = "./plugins";
+    std::string path = "./plugins";
 
     using std::filesystem::directory_iterator;
 
@@ -52,7 +50,7 @@ Registry::~Registry() {
 
 void Registry::register_node_provider(const rttr::type& provider_type) {
     auto provider_var = provider_type.create();
-    auto provider = unique_ptr<INodeProvider>(provider_var.get_value<INodeProvider*>());
+    auto provider = std::unique_ptr<INodeProvider>(provider_var.get_value<INodeProvider*>());
     auto desc = provider->descriptor();
     spdlog::info("注册数据流节点提供器: [{0}]", desc->type_name());
     _node_providers.emplace(desc->type_name(), std::move(provider));

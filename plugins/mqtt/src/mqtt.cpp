@@ -1,7 +1,6 @@
 
 #include "mqtt.hpp"
 
-using namespace std;
 using namespace boost;
 
 namespace edgelink::plugins::mqtt {

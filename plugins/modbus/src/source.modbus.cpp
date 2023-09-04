@@ -4,7 +4,6 @@
 
 #include <edgelink/plugin.hpp>
 
-using namespace std;
 using namespace edgelink;
 
 namespace edgelink::plugins::modbus {
@@ -19,7 +18,7 @@ class ModbusLogNode : public SinkNode {
 
     Awaitable<void> stop_async() override { co_return; }
 
-    Awaitable<void> receive_async(shared_ptr<Msg> msg) override {
+    Awaitable<void> receive_async(std::shared_ptr<Msg> msg) override {
         //
         spdlog::info("ModBusLogNode > 收到了消息：\n{0}", msg->data().at("payload"));
         co_return;

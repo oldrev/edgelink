@@ -1,7 +1,6 @@
 
 #include "edgelink/edgelink.hpp"
 
-using namespace std;
 namespace this_coro = boost::asio::this_coro;
 
 namespace edgelink {
@@ -24,7 +23,7 @@ class InjectNode : public SourceNode {
         auto executor = co_await this_coro::executor;
 
         auto msg_id = this->flow()->generate_msg_id();
-        auto msg = make_shared<Msg>(msg_id, this->id());
+        auto msg = std::make_shared<Msg>(msg_id, this->id());
 
         if (spdlog::get_level() >= spdlog::level::info) {
             spdlog::info("InjectNode > 数据已注入：[msg={0}]", msg->data().dump());

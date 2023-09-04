@@ -2,7 +2,6 @@
 
 #include "modbus.hpp"
 
-using namespace std;
 using namespace edgelink;
 
 namespace edgelink::plugins::modbus {
@@ -34,7 +33,7 @@ void ModbusClient::connect() {
     }
 
     if (modbus_connect(_modbus) == -1) {
-        string error_msg = modbus_strerror(errno);
+        std::string error_msg = modbus_strerror(errno);
         spdlog::error("ModBus 连接失败！错误消息：{0}", error_msg);
         modbus_free(_modbus);
         _modbus = nullptr;
