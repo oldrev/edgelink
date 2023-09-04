@@ -1,12 +1,13 @@
 #include "edgelink/edgelink.hpp"
 #include "edgelink/flow/dependency-sorter.hpp"
 
+using namespace edgelink;
 using namespace boost;
 namespace this_coro = boost::asio::this_coro;
 
 using CloneMsgStaticVector = boost::container::static_vector<std::shared_ptr<edgelink::Msg>, 32>;
 
-namespace edgelink {
+namespace edgelink::flow::details {
 
 Flow::Flow(const std::string& id) : _id(id), _nodes() {}
 

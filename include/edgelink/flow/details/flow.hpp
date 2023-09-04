@@ -6,6 +6,9 @@ namespace edgelink {
 
 class FlowNode;
 struct IRegistry;
+}; // namespace edgelink
+
+namespace edgelink::flow::details {
 
 class Flow : public IFlow {
 
@@ -37,4 +40,4 @@ class Flow : public IFlow {
     std::unique_ptr<std::stop_source> _stop_source;
 };
 
-}; // namespace edgelink
+}; // namespace edgelink::flow::details
