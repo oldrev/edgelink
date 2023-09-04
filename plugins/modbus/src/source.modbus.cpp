@@ -22,6 +22,7 @@ class ModbusLogNode : public SinkNode {
     Awaitable<void> receive_async(shared_ptr<Msg> msg) override {
         //
         spdlog::info("ModBusLogNode > 收到了消息：\n{0}", msg->data().at("payload"));
+        co_return;
     }
 };
 
