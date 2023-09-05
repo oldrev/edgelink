@@ -80,7 +80,7 @@ std::unique_ptr<IFlow> FlowFactory::create_flow(const boost::json::array& flows_
 
         auto const& provider_iter = _registry.get_node_provider(elem_type);
         auto node = provider_iter->create(i, elem, std::move(ports), flow.get());
-        spdlog::info("已开始创建数据流节点：[type='{0}', str_id='{1}', id={2}]", elem_type, elem_id, node->id());
+        spdlog::info("已开始创建流程节点：[type='{0}', str_id='{1}', id={2}]", elem_type, elem_id, node->id());
         node_map[elem_id] = node.get();
         flow->emplace_node(std::move(node));
     }

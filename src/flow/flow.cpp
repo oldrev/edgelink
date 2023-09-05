@@ -31,29 +31,30 @@ Awaitable<void> Flow::emit_async(FlowNodeID source_node_id, std::shared_ptr<Msg>
 
 Awaitable<void> Flow::start_async() {
     //
-    spdlog::info("开始启动数据流");
+    spdlog::info("开始启动流程");
     _stop_source = std::make_unique<std::stop_source>();
 
     for (auto const& node : _nodes) {
-        spdlog::info("正在启动数据流节点：[id={0}, type={1}]", node->id(), node->descriptor()->type_name());
+        spdlog::info("正在启动流程节点：[id={0}, type={1}]", node->id(), node->descriptor()->type_name());
         co_await node->start_async();
-        spdlog::info("数据流节点已启动");
+        spdlog::info("流程节点已启动");
     }
-    spdlog::info("数据流已启动");
+    spdlog::info("流程已启动");
 }
 
 Awaitable<void> Flow::stop_async() {
     // 给出线程池停止信号
-    spdlog::info("开始请求数据流 '{0}' 停止...", this->id());
+    spdlog::info("开始请求流程 '{0}' 停止...", this->id());
     _stop_source->request_stop();
 
-    for (auto const& node : _nodes) {
-        spdlog::info("正在停止数据流节点：[id={0}, type={1}]", node->id(), node->descriptor()->type_name());
-        co_await node->stop_async();
-        spdlog::info("数据流节点已停止");
+    for (auto it = _nodes.rbegin(); it != _nodes.rend(); ++it) {
+        auto ref = std::reference_wrapper<IFlowNode>(**it); // 使用 std::reference_wrapper
+        spdlog::info("正在停止流程节点：[id={0}, type={1}]", ref.get().id(), ref.get().descriptor()->type_name());
+        co_await ref.get().stop_async();
+        spdlog::info("流程节点已停止");
     }
 
-    spdlog::info("数据流 '{0}' 已停止", this->id());
+    spdlog::info("流程 '{0}' 已停止", this->id());
     co_return;
 }
 
@@ -68,7 +69,7 @@ Awaitable<void> Flow::relay_async(FlowNodeID source_node_id, std::shared_ptr<Msg
         auto endpoint = output_port.wires().at(j);
         auto msg = clone && j > 0 ? std::make_shared<Msg>(*orig_msg) : orig_msg;
 
-        // 线程池中处理数据流
+        // 线程池中处理流程
         //
         switch (endpoint->descriptor()->kind()) {
 

@@ -82,7 +82,7 @@ class OutputPort {
     const std::vector<IFlowNode*> _wires;
 };
 
-/// @brief 数据流处理基础元素
+/// @brief 流程处理基础元素
 struct FlowElement {};
 
 enum class NodeKind {
@@ -92,7 +92,7 @@ enum class NodeKind {
     FILTER = 3    ///< 过滤器
 };
 
-/// @brief 数据流节点抽象类
+/// @brief 流程节点抽象类
 struct IFlowNode : public FlowElement {
     virtual FlowNodeID id() const = 0;
     virtual const std::string_view name() const = 0;
@@ -106,7 +106,7 @@ struct IFlowNode : public FlowElement {
     virtual Awaitable<void> stop_async() = 0;
 };
 
-/// @brief 数据流节点抽象类
+/// @brief 流程节点抽象类
 class FlowNode : public IFlowNode {
   protected:
     FlowNode(FlowNodeID id, const INodeDescriptor* desc, const std::vector<OutputPort>&& output_ports, IFlow* flow,
