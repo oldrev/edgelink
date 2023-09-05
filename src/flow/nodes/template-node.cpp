@@ -78,11 +78,12 @@ class TemplateNode : public FlowNode {
             {_field, boost::json::value(msg->data().at(_field))},
         });
         spdlog::info("template 节点收到的消息：{0}", boost::json::serialize(wrapped_msg));
-        const std::string json_text = bustache::to_string(_format(wrapped_msg).escape(bustache::escape_html));
-        spdlog::info("template 节点渲染出来的内容：{0}", json_text);
-        auto parsed_msg_field_value = boost::json::parse(json_text);
+        bustache::format format("this is the payload: {{payload}}");
+        // const std::string json_text = bustache::to_string(format(wrapped_msg).escape(bustache::escape_html));
+        // spdlog::info("template 节点渲染出来的内容：{0}", json_text);
+        // auto parsed_msg_field_value = boost::json::parse(json_text);
 
-        msg->data()[_field] = parsed_msg_field_value;
+        // msg->data()[_field] = parsed_msg_field_value;
 
         co_await this->flow()->relay_async(this->id(), msg, 0, true);
 
