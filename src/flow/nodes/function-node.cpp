@@ -36,7 +36,7 @@ class EvalEnv final {
 
 DUK_CPP_DEF_CLASS_NAME(EvalEnv);
 
-static const char* JS_PRELUDE = R"(
+constexpr char JS_PRELUDE[] = R"(
 function jsonDeepClone(v) { return JSON.parse(JSON.stringify(v)); }
 
 function cloneMsg(v) {
@@ -45,6 +45,12 @@ function cloneMsg(v) {
     return newMsg; 
 }
 
+)";
+
+constexpr char JS_CODE_TEMPLATE[] = R"(
+    var msg = JSON.parse(evalEnv.msgJsonText); 
+    var __func_node_proc = function() {{ {0}; }};
+    JSON.stringify(__func_node_proc());
 )";
 
 class FunctionNode : public FlowNode {
@@ -71,12 +77,7 @@ class FunctionNode : public FlowNode {
         auto eval_env = EvalEnv::create(this, msg);
         _ctx.addGlobal("evalEnv", eval_env);
 
-        auto js_code = fmt::format(R"(
-            var msg = JSON.parse(evalEnv.msgJsonText); 
-            var __func_node_proc = function() {{ {0}; }};
-            JSON.stringify(__func_node_proc());
-            )",
-                                   _func);
+        auto js_code = fmt::format(JS_CODE_TEMPLATE, _func);
 
         boost::json::string result_json;
         _ctx.evalString(result_json, js_code.c_str());
