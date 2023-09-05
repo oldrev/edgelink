@@ -16,7 +16,7 @@ class LogNode : public SinkNode {
         //
         FlowNodeID node_id = msg->data().at("birthPlaceID").to_number<FlowNodeID>();
         auto birth_place = this->flow()->get_node(node_id);
-        spdlog::info("LogNode > 收到了消息：\n{0}", msg->to_string());
+        spdlog::info("LogNode > 收到了消息：{0}", msg->to_string());
         co_return;
     }
 };

@@ -1,3 +1,6 @@
 [submodule "libs/bustache"]
 	path = libs/bustache
 	url = git@github.com:jamboree/bustache.git
+[submodule "libs/mustache"]
+	path = libs/mustache
+	url = git@github.com:pdimov/mustache.git

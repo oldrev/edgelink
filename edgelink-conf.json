@@ -2,44 +2,5 @@
     "projectID": "yncic-dangerous",
     "deviceID": "3D24E79E3D7D4078B48440B528E7BF74",
     "serverUrl": "tcp://test.mosquitto.org:1883",
-    "queueCapacity": 100,
-    "dataflow": [
-        {
-            "type": "inject",
-            "id": "source1",
-            "name": "inject 1",
-            "cron": "*/5 * * * * ?",
-            "wires": [
-                [
-                    "func1"
-                ]
-            ]
-        },
-        {
-            "type": "function",
-            "id": "func1",
-            "name": "function 1",
-            "func": "msg.payload = 'Hello, World!'; var msg2 = cloneMsg(msg); msg2.payload = 'Hello!, EdgeLink!'; return [msg, msg2];",
-            "wires": [
-                [
-                    "sink1"
-                ],
-                [
-                    "sink2"
-                ]
-            ]
-        },
-        {
-            "type": "log",
-            "id": "sink1",
-            "name": "log 1",
-            "wires": []
-        },
-        {
-            "type": "log",
-            "id": "sink2",
-            "name": "log 2",
-            "wires": []
-        }
-    ]
+    "queueCapacity": 100
 }

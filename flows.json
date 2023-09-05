@@ -9,7 +9,7 @@
         "id": "source1",
         "z": "flow1",
         "name": "inject 1",
-        "cron": "*/2 * * * * ?",
+        "crontab": "*/2 * * * * ?",
         "wires": [
             [
                 "func1",

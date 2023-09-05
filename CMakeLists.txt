@@ -25,7 +25,6 @@ if(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
 endif()
 
-
 find_library(LIBSPDLOG NAMES spdlog REQUIRED)
 find_library(LIBFMT NAMES fmt REQUIRED)
 find_library(LIBRTTR_CORE NAMES rttr_core REQUIRED)
@@ -35,13 +34,14 @@ include_directories(
     ./include
     ./libs/duktape-cpp/src
     ./libs/signals/src
-    ./libs/bustache/include
+    ./libs/mustache/include
 )
 
 file(GLOB_RECURSE SOURCES 
     "src/*.c" 
     "src/*.cpp"
     "./libs/signals/src/signals.cpp"
+    "./libs/mustache/src/renderer.cpp"
 )
 
 
@@ -50,8 +50,7 @@ add_library(edgelink_common_sources OBJECT
 )
 set_target_properties(edgelink_common_sources PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
-add_definitions(-DBUSTACHE_USE_FMT)
-add_subdirectory(./libs/bustache)
+
 
 #include(FetchContent) # 引入该CMake模块
 
@@ -69,7 +68,6 @@ target_link_libraries(
     PRIVATE ${LIBFMT}
     PRIVATE ${LIBRTTR_CORE}
     PRIVATE ${LIBDUKTAPE}
-    PRIVATE bustache
 )
 add_definitions(-DBOOST_LOG_DYN_LINK)
 
