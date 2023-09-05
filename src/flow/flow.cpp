@@ -10,13 +10,13 @@ using CloneMsgStaticVector = boost::container::static_vector<std::shared_ptr<edg
 namespace edgelink::flow::details {
 
 Flow::Flow(const boost::json::object& json_config)
-    : _id(json_config.at("id").as_string()), _name(json_config.at("name").as_string()), _nodes() {
+    : _id(json_config.at("id").as_string()), _name(json_config.at("name").as_string()),
+      _disabled(edgelink::value_or(json_config, "d", true)), _nodes() {
     //
 }
 
 Flow::~Flow() {
     //
-    spdlog::info("数据流关闭中...");
 }
 
 Awaitable<void> Flow::emit_async(FlowNodeID source_node_id, std::shared_ptr<Msg> msg) {
@@ -31,24 +31,29 @@ Awaitable<void> Flow::emit_async(FlowNodeID source_node_id, std::shared_ptr<Msg>
 
 Awaitable<void> Flow::start_async() {
     //
-    spdlog::info("开始启动数据流引擎");
+    spdlog::info("开始启动数据流");
     _stop_source = std::make_unique<std::stop_source>();
-    spdlog::info("数据流引擎已启动");
 
     for (auto const& node : _nodes) {
-        spdlog::info("正在启动数据流节点：{0}", node->descriptor()->type_name());
+        spdlog::info("正在启动数据流节点：[id={0}, type={1}]", node->id(), node->descriptor()->type_name());
         co_await node->start_async();
-        spdlog::info("数据流节点 '{0}' 已启动", node->descriptor()->type_name());
+        spdlog::info("数据流节点已启动");
     }
-    spdlog::info("全部节点启动完毕");
+    spdlog::info("数据流已启动");
 }
 
 Awaitable<void> Flow::stop_async() {
     // 给出线程池停止信号
-    spdlog::info("开始请求数据流引擎线程池停止...");
+    spdlog::info("开始请求数据流 '{0}' 停止...", this->id());
     _stop_source->request_stop();
 
-    spdlog::info("数据流引擎线程池已停止");
+    for (auto const& node : _nodes) {
+        spdlog::info("正在停止数据流节点：[id={0}, type={1}]", node->id(), node->descriptor()->type_name());
+        co_await node->stop_async();
+        spdlog::info("数据流节点已停止");
+    }
+
+    spdlog::info("数据流 '{0}' 已停止", this->id());
     co_return;
 }
 

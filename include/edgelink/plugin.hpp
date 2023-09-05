@@ -3,6 +3,7 @@
 #include "edgelink/common.hpp"
 #include "edgelink/errors.hpp"
 #include "edgelink/utils.hpp"
+#include "edgelink/json.hpp"
 #include "edgelink/logging.hpp"
 
 #include "edgelink/flow/common.hpp"

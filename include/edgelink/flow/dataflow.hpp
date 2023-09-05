@@ -27,6 +27,7 @@ struct IFlow {
 
     virtual const std::string_view id() const = 0;
     virtual const std::string_view name() const = 0;
+    virtual bool is_disabled() const = 0;
 
     /// @brief 向流里发送产生的第一手消息
     virtual Awaitable<void> emit_async(FlowNodeID source_node_id, std::shared_ptr<Msg> msg) = 0;
@@ -58,11 +59,16 @@ struct IFlow {
 };
 
 /// @brief 数据处理引擎接口
-struct IEngine : public IFlow {};
+struct IEngine {
+    virtual Awaitable<void> start_async() = 0;
+    virtual Awaitable<void> stop_async() = 0;
+    virtual IFlow* get_flow(const std::string_view flow_id) const = 0;
+    virtual bool is_disabled() const = 0;
+};
 
 /// @brief 流工厂
 struct IFlowFactory {
-    std::vector<std::unique_ptr<IFlow>> create_flows(const boost::json::array& flows_config);
+    virtual std::vector<std::unique_ptr<IFlow>> create_flows(const boost::json::array& flows_config) const = 0;
 };
 
 /// @brief 节点的发出连接端口
@@ -90,6 +96,7 @@ enum class NodeKind {
 struct IFlowNode : public FlowElement {
     virtual FlowNodeID id() const = 0;
     virtual const std::string_view name() const = 0;
+    virtual const bool is_disabled() const = 0;
     virtual const std::vector<OutputPort>& output_ports() const = 0;
     virtual const size_t output_count() const = 0;
     virtual const INodeDescriptor* descriptor() const = 0;
@@ -104,14 +111,15 @@ class FlowNode : public IFlowNode {
   protected:
     FlowNode(FlowNodeID id, const INodeDescriptor* desc, const std::vector<OutputPort>&& output_ports, IFlow* flow,
              const boost::json::object& config)
-        : _id(id), _name(config.at("name").as_string()), _descriptor(desc), _output_ports(std::move(output_ports)),
-          _flow(flow) {
+        : _id(id), _name(config.at("name").as_string()), _disabled(edgelink::value_or(config, "d", false)),
+          _descriptor(desc), _output_ports(std::move(output_ports)), _flow(flow) {
         // constructor
     }
 
   public:
     FlowNodeID id() const override { return _id; }
     const std::string_view name() const override { return _name; }
+    const bool is_disabled() const override { return _disabled; }
     const std::vector<OutputPort>& output_ports() const override { return _output_ports; }
     const size_t output_count() const override { return _output_ports.size(); }
     const INodeDescriptor* descriptor() const override { return _descriptor; }
@@ -122,6 +130,7 @@ class FlowNode : public IFlowNode {
   private:
     const FlowNodeID _id;
     const std::string _name;
+    bool _disabled;
     IFlow* _flow;
     const INodeDescriptor* _descriptor;
     const std::vector<OutputPort> _output_ports;
@@ -212,5 +221,4 @@ class NodeProvider final : public INodeProvider, public INodeDescriptor {
 
     RTTR_ENABLE(INodeProvider)
 };
-
 }; // namespace edgelink

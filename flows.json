@@ -1,0 +1,48 @@
+[
+    {
+        "type": "tab",
+        "id": "flow1",
+        "name": "flow 1"
+    },
+    {
+        "type": "inject",
+        "id": "source1",
+        "z": "flow1",
+        "name": "inject 1",
+        "cron": "*/5 * * * * ?",
+        "wires": [
+            [
+                "func1"
+            ]
+        ]
+    },
+    {
+        "type": "function",
+        "id": "func1",
+        "z": "flow1",
+        "name": "function 1",
+        "func": "msg.payload = 'Hello, World!'; var msg2 = cloneMsg(msg); msg2.payload = 'Hello!, EdgeLink!'; return [msg, msg2];",
+        "wires": [
+            [
+                "sink1"
+            ],
+            [
+                "sink2"
+            ]
+        ]
+    },
+    {
+        "type": "log",
+        "id": "sink1",
+        "z": "flow1",
+        "name": "log 1",
+        "wires": []
+    },
+    {
+        "type": "log",
+        "id": "sink2",
+        "z": "flow1",
+        "name": "log 2",
+        "wires": []
+    }
+]

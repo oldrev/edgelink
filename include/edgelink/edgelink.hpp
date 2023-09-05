@@ -4,15 +4,21 @@
 #include "errors.hpp"
 #include "logging.hpp"
 #include "utils.hpp"
+#include "json.hpp"
 
 #include "flow/common.hpp"
 #include "flow/msg.hpp"
 #include "flow/dataflow.hpp"
 #include "flow/details/flow.hpp"
-#include "registry.hpp"
-#include "engine.hpp"
+#include "flow/registry.hpp"
+#include "flow/engine.hpp"
 
 namespace edgelink {
+
+/// @brief 程序配置
+struct EdgeLinkConfig {
+    const std::string flows_json_path;
+};
 
 struct IDaemonApp {
     virtual void run() = 0;

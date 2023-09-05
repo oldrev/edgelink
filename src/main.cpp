@@ -13,7 +13,7 @@ namespace edgelink {
 
 class App {
   public:
-    App(std::shared_ptr<boost::json::object>& json_config, std::shared_ptr<Engine> engine) : _engine(engine) {}
+    App(std::shared_ptr<boost::json::object>& json_config, std::shared_ptr<IEngine> engine) : _engine(engine) {}
 
     Awaitable<void> run_async() {
 
@@ -46,7 +46,7 @@ class App {
     }
 
   private:
-    std::shared_ptr<Engine> _engine;
+    std::shared_ptr<IEngine> _engine;
 };
 
 }; // namespace edgelink
@@ -77,10 +77,15 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
+    EdgeLinkConfig el_config{
+        .flows_json_path = "./flows.json",
+    };
+
     const auto injector = di::make_injector(
+        di::bind<>().to(el_config),                                                           // EdgeLinkConfig
         di::bind<>().to(json_config),                                                         // App
         di::bind<App>().in(di::singleton),                                                    // App
-        di::bind<Engine>().in(di::singleton),                                                 // Engine
+        di::bind<IEngine>().to<Engine>().in(di::singleton),                                   // Engine
         di::bind<IRegistry>().to<Registry>().in(di::singleton),                               // Registry
         di::bind<IFlowFactory>().to<edgelink::flow::details::FlowFactory>().in(di::singleton) // Engine
     );

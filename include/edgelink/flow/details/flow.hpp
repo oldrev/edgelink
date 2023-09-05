@@ -18,6 +18,7 @@ class Flow : public IFlow {
 
     const std::string_view id() const override { return _id; }
     const std::string_view name() const override { return _name; }
+    bool is_disabled() const override { return _disabled; }
 
     Awaitable<void> start_async() override;
     Awaitable<void> stop_async() override;
@@ -34,6 +35,7 @@ class Flow : public IFlow {
   private:
     const std::string _id;
     const std::string _name;
+    const bool _disabled;
     std::vector<std::unique_ptr<IFlowNode>> _nodes;
 
     std::atomic<uint64_t> _msg_id_counter; // 初始化计数器为0
