@@ -9,7 +9,10 @@ using CloneMsgStaticVector = boost::container::static_vector<std::shared_ptr<edg
 
 namespace edgelink::flow::details {
 
-Flow::Flow(const std::string& id) : _id(id), _nodes() {}
+Flow::Flow(const boost::json::object& json_config)
+    : _id(json_config.at("id").as_string()), _name(json_config.at("name").as_string()), _nodes() {
+    //
+}
 
 Flow::~Flow() {
     //
@@ -77,4 +80,4 @@ Awaitable<void> Flow::relay_async(FlowNodeID source_node_id, std::shared_ptr<Msg
     co_return;
 }
 
-}; // namespace edgelink
+}; // namespace edgelink::flow::details

@@ -13,7 +13,8 @@ class Engine : public IEngine {
     explicit Engine(const boost::json::object& json_config, const IRegistry& registry);
     virtual ~Engine();
 
-    const std::string& id() const override { return _id; }
+    const std::string_view id() const override { return _id; }
+    const std::string_view name() const override { return _name; }
 
     Awaitable<void> start_async() override;
     Awaitable<void> stop_async() override;
@@ -31,6 +32,7 @@ class Engine : public IEngine {
 
     std::unique_ptr<std::stop_source> _stop_source;
     const std::string _id;
+    const std::string _name;
 };
 
 }; // namespace edgelink

@@ -52,7 +52,7 @@ class FunctionNode : public FlowNode {
   public:
     FunctionNode(FlowNodeID id, const boost::json::object& config, const INodeDescriptor* desc,
                  const std::vector<OutputPort>&& output_ports, IFlow* flow)
-        : FlowNode(id, desc, std::move(output_ports), flow) {
+        : FlowNode(id, desc, std::move(output_ports), flow, config) {
         _func = config.at("func").as_string();
 
         _ctx.registerClass<EvalEnv>();

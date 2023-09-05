@@ -7,6 +7,7 @@
         {
             "type": "inject",
             "id": "source1",
+            "name": "inject 1",
             "cron": "*/5 * * * * ?",
             "wires": [
                 [
@@ -17,6 +18,7 @@
         {
             "type": "function",
             "id": "func1",
+            "name": "function 1",
             "func": "msg.payload = 'Hello, World!'; var msg2 = cloneMsg(msg); msg2.payload = 'Hello!, EdgeLink!'; return [msg, msg2];",
             "wires": [
                 [
@@ -30,11 +32,13 @@
         {
             "type": "log",
             "id": "sink1",
+            "name": "log 1",
             "wires": []
         },
         {
             "type": "log",
             "id": "sink2",
+            "name": "log 2",
             "wires": []
         }
     ]

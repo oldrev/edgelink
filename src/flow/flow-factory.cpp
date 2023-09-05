@@ -35,7 +35,7 @@ std::unique_ptr<IFlow> FlowFactory::create_flow(const boost::json::array& flows_
 
     auto flow_node_id = flow_node.at("id").as_string();
     // 创建一个空的流
-    auto flow = std::make_unique<Flow>(std::string(flow_node_id));
+    auto flow = std::make_unique<Flow>(flow_node);
 
     // 提取属于指定流节点的下级节点
     std::map<const boost::json::string, const boost::json::object*> json_nodes;

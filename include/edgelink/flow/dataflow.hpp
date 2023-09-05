@@ -25,7 +25,8 @@ class FlowContext {
 /// @brief 消息流
 struct IFlow {
 
-    virtual const std::string& id() const = 0;
+    virtual const std::string_view id() const = 0;
+    virtual const std::string_view name() const = 0;
 
     /// @brief 向流里发送产生的第一手消息
     virtual Awaitable<void> emit_async(FlowNodeID source_node_id, std::shared_ptr<Msg> msg) = 0;
@@ -88,6 +89,7 @@ enum class NodeKind {
 /// @brief 数据流节点抽象类
 struct IFlowNode : public FlowElement {
     virtual FlowNodeID id() const = 0;
+    virtual const std::string_view name() const = 0;
     virtual const std::vector<OutputPort>& output_ports() const = 0;
     virtual const size_t output_count() const = 0;
     virtual const INodeDescriptor* descriptor() const = 0;
@@ -100,13 +102,16 @@ struct IFlowNode : public FlowElement {
 /// @brief 数据流节点抽象类
 class FlowNode : public IFlowNode {
   protected:
-    FlowNode(FlowNodeID id, const INodeDescriptor* desc, const std::vector<OutputPort>&& output_ports, IFlow* flow)
-        : _id(id), _descriptor(desc), _output_ports(std::move(output_ports)), _flow(flow) {
+    FlowNode(FlowNodeID id, const INodeDescriptor* desc, const std::vector<OutputPort>&& output_ports, IFlow* flow,
+             const boost::json::object& config)
+        : _id(id), _name(config.at("name").as_string()), _descriptor(desc), _output_ports(std::move(output_ports)),
+          _flow(flow) {
         // constructor
     }
 
   public:
     FlowNodeID id() const override { return _id; }
+    const std::string_view name() const override { return _name; }
     const std::vector<OutputPort>& output_ports() const override { return _output_ports; }
     const size_t output_count() const override { return _output_ports.size(); }
     const INodeDescriptor* descriptor() const override { return _descriptor; }
@@ -116,6 +121,7 @@ class FlowNode : public IFlowNode {
 
   private:
     const FlowNodeID _id;
+    const std::string _name;
     IFlow* _flow;
     const INodeDescriptor* _descriptor;
     const std::vector<OutputPort> _output_ports;
@@ -128,8 +134,9 @@ class FlowNode : public IFlowNode {
 /// @brief 抽象数据源
 class SourceNode : public FlowNode {
   protected:
-    SourceNode(FlowNodeID id, const INodeDescriptor* desc, const std::vector<OutputPort>&& output_ports, IFlow* flow)
-        : FlowNode(id, desc, std::move(output_ports), flow) {}
+    SourceNode(FlowNodeID id, const INodeDescriptor* desc, const std::vector<OutputPort>&& output_ports, IFlow* flow,
+               const boost::json::object& config)
+        : FlowNode(id, desc, std::move(output_ports), flow, config) {}
 
   public:
     virtual bool is_running() const { return _thread.joinable(); }
@@ -156,19 +163,21 @@ class SourceNode : public FlowNode {
 /// @brief 抽象数据接收器
 class SinkNode : public FlowNode {
   protected:
-    SinkNode(FlowNodeID id, const INodeDescriptor* desc, const std::vector<OutputPort>&& output_ports, IFlow* flow)
-        : FlowNode(id, desc, std::move(output_ports), flow) {}
+    SinkNode(FlowNodeID id, const INodeDescriptor* desc, const std::vector<OutputPort>&& output_ports, IFlow* flow,
+             const boost::json::object& config)
+        : FlowNode(id, desc, std::move(output_ports), flow, config) {}
 };
 
 /// @brief 抽象数据过滤器
 class FilterNode : public FlowNode {
   protected:
-    FilterNode(FlowNodeID id, const INodeDescriptor* desc, const std::vector<OutputPort>&& output_ports, IFlow* flow)
-        : FlowNode(id, desc, std::move(output_ports), flow) {}
+    FilterNode(FlowNodeID id, const INodeDescriptor* desc, const std::vector<OutputPort>&& output_ports, IFlow* flow,
+               const boost::json::object& config)
+        : FlowNode(id, desc, std::move(output_ports), flow, config) {}
 };
 
 struct INodeDescriptor {
-    virtual const std::string_view& type_name() const = 0;
+    virtual const std::string_view type_name() const = 0;
     virtual const NodeKind kind() const = 0;
 
   private:
@@ -190,7 +199,7 @@ class NodeProvider final : public INodeProvider, public INodeDescriptor {
     NodeProvider() : _type_name(TTypeName.value) {}
 
     const INodeDescriptor* descriptor() const override { return this; }
-    const std::string_view& type_name() const override { return _type_name; }
+    const std::string_view type_name() const override { return _type_name; }
     inline const NodeKind kind() const override { return TKind; }
 
     std::unique_ptr<IFlowNode> create(FlowNodeID id, const boost::json::object& config,

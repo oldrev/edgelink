@@ -10,7 +10,7 @@ class QueueNode : public FilterNode {
   public:
     QueueNode(FlowNodeID id, const boost::json::object& config, const INodeDescriptor* desc,
               const std::vector<OutputPort>&& output_ports, IFlow* flow)
-        : FilterNode(id, desc, std::move(output_ports), flow),
+        : FilterNode(id, desc, std::move(output_ports), flow, config),
           _queue(config.contains("capacity") ? config.at("capacity").to_number<size_t>() : 100) {
         //
     }

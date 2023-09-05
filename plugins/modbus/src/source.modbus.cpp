@@ -8,7 +8,7 @@ class ModbusLogNode : public SinkNode {
   public:
     ModbusLogNode(FlowNodeID id, const boost::json::object& config, const INodeDescriptor* desc,
                   const std::vector<OutputPort>&& output_ports, IFlow* flow)
-        : edgelink::SinkNode(id, desc, move(output_ports), flow) {}
+        : edgelink::SinkNode(id, desc, move(output_ports), flow, config) {}
 
     Awaitable<void> start_async() override { co_return; }
 

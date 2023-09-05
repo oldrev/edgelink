@@ -13,10 +13,11 @@ namespace edgelink::flow::details {
 class Flow : public IFlow {
 
   public:
-    Flow(const std::string& id);
+    Flow(const boost::json::object& json_config);
     virtual ~Flow();
 
-    const std::string& id() const override { return _id; }
+    const std::string_view id() const override { return _id; }
+    const std::string_view name() const override { return _name; }
 
     Awaitable<void> start_async() override;
     Awaitable<void> stop_async() override;
@@ -32,6 +33,7 @@ class Flow : public IFlow {
 
   private:
     const std::string _id;
+    const std::string _name;
     std::vector<std::unique_ptr<IFlowNode>> _nodes;
 
     std::atomic<uint64_t> _msg_id_counter; // 初始化计数器为0

@@ -6,7 +6,7 @@ class LogNode : public SinkNode {
   public:
     LogNode(FlowNodeID id, const boost::json::object& config, const INodeDescriptor* desc,
             const std::vector<OutputPort>&& output_ports, IFlow* flow)
-        : SinkNode(id, desc, std::move(output_ports), flow) {}
+        : SinkNode(id, desc, std::move(output_ports), flow, config) {}
 
     Awaitable<void> start_async() override { co_return; }
 
