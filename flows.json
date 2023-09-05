@@ -9,10 +9,11 @@
         "id": "source1",
         "z": "flow1",
         "name": "inject 1",
-        "cron": "*/5 * * * * ?",
+        "cron": "*/2 * * * * ?",
         "wires": [
             [
-                "func1"
+                "func1",
+                "temp1"
             ]
         ]
     },
@@ -43,6 +44,27 @@
         "id": "sink2",
         "z": "flow1",
         "name": "log 2",
+        "wires": []
+    },
+    {
+        "type": "template",
+        "id": "temp1",
+        "z": "flow1",
+        "name": "tempalte 1",
+        "field": "payload",
+        "fieldType": "payload",
+        "template": "\"this is the payload: {{payload}}\"",
+        "wires": [
+            [
+                "sink3"
+            ]
+        ]
+    },
+    {
+        "type": "log",
+        "id": "sink3",
+        "z": "flow1",
+        "name": "log 3",
         "wires": []
     }
 ]

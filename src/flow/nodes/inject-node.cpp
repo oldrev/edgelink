@@ -23,8 +23,8 @@ class InjectNode : public SourceNode {
 
         auto executor = co_await this_coro::executor;
 
-        auto msg_id = Msg::generate_msg_id();
-        auto msg = std::make_shared<Msg>(msg_id, this->id());
+        auto msg = std::make_shared<Msg>(this->id());
+        msg->data()["payload"] = std::time(0);
 
         if (spdlog::get_level() >= spdlog::level::info) {
             spdlog::info("InjectNode > 数据已注入：[msg={0}]", boost::json::serialize(msg->data()));

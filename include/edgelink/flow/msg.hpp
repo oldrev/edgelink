@@ -21,6 +21,8 @@ struct FlowNode;
 
 class Msg final {
   public:
+    Msg(FlowNodeID birth_place_id) : Msg(Msg::generate_msg_id(), birth_place_id) {}
+
     Msg(MsgID id, FlowNodeID birth_place_id)
         : _data(std::move(boost::json::object({{"id", id}, {"birthPlaceID", birth_place_id}, {"payload", nullptr}}))) {}
 
