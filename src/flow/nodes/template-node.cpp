@@ -75,9 +75,11 @@ class TemplateNode : public FlowNode {
     Awaitable<void> receive_async(std::shared_ptr<Msg> msg) override {
 
         boost::json::value wrapped_msg = boost::json::object({
-            {_field, msg->data().at(_field)},
+            {_field, boost::json::value(msg->data().at(_field))},
         });
+        spdlog::info("template 节点收到的消息：{0}", boost::json::serialize(wrapped_msg));
         const std::string json_text = bustache::to_string(_format(wrapped_msg).escape(bustache::escape_html));
+        spdlog::info("template 节点渲染出来的内容：{0}", json_text);
         auto parsed_msg_field_value = boost::json::parse(json_text);
 
         msg->data()[_field] = parsed_msg_field_value;

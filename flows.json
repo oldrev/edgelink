@@ -53,7 +53,7 @@
         "name": "tempalte 1",
         "field": "payload",
         "fieldType": "payload",
-        "template": "\"this is the payload: {{payload}}\"",
+        "template": "\"this is the payload: {{payload}} \"",
         "wires": [
             [
                 "sink3"

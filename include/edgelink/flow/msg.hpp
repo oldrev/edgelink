@@ -26,13 +26,13 @@ class Msg final {
     Msg(MsgID id, FlowNodeID birth_place_id)
         : _data(std::move(boost::json::object({{"id", id}, {"birthPlaceID", birth_place_id}, {"payload", nullptr}}))) {}
 
-    Msg(const Msg& other) : _data(other._data) {}
+    Msg(Msg const& other) : _data(other._data) {}
 
-    Msg(const Msg&& other) : _data(std::move(other._data)) {}
+    Msg(Msg&& other) : _data(std::move(other._data)) {}
 
-    explicit Msg(const boost::json::object& data) : _data(data) {}
+    explicit Msg(boost::json::object const& data) : _data(data) {}
 
-    explicit Msg(const boost::json::object&& data) : _data(std::move(data)) {}
+    explicit Msg(boost::json::object&& data) : _data(std::move(data)) {}
 
     inline boost::json::object& data() { return _data; }
 
