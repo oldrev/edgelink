@@ -12,7 +12,7 @@ class InjectNode : public SourceNode {
     InjectNode(FlowNodeID id, const boost::json::object& config, const INodeDescriptor* desc,
                const std::vector<OutputPort>&& output_ports, IFlow* flow)
         : SourceNode(id, desc, move(output_ports), flow, config),
-          _cron(::cron::make_cron(config.contains("cron") ? config.at("cron").as_string() : DEFAULT_CRON)) {
+          _cron(::cron::make_cron(config.contains("crontab") ? config.at("crontab").as_string() : DEFAULT_CRON)) {
         //
     }
 

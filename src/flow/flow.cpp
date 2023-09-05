@@ -11,7 +11,7 @@ namespace edgelink::flow::details {
 
 Flow::Flow(const boost::json::object& json_config)
     : _id(json_config.at("id").as_string()), _name(json_config.at("name").as_string()),
-      _disabled(edgelink::value_or(json_config, "d", true)), _nodes() {
+      _disabled(edgelink::value_or(json_config, "disabled", true)), _nodes() {
     //
 }
 
