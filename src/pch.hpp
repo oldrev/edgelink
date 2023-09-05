@@ -2,11 +2,11 @@
 
 #include <chrono>
 #include <fstream>
+#include <sstream>
 #include <iostream>
 #include <unordered_map>
 #include <memory>
 #include <queue>
-#include <rva/variant.hpp>
 #include <span>
 #include <stdexcept>
 #include <string>
@@ -18,10 +18,8 @@
 #include <boost/asio.hpp>
 #include <boost/container/static_vector.hpp>
 #include <boost/di.hpp>
-#include <boost/thread/sync_bounded_queue.hpp>
 #include <boost/url.hpp>
 #include <boost/json.hpp>
-#include <croncpp/croncpp.h>
 #include <signals.h>
 
 #include <fmt/chrono.h>
@@ -29,9 +27,6 @@
 #include <rttr/registration>
 #include <rttr/type>
 #include <spdlog/spdlog.h>
-
-#include <duktape.h>
-#include <duktape-cpp/DuktapeCpp.h>
 
 /*
 #include "edgelink/edgelink.hpp"

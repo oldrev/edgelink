@@ -1,5 +1,8 @@
-#include "edgelink/edgelink.hpp"
 
+#include <duktape.h>
+#include <duktape-cpp/DuktapeCpp.h>
+
+#include "edgelink/edgelink.hpp"
 #include "edgelink/scripting/duktape.hpp"
 
 using namespace edgelink;
@@ -58,8 +61,7 @@ class FunctionNode : public FlowNode {
   public:
     FunctionNode(FlowNodeID id, const boost::json::object& config, const INodeDescriptor* desc,
                  const std::vector<OutputPort>&& output_ports, IFlow* flow)
-        : FlowNode(id, desc, std::move(output_ports), flow, config) {
-        _func = config.at("func").as_string();
+        : FlowNode(id, desc, std::move(output_ports), flow, config), _func(config.at("func").as_string()) {
 
         _ctx.registerClass<EvalEnv>();
 
@@ -107,7 +109,7 @@ class FunctionNode : public FlowNode {
     }
 
   private:
-    std::string _func;
+    const std::string _func;
     duk::Context _ctx;
 };
 

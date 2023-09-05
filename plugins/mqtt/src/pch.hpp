@@ -6,7 +6,6 @@
 #include <unordered_map>
 #include <memory>
 #include <queue>
-#include <rva/variant.hpp>
 #include <span>
 #include <stdexcept>
 #include <string>

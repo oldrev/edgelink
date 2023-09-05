@@ -1,4 +1,6 @@
 
+#include <croncpp/croncpp.h>
+
 #include "edgelink/edgelink.hpp"
 
 namespace this_coro = boost::asio::this_coro;

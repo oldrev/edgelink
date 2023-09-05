@@ -19,7 +19,7 @@ endif()
 
 
 # 查找Boost库
-find_package(Boost REQUIRED COMPONENTS system log regex log_setup url thread json)
+find_package(Boost REQUIRED COMPONENTS system url json)
 set(Boost_MINIMUM_REQUIRED 1.81.0)
 if(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
@@ -35,6 +35,7 @@ include_directories(
     ./include
     ./libs/duktape-cpp/src
     ./libs/signals/src
+    ./libs/bustache/include
 )
 
 file(GLOB_RECURSE SOURCES 
@@ -49,7 +50,8 @@ add_library(edgelink_common_sources OBJECT
 )
 set_target_properties(edgelink_common_sources PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
-
+add_definitions(-DBUSTACHE_USE_FMT)
+add_subdirectory(./libs/bustache)
 
 #include(FetchContent) # 引入该CMake模块
 
@@ -67,6 +69,7 @@ target_link_libraries(
     PRIVATE ${LIBFMT}
     PRIVATE ${LIBRTTR_CORE}
     PRIVATE ${LIBDUKTAPE}
+    PRIVATE bustache
 )
 add_definitions(-DBOOST_LOG_DYN_LINK)
 
