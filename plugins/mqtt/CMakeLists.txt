@@ -11,7 +11,6 @@ add_library(${PLUGIN_MQTT} SHARED ${SOURCES})
 target_include_directories(${PLUGIN_MQTT} 
     PRIVATE ${Boost_INCLUDE_DIRS}
     PRIVATE ${../include}
-    PRIVATE ../libs/signals/src
 )
 
 target_link_libraries(
@@ -31,8 +30,6 @@ add_custom_command(
     POST_BUILD
     COMMAND cp $<TARGET_FILE:${PLUGIN_MQTT}> ${PLUGINS_OUTPUT_DIR}/
 )
-
-target_sources(${PLUGIN_MQTT} PRIVATE $<TARGET_OBJECTS:edgelink_common_sources>)
 
 
 #file(COPY "${CMAKE_BINARY_DIR}/${PLUGIN_MODBUS}.so" DESTINATION "${PLUGINS_OUTPUT_DIR}")

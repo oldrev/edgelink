@@ -20,7 +20,7 @@
 #include <boost/di.hpp>
 #include <boost/url.hpp>
 #include <boost/json.hpp>
-#include <signals.h>
+#include <boost/signals2.hpp>
 
 #include <fmt/chrono.h>
 #include <fmt/core.h>

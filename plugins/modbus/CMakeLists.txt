@@ -32,8 +32,5 @@ add_custom_command(
     COMMAND cp $<TARGET_FILE:${PLUGIN_MODBUS}> ${PLUGINS_OUTPUT_DIR}/
 )
 
-target_sources(${PLUGIN_MODBUS} PRIVATE $<TARGET_OBJECTS:edgelink_common_sources>)
-
-
 
 #file(COPY "${CMAKE_BINARY_DIR}/${PLUGIN_MODBUS}.so" DESTINATION "${PLUGINS_OUTPUT_DIR}")

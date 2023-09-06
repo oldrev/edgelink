@@ -8,6 +8,6 @@ struct IClosable {
 
 template <typename T> using Awaitable = boost::asio::awaitable<T>;
 
-template <typename... ArgTs> using Signal = ::vdk::signal<void(ArgTs...)>;
+template <typename TFuncType> using Signal = boost::signals2::signal<TFuncType>;
 
 }; // namespace edgelink

@@ -33,22 +33,14 @@ find_library(LIBDUKTAPE NAMES duktape REQUIRED)
 include_directories(
     ./include
     ./libs/duktape-cpp/src
-    ./libs/signals/src
     ./libs/mustache/include
 )
 
 file(GLOB_RECURSE SOURCES 
     "src/*.c" 
     "src/*.cpp"
-    "./libs/signals/src/signals.cpp"
     "./libs/mustache/src/renderer.cpp"
 )
-
-
-add_library(edgelink_common_sources OBJECT
-    "./libs/signals/src/signals.cpp"
-)
-set_target_properties(edgelink_common_sources PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 
 
