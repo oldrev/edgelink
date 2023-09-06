@@ -64,7 +64,7 @@
         "type": "mqtt out",
         "id": "sink3",
         "z": "flow1",
-        "topic": "topic/test",
+        "topic": "/yncic-dangerous/data/test1",
         "name": "mqtt out 1",
         "wires": []
     }

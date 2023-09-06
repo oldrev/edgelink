@@ -39,10 +39,8 @@ Awaitable<void> MqttClient::async_connect() {
     // Underlying TCP connect
     spdlog::info("MqttClient > socket 开始连接");
     co_await asio::async_connect(_endpoint->next_layer(), eps, asio::use_awaitable);
-    spdlog::info("MqttClient > 已连接");
 
     // Send MQTT CONNECT
-    spdlog::info("MqttClient > 发送连接请求");
     if (auto se = co_await _endpoint->send(
             am::v3_1_1::connect_packet{
                 true,   // clean_session
@@ -57,17 +55,15 @@ Awaitable<void> MqttClient::async_connect() {
     }
 
     // Recv MQTT CONNACK
-    spdlog::info("MqttClient > 接收连接相应");
     if (am::packet_variant pv = co_await _endpoint->recv(asio::use_awaitable)) {
         auto cb = am::overload{[&](am::v3_1_1::connack_packet const& p) {
                                    // std::cout << "MQTT CONNACK recv" << " sp:" << p.session_present() << std::endl;
-                                   spdlog::info("MqttClient > 收到连接相应");
+                                   // spdlog::info("MqttClient > 收到连接相应");
                                },
                                [](auto const&) {}};
         pv.visit(cb);
     } else {
-        spdlog::info("MqttClient > CONNACK 收到错误：{0}", pv.get<am::system_error>().what());
-        //  std::cout << "MQTT CONNACK recv error:" << pv.get<am::system_error>().what() << std::endl;
+        spdlog::error("MqttClient > CONNACK 收到错误：{0}", pv.get<am::system_error>().what());
         co_return;
     }
 
@@ -76,47 +72,33 @@ Awaitable<void> MqttClient::async_connect() {
 
 Awaitable<void> MqttClient::async_close() noexcept {
     co_await _endpoint->close(asio::use_awaitable);
-    spdlog::info("MQTT 连接已断开，主机：{0}", _address.host());
+    spdlog::info("MQTT 连接已断开，主机：{0}:{1}", _address.host(), _address.port());
 }
 
 Awaitable<void> MqttClient::publish_async(const std::string_view topic, const std::string_view payload,
                                           async_mqtt::qos qos) {
-    //
     auto topic_buffer = am::allocate_buffer(topic);
     auto payload_buffer = am::allocate_buffer(payload);
-    auto pid = *_endpoint->acquire_unique_packet_id();
+    auto pid = co_await _endpoint->acquire_unique_packet_id(asio::use_awaitable);
     // Send MQTT PUBLISH
-    auto se = co_await _endpoint->send(
-        am::v3_1_1::publish_packet{pid, topic_buffer, payload_buffer, am::qos::at_least_once}, asio::use_awaitable);
+    auto se = co_await _endpoint->send(am::v3_1_1::publish_packet{*pid, topic_buffer, payload_buffer, qos},
+                                       asio::use_awaitable);
     if (se) {
         spdlog::error("MQTT PUBLISH send error: {0}", se.what());
         co_return;
     }
-
     // Recv MQTT PUBLISH and PUBACK (order depends on broker)
-    for (std::size_t count = 0; count != 2; ++count) {
-        if (am::packet_variant pv = co_await _endpoint->recv(asio::use_awaitable)) {
-            pv.visit(am::overload{[&](am::v3_1_1::publish_packet const& p) {
-                                      spdlog::info("MQTT PUBLISH recv pid: {0}", p.packet_id());
-                                      /*
-                                        std::cout << "MQTT PUBLISH recv" << " pid:" << p.packet_id()
-                                         << " topic:" << p.topic() << " payload:" << am::to_string(p.payload()) << "
-                                         qos:" << p.opts().get_qos() << " retain:" << p.opts().get_retain() << " dup:"
-                                         << p.opts().get_dup() << std::endl;
-                                                                      */
-                                  },
-                                  [&](am::v3_1_1::puback_packet const& p) {
-                                      //
-                                      spdlog::info("MQTT PUBACK recv pid: {0}", p.packet_id());
-                                      return;
-                                  },
-                                  [](auto const&) {}});
-        } else {
-            spdlog::error("MQTT recv error: {0}", pv.get<am::system_error>().what());
-        }
+    am::packet_variant pv = co_await _endpoint->recv(asio::use_awaitable);
+    if (pv) {
+        pv.visit(am::overload{[&](am::v3_1_1::puback_packet const& p) {
+                                  //
+                                  // spdlog::info("MQTT PUBACK recv pid: {0}", p.packet_id());
+                                  return;
+                              },
+                              [](auto const&) {}});
+    } else {
+        spdlog::error("MQTT recv error: {0}", pv.get<am::system_error>().what());
     }
-
-    spdlog::info("MQTT 发布完成");
     co_return;
 }
 

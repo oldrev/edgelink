@@ -42,11 +42,18 @@ class MqttOutNode : public SinkNode {
         co_return;
     }
 
-    Awaitable<void> stop_async() override { co_return; }
+    Awaitable<void> stop_async() override {
+        co_await _mqtt.async_close();
+        co_return;
+    }
 
     Awaitable<void> receive_async(std::shared_ptr<Msg> msg) override {
         spdlog::info("MqttOutNode > 收到了消息：\n{0}", msg->to_string());
-        co_await _mqtt.publish_async(_topic, msg->to_string(), async_mqtt::qos::at_most_once);
+
+        if (msg->data().contains("payload")) {
+            auto payload_text = std::move(boost::json::serialize(msg->data().at("payload")));
+            co_await _mqtt.publish_async(_topic, payload_text, async_mqtt::qos::at_least_once);
+        }
         co_return;
     }
 
