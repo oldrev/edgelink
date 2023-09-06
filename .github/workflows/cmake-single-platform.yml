@@ -21,6 +21,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+      with:
+        submodules: recursive
 
     - name: Install dependencies
       run: sudo apt-get install git build-essential libsqlite3-dev uuid-dev git libspnav-dev cmake libmodbus-dev libpaho-mqtt-dev libpaho-mqttpp-dev libspdlog-dev librttr-dev duktape-dev ccache -y
