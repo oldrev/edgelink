@@ -61,10 +61,11 @@
         ]
     },
     {
-        "type": "log",
+        "type": "mqtt out",
         "id": "sink3",
         "z": "flow1",
-        "name": "log 3",
+        "topic": "topic/test",
+        "name": "mqtt out 1",
         "wires": []
     }
 ]

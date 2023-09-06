@@ -94,7 +94,7 @@ int main(int argc, char* argv[]) {
 
     // 启动主程序
     try {
-        asio::io_context io_context(4);
+        asio::io_context io_context(std::thread::hardware_concurrency() + 1);
 
         asio::signal_set signals(io_context, SIGINT, SIGTERM);
         signals.async_wait([&](auto, auto) {

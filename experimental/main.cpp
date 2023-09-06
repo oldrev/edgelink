@@ -11,7 +11,6 @@
 
 #include <async_mqtt/all.hpp>
 
-
 namespace as = boost::asio;
 namespace am = async_mqtt;
 namespace this_coro = boost::asio::this_coro;
@@ -52,7 +51,6 @@ template <typename Executor> as::awaitable<void> publish(Executor exe, Endpoint*
     }
 }
 
-
 template <typename Executor> as::awaitable<void> subscribe(Executor exe, Endpoint* amep) {
     // Send MQTT SUBSCRIBE
     std::vector<am::topic_subopts> sub_entry{{am::allocate_buffer("topic1"), am::qos::at_most_once}};
@@ -83,7 +81,8 @@ template <typename Executor> as::awaitable<void> subscribe(Executor exe, Endpoin
     }
 }
 
-template <typename Executor> as::awaitable<void> proc(Executor exe, const std::string_view host, const std::string_view port) {
+template <typename Executor>
+as::awaitable<void> proc(Executor exe, const std::string_view host, const std::string_view port) {
     // as::ip::tcp::socket resolve_sock{exe};
     as::ip::tcp::resolver res{exe};
     Endpoint amep{am::protocol_version::v3_1_1, exe};

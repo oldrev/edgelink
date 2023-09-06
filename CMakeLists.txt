@@ -51,7 +51,7 @@ set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 # 添加可执行文件
 add_executable(${PROJECT_NAME} ${SOURCES})
 
-target_compile_options(${PROJECT_NAME} PRIVATE -fno-rtti)
+# target_compile_options(${PROJECT_NAME} PRIVATE -fno-rtti), 不要关掉 RTTI
 
 target_link_libraries(
     ${PROJECT_NAME}
