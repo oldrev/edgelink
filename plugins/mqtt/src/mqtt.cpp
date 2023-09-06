@@ -9,7 +9,6 @@ MqttClient::MqttClient(const boost::json::object& json_config) {
     //
     _address = std::move(std::string(json_config.at("test").as_string()));
     auto client_id = uuids::to_string(uuids::uuid());
-    _mqtt = make_unique<::mqtt::client>(_address, client_id);
 }
 
 MqttClient::~MqttClient() {
@@ -20,26 +19,11 @@ MqttClient::~MqttClient() {
 
 void MqttClient::connect() {
     spdlog::info("开始连接 MQTT：{0}", _address);
-
-    ::mqtt::connect_options connOpts;
-    connOpts.set_keep_alive_interval(20);
-    connOpts.set_clean_session(true);
-    _mqtt->connect(connOpts);
-
     spdlog::info("MQTT 已连接：{0}", _address);
 }
 
-void MqttClient::close() noexcept {
-    if (this->is_connected()) {
-        _mqtt->disconnect();
-        spdlog::info("MQTT 连接已断开，主机：", _address);
-    }
-}
+void MqttClient::close() noexcept { spdlog::info("MQTT 连接已断开，主机：", _address); }
 
-void MqttClient::publish(const std::string_view& topic, ::mqtt::binary_ref payload, int qos) {
-    auto msg = ::mqtt::make_message(topic.data(), payload);
-    msg->set_qos(qos);
-    _mqtt->publish(msg);
-}
+void MqttClient::publish(const std::string_view& topic, const void* buf, int qos) {}
 
 }; // namespace edgelink::plugins::mqtt

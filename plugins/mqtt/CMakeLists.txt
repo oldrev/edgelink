@@ -3,7 +3,10 @@ set(PLUGIN_MQTT "edgelink.plugins.mqtt")
 
 file(GLOB_RECURSE SOURCES "src/*.c" "src/*.cpp")
 
-find_package(PahoMqttCpp REQUIRED)
+
+get_filename_component(CURRENT_CMAKE_SOURCE_DIR "${CMAKE_CURRENT_LIST_FILE}" DIRECTORY)
+
+add_subdirectory(${CURRENT_CMAKE_SOURCE_DIR}/libs/async_mqtt)
 
 add_library(${PLUGIN_MQTT} SHARED ${SOURCES})
 
@@ -11,6 +14,7 @@ add_library(${PLUGIN_MQTT} SHARED ${SOURCES})
 target_include_directories(${PLUGIN_MQTT} 
     PRIVATE ${Boost_INCLUDE_DIRS}
     PRIVATE ${../include}
+    ./libs/async_mqtt/include
 )
 
 target_link_libraries(
@@ -19,7 +23,7 @@ target_link_libraries(
     PRIVATE ${LIBSPDLOG}
     PRIVATE ${LIBFMT}
     PRIVATE ${LIBRTTR_CORE}
-    PRIVATE PahoMqttCpp::paho-mqttpp3
+    PRIVATE async_mqtt_iface
 )
 
 target_precompile_headers(${PLUGIN_MQTT} PRIVATE src/pch.hpp)
