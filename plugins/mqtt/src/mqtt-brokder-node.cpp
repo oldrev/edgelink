@@ -43,9 +43,8 @@ class MqttBrokerNode : public EndpointNode,
                        public std::enable_shared_from_this<MqttBrokerNode>,
                        public IMqttBrokerEndpoint {
   public:
-    MqttBrokerNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc,
-                   const std::vector<OutputPort>&& output_ports, IFlow* flow)
-        : EndpointNode(id, desc, std::move(output_ports), flow, config, config.at("broker").as_string(),
+    MqttBrokerNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc)
+        : EndpointNode(id, desc, config, config.at("broker").as_string(),
                        boost::lexical_cast<uint16_t>(config.at("port").as_string().c_str())) {
         //
     }
@@ -57,8 +56,6 @@ class MqttBrokerNode : public EndpointNode,
     Awaitable<void> start_async() override { co_return; }
 
     Awaitable<void> stop_async() override { co_return; }
-
-    Awaitable<void> receive_async(std::shared_ptr<Msg> msg) override { co_return; }
 
     bool is_connected() const override { return _endpoint && _endpoint->next_layer().is_open(); }
 
@@ -166,7 +163,7 @@ class MqttBrokerNode : public EndpointNode,
 };
 
 RTTR_PLUGIN_REGISTRATION {
-    rttr::registration::class_<FlowNodeProvider<MqttBrokerNode, "mqtt-broker", NodeKind::STANDALONE>>(
+    rttr::registration::class_<StandaloneNodeProvider<MqttBrokerNode, "mqtt-broker", NodeKind::STANDALONE>>(
         "edgelink::plugins::modbus::MqttBrokerNodeProvider")
         .constructor()(rttr::policy::ctor::as_raw_ptr);
 };

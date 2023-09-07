@@ -3,7 +3,6 @@
 #include "edgelink/utils.hpp"
 
 namespace edgelink {
-
 class FlowNode;
 struct IRegistry;
 }; // namespace edgelink

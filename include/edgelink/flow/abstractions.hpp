@@ -6,7 +6,9 @@ namespace edgelink {
 
 struct INodeDescriptor;
 struct IEngine;
+struct INode;
 struct IFlowNode;
+struct IStandaloneNode;
 
 /// @brief 数据处理上下文
 class FlowContext {
@@ -63,14 +65,16 @@ struct IEngine {
     virtual Awaitable<void> start_async() = 0;
     virtual Awaitable<void> stop_async() = 0;
     virtual IFlow* get_flow(const std::string_view flow_id) const = 0;
+    virtual INode* get_node(const std::string_view node_id) const = 0;
     virtual bool is_disabled() const = 0;
 };
 
 /// @brief 流工厂
 struct IFlowFactory {
-    virtual std::vector<std::unique_ptr<edgelink::IFlow>>
-    create_flows(const boost::json::array& flows_config) const = 0;
-    virtual std::vector<std::unique_ptr<edgelink::IFlowNode>>
+
+    virtual std::vector<std::unique_ptr<IFlow>> create_flows(const boost::json::array& flows_config) const = 0;
+
+    virtual std::vector<std::unique_ptr<IStandaloneNode>>
     create_global_nodes(const boost::json::array& flows_config) const = 0;
 };
 
@@ -107,6 +111,32 @@ struct INode : public IFlowElement {
 };
 
 struct IStandaloneNode : public INode {};
+
+/// @brief 独立节点抽象类
+class StandaloneNode : public IStandaloneNode {
+  protected:
+    StandaloneNode(const std::string_view id, const INodeDescriptor* desc, const boost::json::object& config)
+        : _id(id), _name(config.at("name").as_string()), _disabled(edgelink::json::value_or(config, "d", false)),
+          _descriptor(desc) {
+        // constructor
+    }
+
+  public:
+    const std::string_view id() const override { return _id; }
+    const std::string_view name() const override { return _name; }
+    const bool is_disabled() const override { return _disabled; }
+    const INodeDescriptor* descriptor() const override { return _descriptor; }
+
+  private:
+    const std::string _id;
+    const std::string _name;
+    bool _disabled;
+    const INodeDescriptor* _descriptor;
+
+  public:
+    virtual Awaitable<void> start_async() = 0;
+    virtual Awaitable<void> stop_async() = 0;
+};
 
 /// @brief 流程节点抽象类
 struct IFlowNode : public INode {
@@ -180,28 +210,19 @@ class SinkNode : public FlowNode {
         : FlowNode(id, desc, std::move(output_ports), flow, config) {}
 };
 
-/// @brief 独立节点
-class StandaloneNode : public FlowNode {
-  protected:
-    StandaloneNode(const std::string_view id, const INodeDescriptor* desc, const std::vector<OutputPort>&& output_ports,
-                   IFlow* flow, const boost::json::object& config)
-        : FlowNode(id, desc, std::move(output_ports), flow, config) {}
-};
-
 /// @brief 全局配置节点
 class GlobalConfigNode : public StandaloneNode {
   protected:
-    GlobalConfigNode(const std::string_view id, const INodeDescriptor* desc,
-                     const std::vector<OutputPort>&& output_ports, IFlow* flow, const boost::json::object& config)
-        : StandaloneNode(id, desc, std::move(output_ports), flow, config) {}
+    GlobalConfigNode(const std::string_view id, const INodeDescriptor* desc, const boost::json::object& config)
+        : StandaloneNode(id, desc, config) {}
 };
 
 /// @brief 网络端点节点
 class EndpointNode : public StandaloneNode {
   protected:
-    EndpointNode(const std::string_view id, const INodeDescriptor* desc, const std::vector<OutputPort>&& output_ports,
-                 IFlow* flow, const boost::json::object& config, const std::string_view host, uint16_t port)
-        : StandaloneNode(id, desc, std::move(output_ports), flow, config), _host(host), _port(port) {}
+    EndpointNode(const std::string_view id, const INodeDescriptor* desc, const boost::json::object& config,
+                 const std::string_view host, uint16_t port)
+        : StandaloneNode(id, desc, config), _host(host), _port(port) {}
 
   public:
     const std::string_view host() const { return _host; }
@@ -228,10 +249,24 @@ struct INodeDescriptor {
     RTTR_ENABLE()
 };
 
-struct IFlowNodeProvider {
+struct INodeProvider {
     virtual const INodeDescriptor* descriptor() const = 0;
+
+  private:
+    RTTR_ENABLE()
+};
+
+struct IFlowNodeProvider : public INodeProvider {
     virtual std::unique_ptr<IFlowNode> create(const std::string_view id, const boost::json::object& config,
                                               const std::vector<OutputPort>&& output_ports, IFlow* flow) const = 0;
+
+  private:
+    RTTR_ENABLE()
+};
+
+struct IStandaloneNodeProvider : public INodeProvider {
+    virtual std::unique_ptr<IStandaloneNode> create(const std::string_view id,
+                                                    const boost::json::object& config) const = 0;
 
   private:
     RTTR_ENABLE()
@@ -256,4 +291,25 @@ class FlowNodeProvider final : public IFlowNodeProvider, public INodeDescriptor 
 
     RTTR_ENABLE(IFlowNodeProvider)
 };
+
+template <typename TNode, StringLiteral TTypeName, NodeKind TKind>
+class StandaloneNodeProvider final : public IStandaloneNodeProvider, public INodeDescriptor {
+  public:
+    StandaloneNodeProvider() : _type_name(TTypeName.value) {}
+
+    const INodeDescriptor* descriptor() const override { return this; }
+    const std::string_view type_name() const override { return _type_name; }
+    inline const NodeKind kind() const override { return TKind; }
+
+    std::unique_ptr<IStandaloneNode> create(const std::string_view id,
+                                            const boost::json::object& config) const override {
+        return std::make_unique<TNode>(id, config, this);
+    }
+
+  private:
+    const std::string_view _type_name;
+
+    RTTR_ENABLE(IStandaloneNodeProvider)
+};
+
 }; // namespace edgelink

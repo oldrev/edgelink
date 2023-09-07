@@ -4,8 +4,6 @@ namespace edgelink {
 
 struct IFlowNode;
 
-struct EngineConfig {};
-
 using MsgRoutingPath = boost::container::static_vector<const IFlowNode*, 32>;
 
 struct EdgeLinkConfig;
@@ -29,10 +27,21 @@ class Engine : public IEngine {
         return nullptr;
     }
 
+    inline INode* get_node(const std::string_view node_id) const override {
+        for (auto& node : _nodes) {
+            if (node->id() == node_id) {
+                return node.get();
+            }
+        }
+        return nullptr;
+    }
+
+
+
   private:
     const IFlowFactory& _flow_factory;
     const std::string _flows_json_path;
-    std::vector<std::unique_ptr<IFlowNode>> _nodes;
+    std::vector<std::unique_ptr<INode>> _nodes;
 
     std::unique_ptr<std::stop_source> _stop_source;
     const std::string _id;

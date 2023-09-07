@@ -28,17 +28,17 @@ std::vector<std::unique_ptr<IFlow>> FlowFactory::create_flows(const boost::json:
     return flows;
 }
 
-std::vector<std::unique_ptr<IFlowNode>> FlowFactory::create_global_nodes(const boost::json::array& flows_config) const {
+std::vector<std::unique_ptr<IStandaloneNode>>
+FlowFactory::create_global_nodes(const boost::json::array& flows_config) const {
     // 创建全局节点
-    std::vector<std::unique_ptr<IFlowNode>> global_nodes;
+    std::vector<std::unique_ptr<IStandaloneNode>> global_nodes;
     for (const auto& json_node_value : flows_config) {
         const auto& json_node = json_node_value.as_object();
         if (!json_node.contains("z")) {
             const std::string_view elem_type = json_node.at("type").as_string();
             const std::string_view elem_id = json_node.at("id").as_string();
-            auto const& provider_iter = _registry.get_node_provider(elem_type);
-            auto empty_ports = std::vector<OutputPort>();
-            auto node = provider_iter->create(elem_id, json_node, std::move(empty_ports), nullptr);
+            auto const& provider_iter = _registry.get_standalone_node_provider(elem_type);
+            auto node = provider_iter->create(elem_id, json_node);
             global_nodes.emplace_back(std::move(node));
         }
     }
@@ -100,7 +100,7 @@ std::unique_ptr<IFlow> FlowFactory::create_flow(const boost::json::array& flows_
         }
 
         spdlog::info("开始创建流程节点：[type='{0}', json_id='{1}']", elem_type, elem_id);
-        auto const& provider_iter = _registry.get_node_provider(elem_type);
+        auto const& provider_iter = _registry.get_flow_node_provider(elem_type);
         auto node = provider_iter->create(elem_id, elem, std::move(ports), flow.get());
         spdlog::info("流程节点创建成功：[type='{0}', json_id='{1}', id={2}]", elem_type, elem_id, node->id());
         node_map[elem_id] = node.get();
