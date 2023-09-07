@@ -26,10 +26,6 @@ class InjectNode : public SourceNode {
         auto msg = std::make_shared<Msg>();
         msg->data()["payload"] = std::time(0);
 
-        if (spdlog::get_level() >= spdlog::level::info) {
-            spdlog::info("InjectNode > 数据已注入：[msg={0}]", boost::json::serialize(msg->data()));
-        }
-
         co_await this->flow()->emit_async(this->id(), msg);
 
         std::time_t now = std::time(0);
