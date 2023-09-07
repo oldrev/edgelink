@@ -65,7 +65,7 @@ struct IEngine {
     virtual Awaitable<void> start_async() = 0;
     virtual Awaitable<void> stop_async() = 0;
     virtual IFlow* get_flow(const std::string_view flow_id) const = 0;
-    virtual INode* get_node(const std::string_view node_id) const = 0;
+    virtual INode* get_global_node(const std::string_view node_id) const = 0;
     virtual bool is_disabled() const = 0;
 };
 
@@ -261,7 +261,7 @@ struct IFlowNodeProvider : public INodeProvider {
                                               const std::vector<OutputPort>&& output_ports, IFlow* flow) const = 0;
 
   private:
-    RTTR_ENABLE()
+    RTTR_ENABLE(INodeProvider)
 };
 
 struct IStandaloneNodeProvider : public INodeProvider {
@@ -269,7 +269,7 @@ struct IStandaloneNodeProvider : public INodeProvider {
                                                     const boost::json::object& config) const = 0;
 
   private:
-    RTTR_ENABLE()
+    RTTR_ENABLE(INodeProvider)
 };
 
 template <typename TNode, StringLiteral TTypeName, NodeKind TKind>
@@ -289,7 +289,7 @@ class FlowNodeProvider final : public IFlowNodeProvider, public INodeDescriptor 
   private:
     const std::string_view _type_name;
 
-    RTTR_ENABLE(IFlowNodeProvider)
+    RTTR_ENABLE(IFlowNodeProvider, INodeDescriptor)
 };
 
 template <typename TNode, StringLiteral TTypeName, NodeKind TKind>
@@ -309,7 +309,7 @@ class StandaloneNodeProvider final : public IStandaloneNodeProvider, public INod
   private:
     const std::string_view _type_name;
 
-    RTTR_ENABLE(IStandaloneNodeProvider)
+    RTTR_ENABLE(IStandaloneNodeProvider, INodeDescriptor)
 };
 
 }; // namespace edgelink

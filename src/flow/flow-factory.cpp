@@ -38,7 +38,9 @@ FlowFactory::create_global_nodes(const boost::json::array& flows_config) const {
             const std::string_view elem_type = json_node.at("type").as_string();
             const std::string_view elem_id = json_node.at("id").as_string();
             auto const& provider_iter = _registry.get_standalone_node_provider(elem_type);
+            spdlog::info("开始创建独立节点：[type='{0}', json_id='{1}']", elem_type, elem_id);
             auto node = provider_iter->create(elem_id, json_node);
+            spdlog::info("流程节点创建成功：[type='{0}', json_id='{1}', id={2}]", elem_type, elem_id, node->id());
             global_nodes.emplace_back(std::move(node));
         }
     }

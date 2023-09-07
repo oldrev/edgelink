@@ -32,7 +32,7 @@ Registry::Registry(const boost::json::object& json_config) : _libs() {
         }
 
         for (auto type : lib->get_types()) {
-            if (type.is_derived_from<INodeProvider>() && !type.is_pointer() && type.is_class()) {
+            if ((type.is_derived_from<IFlowNodeProvider>() || type.is_derived_from<IStandaloneNodeProvider>()) && !type.is_pointer() && type.is_class()) {
                 this->register_node_provider(type);
             }
         }
@@ -53,15 +53,16 @@ void Registry::register_node_provider(const rttr::type& provider_type) {
     auto flow_node_provider_type = rttr::type::get<IFlowNodeProvider>();
     auto standalone_node_provider_type = rttr::type::get<IStandaloneNodeProvider>();
 
-    auto provider_var = provider_type.create();
 
     if (provider_type.is_derived_from(flow_node_provider_type)) {
-        auto provider = std::unique_ptr<IFlowNodeProvider>(provider_var.get_value<IFlowNodeProvider*>());
+        auto node_provider = provider_type.create().get_value<INodeProvider*>();
+        auto provider = rttr::rttr_cast<IFlowNodeProvider*>(node_provider);
         auto desc = provider->descriptor();
         spdlog::info("注册流程节点提供器: [{0}]", desc->type_name());
         _flow_node_providers.emplace(desc->type_name(), std::move(provider));
     } else if (provider_type.is_derived_from(standalone_node_provider_type)) {
-        auto provider = std::unique_ptr<IStandaloneNodeProvider>(provider_var.get_value<IStandaloneNodeProvider*>());
+        auto node_provider = provider_type.create().get_value<INodeProvider*>();
+        auto provider = rttr::rttr_cast<IStandaloneNodeProvider*>(node_provider);
         auto desc = provider->descriptor();
         spdlog::info("注册流程节点提供器: [{0}]", desc->type_name());
         _standalone_node_providers.emplace(desc->type_name(), std::move(provider));

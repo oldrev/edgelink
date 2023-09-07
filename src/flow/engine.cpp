@@ -42,6 +42,11 @@ Awaitable<void> Engine::start_async() {
         throw BadFlowConfigException("There are no node in the configuration file of the flows!");
     }
 
+    auto global_nodes = _flow_factory.create_global_nodes(flows_config);
+    for (auto& gn : global_nodes) {
+        _global_nodes.emplace_back(std::move(gn));
+    }
+
     auto flows = _flow_factory.create_flows(flows_config);
     for (auto& flow : flows) {
         _flows.emplace_back(std::move(flow));

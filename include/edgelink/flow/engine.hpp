@@ -27,8 +27,8 @@ class Engine : public IEngine {
         return nullptr;
     }
 
-    inline INode* get_node(const std::string_view node_id) const override {
-        for (auto& node : _nodes) {
+    inline INode* get_global_node(const std::string_view node_id) const override {
+        for (auto& node : _global_nodes) {
             if (node->id() == node_id) {
                 return node.get();
             }
@@ -41,7 +41,7 @@ class Engine : public IEngine {
   private:
     const IFlowFactory& _flow_factory;
     const std::string _flows_json_path;
-    std::vector<std::unique_ptr<INode>> _nodes;
+    std::vector<std::unique_ptr<INode>> _global_nodes;
 
     std::unique_ptr<std::stop_source> _stop_source;
     const std::string _id;
