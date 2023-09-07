@@ -7,7 +7,7 @@ using namespace edgelink;
 class TemplateNode : public FlowNode {
 
   public:
-    TemplateNode(FlowNodeID id, const boost::json::object& config, const INodeDescriptor* desc,
+    TemplateNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc,
                  const std::vector<OutputPort>&& output_ports, IFlow* flow)
         : FlowNode(id, desc, std::move(output_ports), flow, config),
           _field(config.at("field").as_string()),          // .field 属性
@@ -47,7 +47,7 @@ class TemplateNode : public FlowNode {
 };
 
 RTTR_REGISTRATION {
-    rttr::registration::class_<NodeProvider<TemplateNode, "template", NodeKind::FILTER>>(
+    rttr::registration::class_<FlowNodeProvider<TemplateNode, "template", NodeKind::FILTER>>(
         "edgelink::TemplateNodeProvider")
         .constructor()(rttr::policy::ctor::as_raw_ptr);
 };

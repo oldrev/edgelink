@@ -18,7 +18,7 @@ class EvalEnv final {
     const std::string& msg_json_text() const { return _msg_json_text; }
 
     MsgID generate_msg_id() { return Msg::generate_msg_id(); }
-    FlowNodeID node_id() const { return _node->id(); }
+    const std::string node_id() const { return std::string(_node->id()); }
 
     template <class Inspector> static void inspect(Inspector& i) {
         i.construct(&std::make_shared<EvalEnv>);
@@ -59,7 +59,7 @@ constexpr char JS_CODE_TEMPLATE[] = R"(
 class FunctionNode : public FlowNode {
 
   public:
-    FunctionNode(FlowNodeID id, const boost::json::object& config, const INodeDescriptor* desc,
+    FunctionNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc,
                  const std::vector<OutputPort>&& output_ports, IFlow* flow)
         : FlowNode(id, desc, std::move(output_ports), flow, config), _func(config.at("func").as_string()) {
 
@@ -114,7 +114,7 @@ class FunctionNode : public FlowNode {
 };
 
 RTTR_REGISTRATION {
-    rttr::registration::class_<NodeProvider<FunctionNode, "function", NodeKind::FILTER>>(
+    rttr::registration::class_<FlowNodeProvider<FunctionNode, "function", NodeKind::FILTER>>(
         "edgelink::FunctionNodeProvider")
         .constructor()(rttr::policy::ctor::as_raw_ptr);
 };

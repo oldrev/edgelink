@@ -2,7 +2,7 @@
 
 namespace edgelink {
 
-using FlowNodeID = unsigned int;
+using FlowElementID = unsigned int;
 
 class FlowConfig {
   public:

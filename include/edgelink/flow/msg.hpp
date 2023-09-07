@@ -21,9 +21,9 @@ struct FlowNode;
 
 class Msg final {
   public:
-    Msg(FlowNodeID birth_place_id) : Msg(Msg::generate_msg_id(), birth_place_id) {}
+    Msg(const std::string_view birth_place_id) : Msg(Msg::generate_msg_id(), birth_place_id) {}
 
-    Msg(MsgID id, FlowNodeID birth_place_id)
+    Msg(MsgID id, const std::string_view birth_place_id)
         : _data(std::move(boost::json::object({{"id", id}, {"birthPlaceID", birth_place_id}, {"payload", nullptr}}))) {}
 
     Msg(Msg const& other) : _data(other._data) {}
@@ -41,10 +41,7 @@ class Msg final {
         return id;
     }
 
-    inline FlowNodeID birth_place_id() const {
-        FlowNodeID bid = _data.at("birthPlaceID").to_number<FlowNodeID>();
-        return bid;
-    }
+    inline const std::string_view birth_place_id() const { return _data.at("birthPlaceID").as_string(); }
 
     inline const boost::json::string to_json_string() const {
         return boost::json::string(std::move(boost::json::serialize(_data)));

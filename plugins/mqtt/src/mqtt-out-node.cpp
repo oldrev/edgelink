@@ -28,7 +28,7 @@ namespace edgelink::plugins::mqtt {
 
 class MqttOutNode : public SinkNode {
   public:
-    MqttOutNode(FlowNodeID id, const boost::json::object& config, const INodeDescriptor* desc,
+    MqttOutNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc,
                 const std::vector<OutputPort>&& output_ports, IFlow* flow)
         : SinkNode(id, desc, move(output_ports), flow, config), _mqtt("test.mosquitto.org", 1883) // Host Address
     {
@@ -124,7 +124,7 @@ class MqttOutNode : public SinkNode {
 };
 
 RTTR_PLUGIN_REGISTRATION {
-    rttr::registration::class_<NodeProvider<MqttOutNode, "mqtt out", NodeKind::SINK>>(
+    rttr::registration::class_<FlowNodeProvider<MqttOutNode, "mqtt out", NodeKind::SINK>>(
         "edgelink::plugins::modbus::MqttOutNodeProvider")
         .constructor()(rttr::policy::ctor::as_raw_ptr);
 };

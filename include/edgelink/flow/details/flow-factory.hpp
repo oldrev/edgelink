@@ -7,6 +7,7 @@ class FlowFactory : public edgelink::IFlowFactory {
     FlowFactory(const IRegistry& registry);
 
     std::vector<std::unique_ptr<edgelink::IFlow>> create_flows(const boost::json::array& flows_config) const override;
+    std::vector<std::unique_ptr<edgelink::IFlowNode>> create_global_nodes(const boost::json::array& flows_config) const override;
 
   private:
     std::unique_ptr<edgelink::IFlow> create_flow(const boost::json::array& flows_config,

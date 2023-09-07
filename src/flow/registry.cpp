@@ -4,7 +4,7 @@ namespace edgelink {
 
 Registry::Registry(const boost::json::object& json_config) : _node_providers(), _libs() {
 
-    auto node_provider_type = rttr::type::get<INodeProvider>();
+    auto node_provider_type = rttr::type::get<IFlowNodeProvider>();
 
     // 注册内置节点
     {
@@ -32,7 +32,7 @@ Registry::Registry(const boost::json::object& json_config) : _node_providers(), 
         }
 
         for (auto type : lib->get_types()) {
-            if (type.is_derived_from<INodeProvider>() && !type.is_pointer() && type.is_class()) {
+            if (type.is_derived_from<IFlowNodeProvider>() && !type.is_pointer() && type.is_class()) {
                 this->register_node_provider(type);
             }
         }
@@ -50,7 +50,7 @@ Registry::~Registry() {
 
 void Registry::register_node_provider(const rttr::type& provider_type) {
     auto provider_var = provider_type.create();
-    auto provider = std::unique_ptr<INodeProvider>(provider_var.get_value<INodeProvider*>());
+    auto provider = std::unique_ptr<IFlowNodeProvider>(provider_var.get_value<IFlowNodeProvider*>());
     auto desc = provider->descriptor();
     spdlog::info("注册流程节点提供器: [{0}]", desc->type_name());
     _node_providers.emplace(desc->type_name(), std::move(provider));

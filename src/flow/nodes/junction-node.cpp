@@ -4,7 +4,7 @@ namespace edgelink {
 
 class JunctionNode : public FlowNode {
   public:
-    JunctionNode(FlowNodeID id, const boost::json::object& config, const INodeDescriptor* desc,
+    JunctionNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc,
                  const std::vector<OutputPort>&& output_ports, IFlow* flow)
         : FlowNode(id, desc, std::move(output_ports), flow, config) {}
 
@@ -19,7 +19,7 @@ class JunctionNode : public FlowNode {
 };
 
 RTTR_REGISTRATION {
-    rttr::registration::class_<NodeProvider<JunctionNode, "junction", NodeKind::JUNCTION>>(
+    rttr::registration::class_<FlowNodeProvider<JunctionNode, "junction", NodeKind::JUNCTION>>(
         "edgelink::JunctionNodeProvider")
         .constructor()(rttr::policy::ctor::as_raw_ptr);
 };

@@ -11,7 +11,7 @@ class InjectNode : public SourceNode {
   public:
     const char* DEFAULT_CRON = "*/5 * * * * ?"; // 默认值是每隔两秒执行一次
   public:
-    InjectNode(FlowNodeID id, const boost::json::object& config, const INodeDescriptor* desc,
+    InjectNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc,
                const std::vector<OutputPort>&& output_ports, IFlow* flow)
         : SourceNode(id, desc, move(output_ports), flow, config),
           _cron(::cron::make_cron(config.contains("crontab") ? config.at("crontab").as_string() : DEFAULT_CRON)) {
@@ -46,7 +46,7 @@ class InjectNode : public SourceNode {
 };
 
 RTTR_REGISTRATION {
-    rttr::registration::class_<NodeProvider<InjectNode, "inject", NodeKind::SOURCE>>("edgelink::InjectNodeProvider")
+    rttr::registration::class_<FlowNodeProvider<InjectNode, "inject", NodeKind::SOURCE>>("edgelink::InjectNodeProvider")
         .constructor()(rttr::policy::ctor::as_raw_ptr);
 };
 

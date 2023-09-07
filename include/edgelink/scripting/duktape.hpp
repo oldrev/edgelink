@@ -7,7 +7,7 @@ template <> struct Type<boost::json::string> {
 
     static void get(Context& d, boost::json::string& value, int index) {
         const char* cstr = duk_get_string(d, index);
-        value = std::string(cstr);
+        value = boost::json::string(cstr);
     }
 
     static constexpr bool isPrimitive() { return true; };

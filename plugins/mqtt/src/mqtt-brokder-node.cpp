@@ -1,10 +1,14 @@
 #include <edgelink/plugin.hpp>
-#include "mqtt.client.hpp"
+#include "mqtt.hpp"
 
 using namespace edgelink;
 
 namespace edgelink::plugins::mqtt {
 
+using namespace boost;
+namespace asio = boost::asio;
+namespace am = async_mqtt;
+namespace this_coro = boost::asio::this_coro;
 /*
     {
         "id": "3c39cf63714c26a4",
@@ -35,111 +39,136 @@ namespace edgelink::plugins::mqtt {
     }
 */
 
-/*
-class MqttBrokerNode : public EndpointNode {
+class MqttBrokerNode : public EndpointNode,
+                       public std::enable_shared_from_this<MqttBrokerNode>,
+                       public IMqttBrokerEndpoint {
   public:
-    MqttBrokerNode(FlowNodeID id, const boost::json::object& config, const INodeDescriptor* desc,
+    MqttBrokerNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc,
                    const std::vector<OutputPort>&& output_ports, IFlow* flow)
-        : EndpointNode(id, desc, move(output_ports), flow, config, config.at("broker").as_string(),
-                       boost::lexical_cast<uint16_t>(config.at("port").as_string().c_str())),
-          _mqtt(boost::urls::parse_uri("mqtt://test.mosquitto.org:1883").value()) // Host Address
-    {
-        try {
-            //
-            if (auto topic_value = config.if_contains("topic")) {
-                const std::string_view topic_str = topic_value->as_string();
-                if (!topic_str.empty()) {
-                    _node_topic = std::string(topic_str);
-                } else {
-                    // 保持为空
-                }
-            }
-
-            if (auto qos_value = config.if_contains("qos")) {
-                const std::string_view qos_str = qos_value->as_string();
-                if (qos_str == "0") {
-                    _node_qos = async_mqtt::qos::at_most_once;
-                } else if (qos_str == "1") {
-                    _node_qos = async_mqtt::qos::at_least_once;
-                } else if (qos_str == "2") {
-                    _node_qos = async_mqtt::qos::exactly_once;
-                } else {
-                    // 不动
-                }
-            }
-
-            if (auto retain_value = config.if_contains("retain")) {
-                const std::string_view retain_str = retain_value->as_string();
-                if (retain_str == "true") {
-                    _node_retail = true;
-                } else if (retain_str == "false") {
-                    _node_retail = false;
-                } else {
-                    // 保持为空
-                }
-            }
-        } catch (std::exception& ex) {
-            spdlog::error("加载 MQTT Out 节点配置发生错误：{0}", ex.what());
-            throw ex;
-        }
+        : EndpointNode(id, desc, std::move(output_ports), flow, config, config.at("broker").as_string(),
+                       boost::lexical_cast<uint16_t>(config.at("port").as_string().c_str())) {
+        //
     }
 
-    Awaitable<void> start_async() override {
-        co_await _mqtt.async_connect();
+    const std::string_view host() const noexcept override { return _host; }
 
+    uint16_t address() const noexcept override { return _port; }
+
+    Awaitable<void> start_async() override { co_return; }
+
+    Awaitable<void> stop_async() override { co_return; }
+
+    Awaitable<void> receive_async(std::shared_ptr<Msg> msg) override { co_return; }
+
+    bool is_connected() const override { return _endpoint && _endpoint->next_layer().is_open(); }
+
+    Awaitable<void> async_publish(const std::string_view topic, const async_mqtt::buffer& payload_buffer,
+                                  async_mqtt::qos qos) override {
+        auto topic_buffer = am::allocate_buffer(topic);
+        auto pid = co_await _endpoint->acquire_unique_packet_id(asio::use_awaitable);
+        // Send MQTT PUBLISH
+        auto se = co_await _endpoint->send(am::v3_1_1::publish_packet{*pid, topic_buffer, payload_buffer, qos},
+                                           asio::use_awaitable);
+        if (se) {
+            spdlog::error("MQTT PUBLISH send error: {0}", se.what());
+            co_return;
+        }
+        // Recv MQTT PUBLISH and PUBACK (order depends on broker)
+        am::packet_variant pv = co_await _endpoint->recv(asio::use_awaitable);
+        if (pv) {
+            pv.visit(am::overload{[&](am::v3_1_1::puback_packet const& p) {
+                                      //
+                                      // spdlog::info("MQTT PUBACK recv pid: {0}", p.packet_id());
+                                      return;
+                                  },
+                                  [](auto const&) {}});
+        } else {
+            spdlog::error("MQTT recv error: {0}", pv.get<am::system_error>().what());
+        }
         co_return;
     }
 
-    Awaitable<void> stop_async() override {
-        co_await _mqtt.async_close();
-        co_return;
-    }
-
-    Awaitable<void> receive_async(std::shared_ptr<Msg> msg) override {
-        spdlog::info("MqttOutNode > 收到了消息：\n{0}", msg->to_string());
-
-        if (msg->data().contains("payload")) {
-
-            auto topic = _node_topic.has_value() ? std::string_view(*_node_topic)
-                                                 : std::string_view(msg->data().at("topic").as_string());
-            auto qos = _node_qos.has_value() ? *_node_qos : async_mqtt::qos(msg->data().at("qos").to_number<int>());
-
-            auto json_payload_value = msg->data().at("payload");
-
-            if (json_payload_value.is_string()) { // 是字符串就原样发送
-                co_await _mqtt.async_publish_string(topic, json_payload_value.as_string(), qos);
-            } else if (json_payload_value.is_array()) { // 是数组就假定要发送的是字节数组
-                // 注意不能直接发，这里是 boost::array，需要转换 buffer
-                auto json_array = json_payload_value.as_array();
-                std::vector<char> bytes(json_array.size());
-                for (size_t i = 0; i < json_array.size(); i++) {
-                    auto v = json_array.at(i);
-                    bytes[i] = v.to_number<char>();
-                }
-                async_mqtt::buffer buffer(bytes.begin(), bytes.end());
-                co_await _mqtt.async_publish(topic, buffer, qos);
-            } else if (json_payload_value.is_object()) { // 如果是对象就转换为 JSON 字符串发送
-                auto payload_text = std::move(boost::json::serialize(msg->data().at("payload")));
-                co_await _mqtt.async_publish_string(topic, payload_text, qos);
-            } else {
-                throw InvalidDataException(
-                    fmt::format("MQTT 输出节点不支持负载：'{0}'", boost::json::serialize(json_payload_value)));
-            }
-        }
+    Awaitable<void> async_publish_string(const std::string_view topic, const std::string_view payload,
+                                         async_mqtt::qos qos) override {
+        auto topic_buffer = am::allocate_buffer(topic);
+        auto payload_buffer = am::allocate_buffer(payload);
+        co_await this->async_publish(topic_buffer, payload_buffer, qos);
         co_return;
     }
 
   private:
-    MqttClient _mqtt;
-    std::optional<std::string> _node_topic;
-    std::optional<async_mqtt::qos> _node_qos;
-    std::optional<bool> _node_retail;
+    Awaitable<void> async_connect() {
+        spdlog::info("开始连接 MQTT：{0}:{1}", _host, _port);
+
+        auto exe = co_await this_coro::executor;
+
+        {
+            auto amep = new Endpoint{am::protocol_version::v3_1_1, exe};
+            _endpoint = std::move(std::unique_ptr<Endpoint>(amep));
+        }
+
+        // asio::ip::tcp::socket resolve_sock{exe};
+        asio::ip::tcp::resolver resolver(exe);
+
+        // Resolve hostname
+        spdlog::info("MqttBrokerNode > 解析地址");
+
+        auto eps = co_await resolver.async_resolve(_host, std::to_string(_port), asio::use_awaitable);
+
+        // Layer
+        // am::stream -> TCP
+
+        // Underlying TCP connect
+        spdlog::info("MqttBrokerNode > socket 开始连接");
+        co_await asio::async_connect(_endpoint->next_layer(), eps, asio::use_awaitable);
+
+        // Send MQTT CONNECT
+        if (auto se = co_await _endpoint->send(
+                am::v3_1_1::connect_packet{
+                    true,   // clean_session
+                    0x1234, // keep_alive
+                    am::allocate_buffer("cid1"),
+                    am::nullopt, // will
+                    am::nullopt, // username set like am::allocate_buffer("user1"),
+                    am::nullopt  // password set like am::allocate_buffer("pass1")
+                },
+                asio::use_awaitable)) {
+            co_return;
+        }
+
+        // Recv MQTT CONNACK
+        if (am::packet_variant pv = co_await _endpoint->recv(asio::use_awaitable)) {
+            auto cb = am::overload{[&](am::v3_1_1::connack_packet const& p) {
+                                       // std::cout << "MQTT CONNACK recv" << " sp:" << p.session_present() <<
+                                       // std::endl; spdlog::info("MqttClient > 收到连接相应");
+                                   },
+                                   [](auto const&) {}};
+            pv.visit(cb);
+        } else {
+            spdlog::error("MqttClient > CONNACK 收到错误：{0}", pv.get<am::system_error>().what());
+            co_return;
+        }
+
+        spdlog::info("MQTT 已连接：{0}:{1}", _host, _port);
+    }
+
+    /// @brief 关闭连接
+    /// @return
+    Awaitable<void> async_close() noexcept {
+        co_await _endpoint->close(asio::use_awaitable);
+        spdlog::info("MQTT 连接已断开，主机：{0}:{1}", _host, _port);
+    }
+
+  private:
+    std::string _host;
+    uint16_t _port;
+    std::unique_ptr<Endpoint> _endpoint;
 };
 
 RTTR_PLUGIN_REGISTRATION {
-    rttr::registration::class_<NodeProvider<MqttOutNode, "mqtt out", NodeKind::SINK>>(
-        "edgelink::plugins::modbus::MqttOutNodeProvider")
+    rttr::registration::class_<FlowNodeProvider<MqttBrokerNode, "mqtt-broker", NodeKind::STANDALONE>>(
+        "edgelink::plugins::modbus::MqttBrokerNodeProvider")
         .constructor()(rttr::policy::ctor::as_raw_ptr);
 };
-*/
+
 }; // namespace edgelink::plugins::mqtt

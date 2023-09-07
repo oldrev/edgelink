@@ -4,7 +4,7 @@ namespace edgelink {
 
 class LogNode : public SinkNode {
   public:
-    LogNode(FlowNodeID id, const boost::json::object& config, const INodeDescriptor* desc,
+    LogNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc,
             const std::vector<OutputPort>&& output_ports, IFlow* flow)
         : SinkNode(id, desc, std::move(output_ports), flow, config) {}
 
@@ -14,7 +14,7 @@ class LogNode : public SinkNode {
 
     Awaitable<void> receive_async(std::shared_ptr<Msg> msg) override {
         //
-        FlowNodeID node_id = msg->data().at("birthPlaceID").to_number<FlowNodeID>();
+        const std::string_view node_id = msg->data().at("birthPlaceID").as_string();
         auto birth_place = this->flow()->get_node(node_id);
         spdlog::info("LogNode > 收到了消息：{0}", msg->to_string());
         co_return;
@@ -22,7 +22,7 @@ class LogNode : public SinkNode {
 };
 
 RTTR_REGISTRATION {
-    rttr::registration::class_<NodeProvider<LogNode, "log", NodeKind::SINK>>("edgelink::LogNodeProvider")
+    rttr::registration::class_<FlowNodeProvider<LogNode, "log", NodeKind::SINK>>("edgelink::LogNodeProvider")
         .constructor()(rttr::policy::ctor::as_raw_ptr);
 };
 
