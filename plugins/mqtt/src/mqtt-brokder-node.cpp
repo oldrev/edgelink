@@ -7,30 +7,42 @@ namespace edgelink::plugins::mqtt {
 
 /*
     {
-        "id": "f83cdc7c9c540aa8",
-        "type": "mqtt out",
-        "z": "7c226c13f2e3b224",
+        "id": "3c39cf63714c26a4",
+        "type": "mqtt-broker",
         "name": "",
-        "topic": "",
-        "qos": "",
-        "retain": "",
-        "respTopic": "",
-        "contentType": "",
+        "broker": "test.mosquitto.org",
+        "port": "1883",
+        "clientid": "1883",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": "4",
+        "keepalive": "60",
+        "cleansession": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willPayload": "",
+        "willMsg": {},
         "userProps": "",
-        "correl": "",
-        "expiry": "",
-        "broker": "",
-        "x": 870,
-        "y": 320,
-        "wires": []
+        "sessionExpiry": ""
     }
 */
 
-class MqttOutNode : public SinkNode {
+/*
+class MqttBrokerNode : public EndpointNode {
   public:
-    MqttOutNode(FlowNodeID id, const boost::json::object& config, const INodeDescriptor* desc,
-                const std::vector<OutputPort>&& output_ports, IFlow* flow)
-        : SinkNode(id, desc, move(output_ports), flow, config), _mqtt("test.mosquitto.org", 1883) // Host Address
+    MqttBrokerNode(FlowNodeID id, const boost::json::object& config, const INodeDescriptor* desc,
+                   const std::vector<OutputPort>&& output_ports, IFlow* flow)
+        : EndpointNode(id, desc, move(output_ports), flow, config, config.at("broker").as_string(),
+                       boost::lexical_cast<uint16_t>(config.at("port").as_string().c_str())),
+          _mqtt(boost::urls::parse_uri("mqtt://test.mosquitto.org:1883").value()) // Host Address
     {
         try {
             //
@@ -84,6 +96,7 @@ class MqttOutNode : public SinkNode {
     }
 
     Awaitable<void> receive_async(std::shared_ptr<Msg> msg) override {
+        spdlog::info("MqttOutNode > 收到了消息：\n{0}", msg->to_string());
 
         if (msg->data().contains("payload")) {
 
@@ -128,4 +141,5 @@ RTTR_PLUGIN_REGISTRATION {
         "edgelink::plugins::modbus::MqttOutNodeProvider")
         .constructor()(rttr::policy::ctor::as_raw_ptr);
 };
+*/
 }; // namespace edgelink::plugins::mqtt

@@ -8,7 +8,7 @@ namespace this_coro = boost::asio::this_coro;
 
 namespace edgelink::plugins::mqtt {
 
-MqttClient::MqttClient(const boost::url& address) : _address(address) {
+MqttClient::MqttClient(const std::string_view host, uint16_t port) : _host(host), _port(port) {
     //
     auto client_id = uuids::to_string(uuids::uuid());
 }
@@ -16,7 +16,7 @@ MqttClient::MqttClient(const boost::url& address) : _address(address) {
 MqttClient::~MqttClient() {}
 
 Awaitable<void> MqttClient::async_connect() {
-    spdlog::info("开始连接 MQTT：{0}:{1}", _address.host(), _address.port());
+    spdlog::info("开始连接 MQTT：{0}:{1}", _host, _port);
 
     auto exe = co_await this_coro::executor;
 
@@ -31,7 +31,7 @@ Awaitable<void> MqttClient::async_connect() {
     // Resolve hostname
     spdlog::info("MqttClient > 解析地址");
 
-    auto eps = co_await resolver.async_resolve(_address.host(), _address.port(), asio::use_awaitable);
+    auto eps = co_await resolver.async_resolve(_host, std::to_string(_port), asio::use_awaitable);
 
     // Layer
     // am::stream -> TCP
@@ -67,18 +67,17 @@ Awaitable<void> MqttClient::async_connect() {
         co_return;
     }
 
-    spdlog::info("MQTT 已连接：{0}:{1}", _address.host(), _address.port());
+    spdlog::info("MQTT 已连接：{0}:{1}", _host, _port);
 }
 
 Awaitable<void> MqttClient::async_close() noexcept {
     co_await _endpoint->close(asio::use_awaitable);
-    spdlog::info("MQTT 连接已断开，主机：{0}:{1}", _address.host(), _address.port());
+    spdlog::info("MQTT 连接已断开，主机：{0}:{1}", _host, _port);
 }
 
-Awaitable<void> MqttClient::publish_async(const std::string_view topic, const std::string_view payload,
+Awaitable<void> MqttClient::async_publish(const std::string_view topic, const am::buffer& payload_buffer,
                                           async_mqtt::qos qos) {
     auto topic_buffer = am::allocate_buffer(topic);
-    auto payload_buffer = am::allocate_buffer(payload);
     auto pid = co_await _endpoint->acquire_unique_packet_id(asio::use_awaitable);
     // Send MQTT PUBLISH
     auto se = co_await _endpoint->send(am::v3_1_1::publish_packet{*pid, topic_buffer, payload_buffer, qos},
@@ -99,6 +98,14 @@ Awaitable<void> MqttClient::publish_async(const std::string_view topic, const st
     } else {
         spdlog::error("MQTT recv error: {0}", pv.get<am::system_error>().what());
     }
+    co_return;
+}
+
+Awaitable<void> MqttClient::async_publish_string(const std::string_view topic, const std::string_view payload,
+                                                 async_mqtt::qos qos) {
+    auto topic_buffer = am::allocate_buffer(topic);
+    auto payload_buffer = am::allocate_buffer(payload);
+    co_await this->async_publish(topic_buffer, payload_buffer, qos);
     co_return;
 }
 

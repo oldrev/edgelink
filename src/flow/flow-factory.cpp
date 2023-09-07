@@ -19,7 +19,7 @@ std::vector<std::unique_ptr<IFlow>> FlowFactory::create_flows(const boost::json:
     for (const auto& json_node_value : flows_config) {
         const auto& json_node = json_node_value.as_object();
         const std::string type(json_node.at("type").as_string());
-        if (type == "tab") {
+        if (type == "tab" || type == "flow") {
             auto flow = this->create_flow(flows_config, json_node);
             flows.emplace_back(std::move(flow));
         }
@@ -78,9 +78,10 @@ std::unique_ptr<IFlow> FlowFactory::create_flow(const boost::json::array& flows_
             ports.emplace_back(std::move(port));
         }
 
+        spdlog::info("开始创建流程节点：[type='{0}', json_id='{1}']", elem_type, elem_id);
         auto const& provider_iter = _registry.get_node_provider(elem_type);
         auto node = provider_iter->create(i, elem, std::move(ports), flow.get());
-        spdlog::info("已开始创建流程节点：[type='{0}', str_id='{1}', id={2}]", elem_type, elem_id, node->id());
+        spdlog::info("流程节点创建成功：[type='{0}', json_id='{1}', id={2}]", elem_type, elem_id, node->id());
         node_map[elem_id] = node.get();
         flow->emplace_node(std::move(node));
     }

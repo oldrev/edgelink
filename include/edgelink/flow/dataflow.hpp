@@ -86,10 +86,11 @@ class OutputPort {
 struct FlowElement {};
 
 enum class NodeKind {
-    JUNCTION = 0, ///< 节点
-    SOURCE = 1,   ///< 数据源
-    SINK = 2,     ///< 数据收集器
-    FILTER = 3    ///< 过滤器
+    JUNCTION = 0,   ///< 节点
+    STANDALONE = 1, ///< 独立节点
+    SOURCE = 2,     ///< 数据源
+    SINK = 3,       ///< 数据收集器
+    FILTER = 4      ///< 过滤器
 };
 
 /// @brief 流程节点抽象类
@@ -111,7 +112,7 @@ class FlowNode : public IFlowNode {
   protected:
     FlowNode(FlowNodeID id, const INodeDescriptor* desc, const std::vector<OutputPort>&& output_ports, IFlow* flow,
              const boost::json::object& config)
-        : _id(id), _name(config.at("name").as_string()), _disabled(edgelink::value_or(config, "d", false)),
+        : _id(id), _name(config.at("name").as_string()), _disabled(edgelink::json::value_or(config, "d", false)),
           _descriptor(desc), _output_ports(std::move(output_ports)), _flow(flow) {
         // constructor
     }
@@ -148,7 +149,6 @@ class SourceNode : public FlowNode {
         : FlowNode(id, desc, std::move(output_ports), flow, config) {}
 
   public:
-    virtual bool is_running() const { return _thread.joinable(); }
     Awaitable<void> start_async() override;
     Awaitable<void> stop_async() override;
 
@@ -157,24 +157,52 @@ class SourceNode : public FlowNode {
         throw InvalidDataException("错误的流设置：数据源不允许接收数据");
     }
 
-    Awaitable<void> work_loop();
-
   protected:
     virtual Awaitable<void> process_async(std::stop_token& stoken) = 0;
     std::stop_source _stop;
 
-    std::jthread& thread() { return _thread; }
-
   private:
-    std::jthread _thread; // 一个数据源一个线程
+    Awaitable<void> work_loop();
 };
 
-/// @brief 抽象数据接收器
+/// @brief 抽象数据接收器节点
 class SinkNode : public FlowNode {
   protected:
     SinkNode(FlowNodeID id, const INodeDescriptor* desc, const std::vector<OutputPort>&& output_ports, IFlow* flow,
              const boost::json::object& config)
         : FlowNode(id, desc, std::move(output_ports), flow, config) {}
+};
+
+/// @brief 独立节点
+class StandaloneNode : public FlowNode {
+  protected:
+    StandaloneNode(FlowNodeID id, const INodeDescriptor* desc, const std::vector<OutputPort>&& output_ports,
+                   IFlow* flow, const boost::json::object& config)
+        : FlowNode(id, desc, std::move(output_ports), flow, config) {}
+};
+
+/// @brief 全局配置节点
+class GlobalConfigNode : public StandaloneNode {
+  protected:
+    GlobalConfigNode(FlowNodeID id, const INodeDescriptor* desc, const std::vector<OutputPort>&& output_ports,
+                     IFlow* flow, const boost::json::object& config)
+        : StandaloneNode(id, desc, std::move(output_ports), flow, config) {}
+};
+
+/// @brief 网络端点节点
+class EndpointNode : public StandaloneNode {
+  protected:
+    EndpointNode(FlowNodeID id, const INodeDescriptor* desc, const std::vector<OutputPort>&& output_ports, IFlow* flow,
+                 const boost::json::object& config, const std::string_view host, uint16_t port)
+        : StandaloneNode(id, desc, std::move(output_ports), flow, config), _host(host), _port(port) {}
+
+  public:
+    const std::string_view host() const { return _host; }
+    uint16_t port() const { return _port; }
+
+  private:
+    const std::string _host;
+    const uint16_t _port;
 };
 
 /// @brief 抽象数据过滤器

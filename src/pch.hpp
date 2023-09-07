@@ -21,6 +21,7 @@
 #include <boost/url.hpp>
 #include <boost/json.hpp>
 #include <boost/signals2.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include <fmt/chrono.h>
 #include <fmt/core.h>

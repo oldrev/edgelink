@@ -1,20 +1,49 @@
 #pragma once
 
-namespace edgelink {
+namespace edgelink::json {
 
 inline const std::string_view value_or(const boost::json::object& json_obj, const std::string_view key,
-                                       const std::string_view& default_value) {
+                                       const std::string_view default_value) {
     if (auto val = json_obj.if_contains(key)) {
         return std::string_view(val->as_string());
     }
     return default_value;
 }
 
+/// @brief 从 JSON 对象获取指定值，如果找不到返回默认值
+/// @param json_obj
+/// @param key
+/// @param default_value
+/// @return
 inline bool value_or(const boost::json::object& json_obj, const std::string_view key, bool default_value) {
     if (auto val = json_obj.if_contains(key)) {
-        return val->as_bool();
+        if (val->is_string()) {
+            auto str = val->as_string();
+            return str == "true" ? true : false;
+        } else {
+            return val->as_bool();
+        }
     }
     return default_value;
 }
 
-}; // namespace edgelink
+/// @brief 从 JSON 对象获取指定值，如果找不到返回默认值
+/// @tparam TNumber
+/// @param json_obj
+/// @param key
+/// @param default_value
+/// @return
+template <typename TNumber,
+          typename = std::enable_if_t<std::is_same<TNumber, int>::value || std::is_same<TNumber, unsigned int>::value>>
+inline TNumber value_or(const boost::json::object& json_obj, const std::string_view key, TNumber default_value) {
+    if (auto val = json_obj.if_contains(key)) {
+        if (val->is_string()) {
+            return boost::lexical_cast<TNumber>(val->as_string().c_str());
+        } else {
+            return val->to_number<TNumber>();
+        }
+    }
+    return default_value;
+}
+
+}; // namespace edgelink::json
