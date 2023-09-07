@@ -5,6 +5,33 @@
         "name": "flow 1"
     },
     {
+        "id": "broker1",
+        "type": "mqtt-broker",
+        "name": "",
+        "broker": "test.mosquitto.org",
+        "port": "1883",
+        "clientid": "",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": "4",
+        "keepalive": "60",
+        "cleansession": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
+    },
+    {
         "type": "inject",
         "id": "source1",
         "z": "flow1",
@@ -33,17 +60,17 @@
         ]
     },
     {
-        "type": "log",
+        "type": "debug",
         "id": "sink1",
         "z": "flow1",
-        "name": "log 1",
+        "name": "debug 1",
         "wires": []
     },
     {
-        "type": "log",
+        "type": "debug",
         "id": "sink2",
         "z": "flow1",
-        "name": "log 2",
+        "name": "debug 2",
         "wires": []
     },
     {
@@ -64,6 +91,7 @@
         "type": "mqtt out",
         "id": "sink3",
         "z": "flow1",
+        "broker": "broker1",
         "topic": "/yncic-dangerous/data/test1",
         "qos": "1",
         "retain": "false",

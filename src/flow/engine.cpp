@@ -42,12 +42,12 @@ Awaitable<void> Engine::start_async() {
         throw BadFlowConfigException("There are no node in the configuration file of the flows!");
     }
 
-    auto global_nodes = _flow_factory.create_global_nodes(flows_config);
+    auto global_nodes = _flow_factory.create_global_nodes(flows_config, this);
     for (auto& gn : global_nodes) {
         _global_nodes.emplace_back(std::move(gn));
     }
 
-    auto flows = _flow_factory.create_flows(flows_config);
+    auto flows = _flow_factory.create_flows(flows_config, this);
     for (auto& flow : flows) {
         _flows.emplace_back(std::move(flow));
     }
@@ -56,8 +56,13 @@ Awaitable<void> Engine::start_async() {
     spdlog::info("开始启动流程引擎");
     _stop_source = std::make_unique<std::stop_source>();
 
+    for (auto& node : _global_nodes) {
+        spdlog::debug("正在启动全局节点：{0}", node->id());
+        co_await node->start_async();
+    }
+
     for (auto& flow : _flows) {
-        spdlog::info("正在启动流程：{0}", flow->id());
+        spdlog::debug("正在启动流程：{0}", flow->id());
         co_await flow->start_async();
     }
     spdlog::info("全部流程启动完毕");
@@ -72,6 +77,13 @@ Awaitable<void> Engine::stop_async() {
     for (auto it = _flows.rbegin(); it != _flows.rend(); ++it) {
         auto ref = std::reference_wrapper<IFlow>(**it); // 使用 std::reference_wrapper
         co_await ref.get().stop_async();
+    }
+
+    for (auto it = _global_nodes.rbegin(); it != _global_nodes.rend(); ++it) {
+        auto ref = std::reference_wrapper<IStandaloneNode>(**it); // 使用 std::reference_wrapper
+        spdlog::debug("正在停止全局节点：[id={0}, type={1}]", ref.get().id(), ref.get().descriptor()->type_name());
+        co_await ref.get().stop_async();
+        spdlog::debug("全局节点已停止");
     }
 
     spdlog::info("流程引擎已停止");

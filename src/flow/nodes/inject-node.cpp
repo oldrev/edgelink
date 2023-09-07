@@ -23,7 +23,7 @@ class InjectNode : public SourceNode {
 
         auto executor = co_await this_coro::executor;
 
-        auto msg = std::make_shared<Msg>(this->id());
+        auto msg = std::make_shared<Msg>();
         msg->data()["payload"] = std::time(0);
 
         if (spdlog::get_level() >= spdlog::level::info) {

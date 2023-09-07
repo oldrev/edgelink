@@ -11,7 +11,7 @@ namespace edgelink::flow::details {
 
 FlowFactory::FlowFactory(const IRegistry& registry) : _registry(registry) {}
 
-std::vector<std::unique_ptr<IFlow>> FlowFactory::create_flows(const boost::json::array& flows_config) const {
+std::vector<std::unique_ptr<IFlow>> FlowFactory::create_flows(const boost::json::array& flows_config, IEngine* engine) const {
     auto node_provider_type = rttr::type::get<IFlowNodeProvider>();
 
     // 这里注册测试用的
@@ -21,7 +21,7 @@ std::vector<std::unique_ptr<IFlow>> FlowFactory::create_flows(const boost::json:
         const auto& json_node = json_node_value.as_object();
         const std::string type(json_node.at("type").as_string());
         if (type == "tab" || type == "flow") {
-            auto flow = this->create_flow(flows_config, json_node);
+            auto flow = this->create_flow(flows_config, json_node, engine);
             flows.emplace_back(std::move(flow));
         }
     }
@@ -29,18 +29,18 @@ std::vector<std::unique_ptr<IFlow>> FlowFactory::create_flows(const boost::json:
 }
 
 std::vector<std::unique_ptr<IStandaloneNode>>
-FlowFactory::create_global_nodes(const boost::json::array& flows_config) const {
+FlowFactory::create_global_nodes(const boost::json::array& flows_config, IEngine* engine) const {
     // 创建全局节点
     std::vector<std::unique_ptr<IStandaloneNode>> global_nodes;
     for (const auto& json_node_value : flows_config) {
         const auto& json_node = json_node_value.as_object();
-        if (!json_node.contains("z")) {
-            const std::string_view elem_type = json_node.at("type").as_string();
-            const std::string_view elem_id = json_node.at("id").as_string();
+        const std::string_view elem_type = json_node.at("type").as_string();
+        const std::string_view elem_id = json_node.at("id").as_string();
+        if (elem_type != "tab" && elem_type != "flow" && !json_node.contains("z")) {
             auto const& provider_iter = _registry.get_standalone_node_provider(elem_type);
-            spdlog::info("开始创建独立节点：[type='{0}', json_id='{1}']", elem_type, elem_id);
-            auto node = provider_iter->create(elem_id, json_node);
-            spdlog::info("流程节点创建成功：[type='{0}', json_id='{1}', id={2}]", elem_type, elem_id, node->id());
+            spdlog::info("开始创建独立节点：[type='{0}', id='{1}']", elem_type, elem_id);
+            auto node = provider_iter->create(elem_id, json_node, engine);
+            spdlog::info("流程节点创建成功：[type='{0}', id={1}]", elem_type, node->id());
             global_nodes.emplace_back(std::move(node));
         }
     }
@@ -49,14 +49,14 @@ FlowFactory::create_global_nodes(const boost::json::array& flows_config) const {
 }
 
 std::unique_ptr<IFlow> FlowFactory::create_flow(const boost::json::array& flows_config,
-                                                const boost::json::object& flow_node) const {
+                                                const boost::json::object& flow_node, IEngine* engine) const {
 
     // 创建边连接
     DependencySorter<std::string_view> sorter;
 
     auto flow_node_id = flow_node.at("id").as_string();
     // 创建一个空的流
-    auto flow = std::make_unique<Flow>(flow_node);
+    auto flow = std::make_unique<Flow>(flow_node, engine);
 
     // 提取属于指定流节点的下级节点
     std::map<const std::string_view, const boost::json::object*> json_nodes;

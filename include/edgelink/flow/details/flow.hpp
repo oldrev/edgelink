@@ -5,6 +5,7 @@
 namespace edgelink {
 class FlowNode;
 struct IRegistry;
+struct IEngine;
 }; // namespace edgelink
 
 namespace edgelink::flow::details {
@@ -12,12 +13,13 @@ namespace edgelink::flow::details {
 class Flow : public IFlow {
 
   public:
-    Flow(const boost::json::object& json_config);
+    Flow(const boost::json::object& json_config, IEngine* engine);
     virtual ~Flow();
 
     const std::string_view id() const override { return _id; }
     const std::string_view name() const override { return _name; }
     bool is_disabled() const override { return _disabled; }
+    IEngine* engine() const override { return _engine; }
 
     Awaitable<void> start_async() override;
     Awaitable<void> stop_async() override;
@@ -43,6 +45,7 @@ class Flow : public IFlow {
     const std::string _id;
     const std::string _name;
     const bool _disabled;
+    IEngine*const _engine;
     std::vector<std::unique_ptr<IFlowNode>> _nodes;
 
     std::atomic<uint64_t> _msg_id_counter; // 初始化计数器为0

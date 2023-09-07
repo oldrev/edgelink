@@ -10,8 +10,8 @@ using CloneMsgStaticVector = boost::container::static_vector<std::shared_ptr<edg
 
 namespace edgelink::flow::details {
 
-Flow::Flow(const boost::json::object& json_config)
-    : _id(json_config.at("id").as_string()), _name(json_config.at("name").as_string()),
+Flow::Flow(const boost::json::object& json_config, IEngine* engine)
+    : _engine(engine), _id(json_config.at("id").as_string()), _name(json_config.at("name").as_string()),
       _disabled(edgelink::json::value_or(json_config, "disabled", true)), _nodes() {
     //
 }
@@ -32,20 +32,18 @@ Awaitable<void> Flow::emit_async(const std::string_view source_node_id, std::sha
 
 Awaitable<void> Flow::start_async() {
     //
-    spdlog::info("开始启动流程");
     _stop_source = std::make_unique<std::stop_source>();
 
     for (auto const& node : _nodes) {
-        spdlog::info("正在启动流程节点：[id={0}, type={1}]", node->id(), node->descriptor()->type_name());
+        spdlog::debug("正在启动流程节点：[id={0}, type={1}]", node->id(), node->descriptor()->type_name());
         co_await node->start_async();
-        spdlog::info("流程节点已启动");
+        spdlog::debug("流程节点已启动");
     }
-    spdlog::info("流程已启动");
 }
 
 Awaitable<void> Flow::stop_async() {
     // 给出线程池停止信号
-    spdlog::info("开始请求流程 '{0}' 停止...", this->id());
+    spdlog::debug("开始请求流程 '{0}' 停止...", this->id());
     _stop_source->request_stop();
 
     for (auto it = _nodes.rbegin(); it != _nodes.rend(); ++it) {
@@ -55,7 +53,7 @@ Awaitable<void> Flow::stop_async() {
         spdlog::info("流程节点已停止");
     }
 
-    spdlog::info("流程 '{0}' 已停止", this->id());
+    spdlog::debug("流程 '{0}' 已停止", this->id());
     co_return;
 }
 

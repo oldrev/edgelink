@@ -1,5 +1,6 @@
 #include <edgelink/plugin.hpp>
 #include "mqtt.client.hpp"
+#include "mqtt.hpp"
 
 using namespace edgelink;
 
@@ -30,8 +31,7 @@ class MqttOutNode : public SinkNode {
   public:
     MqttOutNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc,
                 const std::vector<OutputPort>&& output_ports, IFlow* flow)
-        : SinkNode(id, desc, move(output_ports), flow, config), _mqtt("test.mosquitto.org", 1883) // Host Address
-    {
+        : SinkNode(id, desc, move(output_ports), flow, config), _mqtt_broker_node_id(config.at("broker").as_string()) {
         try {
             //
             if (auto topic_value = config.if_contains("topic")) {
@@ -73,13 +73,10 @@ class MqttOutNode : public SinkNode {
     }
 
     Awaitable<void> start_async() override {
-        co_await _mqtt.async_connect();
-
         co_return;
     }
 
     Awaitable<void> stop_async() override {
-        co_await _mqtt.async_close();
         co_return;
     }
 
@@ -93,8 +90,11 @@ class MqttOutNode : public SinkNode {
 
             auto json_payload_value = msg->data().at("payload");
 
+            auto mqtt_node = this->flow()->engine()->get_global_node(_mqtt_broker_node_id);
+            auto mqtt = dynamic_cast<IMqttBrokerEndpoint*>(mqtt_node);
+
             if (json_payload_value.is_string()) { // 是字符串就原样发送
-                co_await _mqtt.async_publish_string(topic, json_payload_value.as_string(), qos);
+                co_await mqtt->async_publish_string(topic, json_payload_value.as_string(), qos);
             } else if (json_payload_value.is_array()) { // 是数组就假定要发送的是字节数组
                 // 注意不能直接发，这里是 boost::array，需要转换 buffer
                 auto json_array = json_payload_value.as_array();
@@ -104,10 +104,10 @@ class MqttOutNode : public SinkNode {
                     bytes[i] = v.to_number<char>();
                 }
                 async_mqtt::buffer buffer(bytes.begin(), bytes.end());
-                co_await _mqtt.async_publish(topic, buffer, qos);
+                co_await mqtt->async_publish(topic, buffer, qos);
             } else if (json_payload_value.is_object()) { // 如果是对象就转换为 JSON 字符串发送
                 auto payload_text = std::move(boost::json::serialize(msg->data().at("payload")));
-                co_await _mqtt.async_publish_string(topic, payload_text, qos);
+                co_await mqtt->async_publish_string(topic, payload_text, qos);
             } else {
                 throw InvalidDataException(
                     fmt::format("MQTT 输出节点不支持负载：'{0}'", boost::json::serialize(json_payload_value)));
@@ -117,7 +117,7 @@ class MqttOutNode : public SinkNode {
     }
 
   private:
-    MqttClient _mqtt;
+    std::string _mqtt_broker_node_id;
     std::optional<std::string> _node_topic;
     std::optional<async_mqtt::qos> _node_qos;
     std::optional<bool> _node_retail;

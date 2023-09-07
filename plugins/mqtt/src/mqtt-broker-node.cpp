@@ -43,19 +43,21 @@ class MqttBrokerNode : public EndpointNode,
                        public std::enable_shared_from_this<MqttBrokerNode>,
                        public IMqttBrokerEndpoint {
   public:
-    MqttBrokerNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc)
-        : EndpointNode(id, desc, config, config.at("broker").as_string(),
+    MqttBrokerNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc, IEngine* engine)
+        : EndpointNode(id, desc, config, engine, config.at("broker").as_string(),
                        boost::lexical_cast<uint16_t>(config.at("port").as_string().c_str())) {
         //
     }
 
-    const std::string_view host() const noexcept override { return _host; }
+    Awaitable<void> start_async() override {
+        co_await this->async_connect();
+        co_return;
+    }
 
-    uint16_t address() const noexcept override { return _port; }
-
-    Awaitable<void> start_async() override { co_return; }
-
-    Awaitable<void> stop_async() override { co_return; }
+    Awaitable<void> stop_async() override {
+        co_await this->async_close();
+        co_return;
+    }
 
     bool is_connected() const override { return _endpoint && _endpoint->next_layer().is_open(); }
 
@@ -95,7 +97,7 @@ class MqttBrokerNode : public EndpointNode,
 
   private:
     Awaitable<void> async_connect() {
-        spdlog::info("开始连接 MQTT：{0}:{1}", _host, _port);
+        spdlog::info("开始连接 MQTT：{0}:{1}", this->host(), this->port());
 
         auto exe = co_await this_coro::executor;
 
@@ -110,7 +112,7 @@ class MqttBrokerNode : public EndpointNode,
         // Resolve hostname
         spdlog::info("MqttBrokerNode > 解析地址");
 
-        auto eps = co_await resolver.async_resolve(_host, std::to_string(_port), asio::use_awaitable);
+        auto eps = co_await resolver.async_resolve(this->host(), std::to_string(this->port()), asio::use_awaitable);
 
         // Layer
         // am::stream -> TCP
@@ -146,19 +148,17 @@ class MqttBrokerNode : public EndpointNode,
             co_return;
         }
 
-        spdlog::info("MQTT 已连接：{0}:{1}", _host, _port);
+        spdlog::info("MQTT 已连接：{0}:{1}", this->host(), this->port());
     }
 
     /// @brief 关闭连接
     /// @return
     Awaitable<void> async_close() noexcept {
         co_await _endpoint->close(asio::use_awaitable);
-        spdlog::info("MQTT 连接已断开，主机：{0}:{1}", _host, _port);
+        spdlog::info("MQTT 连接已断开，主机：{0}:{1}", this->host(), this->port());
     }
 
   private:
-    std::string _host;
-    uint16_t _port;
     std::unique_ptr<Endpoint> _endpoint;
 };
 

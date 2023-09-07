@@ -30,6 +30,7 @@ struct IFlow {
     virtual const std::string_view id() const = 0;
     virtual const std::string_view name() const = 0;
     virtual bool is_disabled() const = 0;
+    virtual IEngine* engine() const = 0;
 
     /// @brief 向流里发送产生的第一手消息
     virtual Awaitable<void> emit_async(const std::string_view source_node_id, std::shared_ptr<Msg> msg) = 0;
@@ -65,17 +66,20 @@ struct IEngine {
     virtual Awaitable<void> start_async() = 0;
     virtual Awaitable<void> stop_async() = 0;
     virtual IFlow* get_flow(const std::string_view flow_id) const = 0;
-    virtual INode* get_global_node(const std::string_view node_id) const = 0;
+    virtual IStandaloneNode* get_global_node(const std::string_view node_id) const = 0;
     virtual bool is_disabled() const = 0;
+
 };
 
 /// @brief 流工厂
 struct IFlowFactory {
 
-    virtual std::vector<std::unique_ptr<IFlow>> create_flows(const boost::json::array& flows_config) const = 0;
+    virtual std::vector<std::unique_ptr<IFlow>> create_flows(const boost::json::array& flows_config,
+                                                             IEngine* engine) const = 0;
 
     virtual std::vector<std::unique_ptr<IStandaloneNode>>
-    create_global_nodes(const boost::json::array& flows_config) const = 0;
+    create_global_nodes(const boost::json::array& flows_config, IEngine* engine) const = 0;
+
 };
 
 /// @brief 节点的发出连接端口
@@ -110,14 +114,17 @@ struct INode : public IFlowElement {
     virtual const INodeDescriptor* descriptor() const = 0;
 };
 
-struct IStandaloneNode : public INode {};
+struct IStandaloneNode : public INode {
+    virtual IEngine* engine() const = 0;
+};
 
 /// @brief 独立节点抽象类
 class StandaloneNode : public IStandaloneNode {
   protected:
-    StandaloneNode(const std::string_view id, const INodeDescriptor* desc, const boost::json::object& config)
+    StandaloneNode(const std::string_view id, const INodeDescriptor* desc, const boost::json::object& config,
+                   IEngine* engine)
         : _id(id), _name(config.at("name").as_string()), _disabled(edgelink::json::value_or(config, "d", false)),
-          _descriptor(desc) {
+          _descriptor(desc), _engine(engine) {
         // constructor
     }
 
@@ -126,12 +133,14 @@ class StandaloneNode : public IStandaloneNode {
     const std::string_view name() const override { return _name; }
     const bool is_disabled() const override { return _disabled; }
     const INodeDescriptor* descriptor() const override { return _descriptor; }
+    IEngine* engine() const override { return _engine; };
 
   private:
     const std::string _id;
     const std::string _name;
     bool _disabled;
     const INodeDescriptor* _descriptor;
+    IEngine* const _engine;
 
   public:
     virtual Awaitable<void> start_async() = 0;
@@ -213,16 +222,16 @@ class SinkNode : public FlowNode {
 /// @brief 全局配置节点
 class GlobalConfigNode : public StandaloneNode {
   protected:
-    GlobalConfigNode(const std::string_view id, const INodeDescriptor* desc, const boost::json::object& config)
-        : StandaloneNode(id, desc, config) {}
+    GlobalConfigNode(const std::string_view id, const INodeDescriptor* desc, const boost::json::object& config, IEngine* engine)
+        : StandaloneNode(id, desc, config, engine) {}
 };
 
 /// @brief 网络端点节点
 class EndpointNode : public StandaloneNode {
   protected:
     EndpointNode(const std::string_view id, const INodeDescriptor* desc, const boost::json::object& config,
-                 const std::string_view host, uint16_t port)
-        : StandaloneNode(id, desc, config), _host(host), _port(port) {}
+                 IEngine* engine, const std::string_view host, uint16_t port)
+        : StandaloneNode(id, desc, config, engine), _host(host), _port(port) {}
 
   public:
     const std::string_view host() const { return _host; }
@@ -265,8 +274,8 @@ struct IFlowNodeProvider : public INodeProvider {
 };
 
 struct IStandaloneNodeProvider : public INodeProvider {
-    virtual std::unique_ptr<IStandaloneNode> create(const std::string_view id,
-                                                    const boost::json::object& config) const = 0;
+    virtual std::unique_ptr<IStandaloneNode> create(const std::string_view id, const boost::json::object& config,
+                                                    IEngine* engine) const = 0;
 
   private:
     RTTR_ENABLE(INodeProvider)
@@ -302,8 +311,8 @@ class StandaloneNodeProvider final : public IStandaloneNodeProvider, public INod
     inline const NodeKind kind() const override { return TKind; }
 
     std::unique_ptr<IStandaloneNode> create(const std::string_view id,
-                                            const boost::json::object& config) const override {
-        return std::make_unique<TNode>(id, config, this);
+                                            const boost::json::object& config, IEngine* engine) const override {
+        return std::make_unique<TNode>(id, config, this, engine);
     }
 
   private:
