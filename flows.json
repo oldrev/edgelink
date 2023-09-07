@@ -53,7 +53,7 @@
         "name": "tempalte 1",
         "field": "payload",
         "fieldType": "payload",
-        "template": "[11,22,33,44,55,66]",
+        "template": "[72, 101, 108, 108, 111, 44, 32, 87, 111, 114, 108, 100, 33]",
         "wires": [
             [
                 "sink3"

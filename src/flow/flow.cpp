@@ -1,5 +1,6 @@
 #include "edgelink/edgelink.hpp"
 #include "edgelink/flow/dependency-sorter.hpp"
+#include "edgelink/flow/details/flow.hpp"
 
 using namespace edgelink;
 using namespace boost;

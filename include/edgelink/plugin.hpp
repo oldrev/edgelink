@@ -8,7 +8,7 @@
 
 #include "edgelink/flow/common.hpp"
 #include "edgelink/flow/msg.hpp"
-#include "edgelink/flow/dataflow.hpp"
+#include "edgelink/flow/abstractions.hpp"
 
 namespace edgelink {
 

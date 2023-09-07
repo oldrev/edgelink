@@ -8,8 +8,7 @@
 
 #include "flow/common.hpp"
 #include "flow/msg.hpp"
-#include "flow/dataflow.hpp"
-#include "flow/details/flow.hpp"
+#include "flow/abstractions.hpp"
 #include "flow/registry.hpp"
 #include "flow/engine.hpp"
 
