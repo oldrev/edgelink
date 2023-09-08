@@ -99,7 +99,17 @@ class InjectNode : public SourceNode {
   private:
     std::shared_ptr<Msg> create_msg() {
         auto msg = std::make_shared<Msg>();
-        msg->data()["payload"] = std::time(0);
+
+        auto currentTime = std::chrono::system_clock::now();
+
+        // 将当前时间点转换为毫秒
+        auto sinceEpoch = currentTime.time_since_epoch();
+        auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(sinceEpoch);
+
+        // 获取毫秒时间戳
+        int64_t milliseconds = millis.count();
+
+        msg->data()["payload"] = milliseconds;
         return msg;
     }
 
