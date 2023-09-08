@@ -164,7 +164,7 @@ class MqttBrokerNode : public EndpointNode,
 
 RTTR_PLUGIN_REGISTRATION {
     rttr::registration::class_<StandaloneNodeProvider<MqttBrokerNode, "mqtt-broker", NodeKind::STANDALONE>>(
-        "edgelink::plugins::modbus::MqttBrokerNodeProvider")
+        "edgelink::plugins::mqtt::MqttBrokerNodeProvider")
         .constructor()(rttr::policy::ctor::as_raw_ptr);
 };
 

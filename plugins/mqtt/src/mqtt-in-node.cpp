@@ -30,6 +30,7 @@ namespace edgelink::plugins::mqtt {
     },
 */
 
+/*
 class MqttInNode : public SourceNode {
   public:
     MqttInNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc,
@@ -65,6 +66,7 @@ class MqttInNode : public SourceNode {
         }
     }
 
+protected:
     Awaitable<void> process_async(std::stop_token& stoken) override {
         //
 
@@ -79,7 +81,11 @@ class MqttInNode : public SourceNode {
 
 RTTR_PLUGIN_REGISTRATION {
     rttr::registration::class_<FlowNodeProvider<MqttInNode, "mqtt in", NodeKind::SOURCE>>(
-        "edgelink::plugins::modbus::MqttInNodeProvider")
+        "edgelink::plugins::mqtt::MqttInNodeProvider")
         .constructor()(rttr::policy::ctor::as_raw_ptr);
 };
+
+*/
+
+
 }; // namespace edgelink::plugins::mqtt

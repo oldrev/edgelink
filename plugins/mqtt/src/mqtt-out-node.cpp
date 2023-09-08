@@ -72,13 +72,9 @@ class MqttOutNode : public SinkNode {
         }
     }
 
-    Awaitable<void> start_async() override {
-        co_return;
-    }
+    Awaitable<void> start_async() override { co_return; }
 
-    Awaitable<void> stop_async() override {
-        co_return;
-    }
+    Awaitable<void> stop_async() override { co_return; }
 
     Awaitable<void> receive_async(std::shared_ptr<Msg> msg) override {
 
@@ -125,7 +121,8 @@ class MqttOutNode : public SinkNode {
 
 RTTR_PLUGIN_REGISTRATION {
     rttr::registration::class_<FlowNodeProvider<MqttOutNode, "mqtt out", NodeKind::SINK>>(
-        "edgelink::plugins::modbus::MqttOutNodeProvider")
+        "edgelink::plugins::mqtt::MqttOutNodeProvider")
         .constructor()(rttr::policy::ctor::as_raw_ptr);
 };
+
 }; // namespace edgelink::plugins::mqtt

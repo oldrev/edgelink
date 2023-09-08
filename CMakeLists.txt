@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(EdgeLink)
+project(EdgeLinkApp)
 
 set(CMAKE_GENERATOR "Ninja")
 
@@ -49,7 +49,7 @@ file(GLOB_RECURSE SOURCES
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 
 # 添加可执行文件
-add_executable(${PROJECT_NAME} ${SOURCES})
+add_executable(EdgeLinkApp ${SOURCES})
 
 # target_compile_options(${PROJECT_NAME} PRIVATE -fno-rtti), 不要关掉 RTTI
 
@@ -67,6 +67,7 @@ add_definitions(-DBOOST_LOG_DYN_LINK)
 target_precompile_headers(${PROJECT_NAME} PRIVATE src/pch.hpp)
 
 # 添加复制操作，将配置文件复制到输出目录
+configure_file("./bin/edgelink" ${EXECUTABLE_OUTPUT_PATH}/edgelink COPYONLY)
 configure_file(./edgelink-conf.json ${EXECUTABLE_OUTPUT_PATH}/edgelink-conf.json COPYONLY)
 configure_file(./flows.json ${EXECUTABLE_OUTPUT_PATH}/flows.json COPYONLY)
 

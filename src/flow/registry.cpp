@@ -34,8 +34,9 @@ Registry::Registry(const boost::json::object& json_config) : _libs() {
         spdlog::info("找到插件：{0}", lib_path);
 
         auto lib = make_unique<rttr::library>(lib_path);
-        if (!lib->load()) {
-            throw std::runtime_error(fmt::format("无法加载插件 {0}", lib_path));
+        auto is_loaded = lib->load();
+        if (!is_loaded) {
+            throw std::runtime_error(fmt::format("无法加载插件 '{0}'：{1}", lib_path, lib->get_error_string()));
         }
 
         for (auto type : lib->get_types()) {
