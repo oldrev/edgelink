@@ -34,7 +34,7 @@ class DebugNode : public SinkNode {
 
     Awaitable<void> receive_async(std::shared_ptr<Msg> msg) override {
         //
-        spdlog::info("DebugNode > {0}", msg->to_string());
+        spdlog::info("DebugNode({0})> {1}", this->id(), msg->to_string());
         co_return;
     }
 };

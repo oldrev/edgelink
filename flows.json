@@ -1,16 +1,19 @@
 [
     {
+        "id": "73e0fcd142fc5256",
         "type": "tab",
-        "id": "flow1",
-        "name": "flow 1"
+        "label": "流程 1",
+        "disabled": true,
+        "info": "",
+        "env": []
     },
     {
-        "id": "broker1",
+        "id": "3c39cf63714c26a4",
         "type": "mqtt-broker",
         "name": "",
         "broker": "test.mosquitto.org",
         "port": "1883",
-        "clientid": "",
+        "clientid": "1883",
         "autoConnect": true,
         "usetls": false,
         "protocolVersion": "4",
@@ -32,73 +35,126 @@
         "sessionExpiry": ""
     },
     {
+        "id": "e978982598e42d37",
         "type": "inject",
-        "id": "source1",
-        "z": "flow1",
-        "name": "inject 1",
-        "repeat": "",
+        "z": "73e0fcd142fc5256",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "1",
+        "crontab": "",
         "once": false,
-        "onceDelay": 1.0,
-        "crontab": "*/2 * * * * ?",
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 500,
+        "y": 280,
         "wires": [
             [
-                "func1",
-                "temp1"
+                "6301403be614681a",
+                "78957c1f36845f71"
             ]
         ]
     },
     {
+        "id": "6301403be614681a",
         "type": "function",
-        "id": "func1",
-        "z": "flow1",
+        "z": "73e0fcd142fc5256",
         "name": "function 1",
-        "func": "msg.payload = 'Hello, World!'; var msg2 = cloneMsg(msg); msg2.payload = 'Hello!, EdgeLink!'; return [msg, msg2];",
+        "func": "var timestamp = msg.payload;\nmsg.payload = {\n    say: \"hello world\",\n    time: String(timestamp),\n};\nreturn [msg, msg];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 720,
+        "y": 280,
         "wires": [
             [
-                "sink1"
+                "6b435f6fae0bd992"
             ],
             [
-                "sink2"
+                "29487235f536cc7c"
             ]
         ]
     },
     {
+        "id": "6b435f6fae0bd992",
         "type": "debug",
-        "id": "sink1",
-        "z": "flow1",
+        "z": "73e0fcd142fc5256",
         "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 960,
+        "y": 280,
         "wires": []
     },
     {
-        "type": "debug",
-        "id": "sink2",
-        "z": "flow1",
-        "name": "debug 2",
+        "id": "29487235f536cc7c",
+        "type": "mqtt out",
+        "z": "73e0fcd142fc5256",
+        "name": "",
+        "topic": "/yncic-dangerous/data/test1",
+        "qos": "0",
+        "retain": "false",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "3c39cf63714c26a4",
+        "x": 1020,
+        "y": 420,
         "wires": []
     },
     {
+        "id": "78957c1f36845f71",
         "type": "template",
-        "id": "temp1",
-        "z": "flow1",
-        "name": "tempalte 1",
+        "z": "73e0fcd142fc5256",
+        "name": "",
         "field": "payload",
-        "fieldType": "payload",
-        "template": "[72, 101, 108, 108, 111, 44, 32, 87, 111, 114, 108, 100, 33]",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "爱来自时间 {{payload}} !",
+        "output": "str",
+        "x": 730,
+        "y": 340,
         "wires": [
             [
-                "sink3"
+                "29487235f536cc7c",
+                "90392e0ffa1882d4"
             ]
         ]
     },
     {
-        "type": "mqtt out",
-        "id": "sink3",
-        "z": "flow1",
-        "broker": "broker1",
-        "topic": "/yncic-dangerous/data/test1",
-        "qos": "1",
-        "retain": "false",
-        "name": "mqtt out 1",
+        "id": "90392e0ffa1882d4",
+        "type": "debug",
+        "z": "73e0fcd142fc5256",
+        "name": "debug 2",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 960,
+        "y": 500,
         "wires": []
     }
 ]

@@ -80,7 +80,9 @@ class InjectNode : public SourceNode {
     Awaitable<void> on_async_run() override {
         auto executor = co_await this_coro::executor;
 
-        co_await this->async_once_task();
+        if (_once) {
+            co_await this->async_once_task();
+        }
 
         // 进入循环执行
         if (_repeat && *_repeat > 0) {

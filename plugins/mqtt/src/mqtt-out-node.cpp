@@ -78,6 +78,7 @@ class MqttOutNode : public SinkNode {
 
     Awaitable<void> receive_async(std::shared_ptr<Msg> msg) override {
 
+        spdlog::debug("MQTT OUT > 开始发布：{0}", msg->to_string());
         if (msg->data().contains("payload")) {
 
             auto topic = _node_topic.has_value() ? std::string_view(*_node_topic)
@@ -91,6 +92,7 @@ class MqttOutNode : public SinkNode {
 
             if (json_payload_value.is_string()) { // 是字符串就原样发送
                 co_await mqtt->async_publish_string(topic, json_payload_value.as_string(), qos);
+                spdlog::debug("MQTT OUT > 已发送 {0}", json_payload_value.as_string());
             } else if (json_payload_value.is_array()) { // 是数组就假定要发送的是字节数组
                 // 注意不能直接发，这里是 boost::array，需要转换 buffer
                 auto json_array = json_payload_value.as_array();
@@ -101,9 +103,11 @@ class MqttOutNode : public SinkNode {
                 }
                 async_mqtt::buffer buffer(bytes.begin(), bytes.end());
                 co_await mqtt->async_publish(topic, buffer, qos);
+                spdlog::debug("MQTT OUT > 已发送 {0}", json_payload_value.as_string());
             } else if (json_payload_value.is_object()) { // 如果是对象就转换为 JSON 字符串发送
                 auto payload_text = std::move(boost::json::serialize(msg->data().at("payload")));
                 co_await mqtt->async_publish_string(topic, payload_text, qos);
+                spdlog::debug("MQTT OUT > 已发送 {0}", json_payload_value.as_string());
             } else {
                 throw InvalidDataException(
                     fmt::format("MQTT 输出节点不支持负载：'{0}'", boost::json::serialize(json_payload_value)));

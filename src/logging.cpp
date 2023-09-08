@@ -29,7 +29,7 @@ void init_logging() {
     spdlog::set_default_logger(logger);
     
     // not work...
-    spdlog::set_level(spdlog::level::info);
+    spdlog::set_level(spdlog::level::debug);
 }
 
 }; // namespace edgelink

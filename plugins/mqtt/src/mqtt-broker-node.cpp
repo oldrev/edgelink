@@ -63,6 +63,7 @@ class MqttBrokerNode : public EndpointNode,
 
     Awaitable<void> async_publish(const std::string_view topic, const async_mqtt::buffer& payload_buffer,
                                   async_mqtt::qos qos) override {
+        spdlog::debug("MQTT OUT > 发布主题：{0}", topic);
         auto topic_buffer = am::allocate_buffer(topic);
         auto pid = co_await _endpoint->acquire_unique_packet_id(asio::use_awaitable);
         // Send MQTT PUBLISH

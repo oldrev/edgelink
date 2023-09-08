@@ -28,7 +28,7 @@ class FlowContext {
 struct IFlow {
 
     virtual const std::string_view id() const = 0;
-    virtual const std::string_view name() const = 0;
+    virtual const std::string_view label() const = 0;
     virtual bool is_disabled() const = 0;
     virtual IEngine* engine() const = 0;
 

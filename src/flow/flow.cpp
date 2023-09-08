@@ -11,7 +11,7 @@ using CloneMsgStaticVector = boost::container::static_vector<std::shared_ptr<edg
 namespace edgelink::flow::details {
 
 Flow::Flow(const boost::json::object& json_config, IEngine* engine)
-    : _engine(engine), _id(json_config.at("id").as_string()), _name(json_config.at("name").as_string()),
+    : _engine(engine), _id(json_config.at("id").as_string()), _label(json_config.at("label").as_string()),
       _disabled(edgelink::json::value_or(json_config, "disabled", true)), _nodes() {
     //
 }

@@ -17,7 +17,7 @@ class Flow : public IFlow {
     virtual ~Flow();
 
     const std::string_view id() const override { return _id; }
-    const std::string_view name() const override { return _name; }
+    const std::string_view label() const override { return _label; }
     bool is_disabled() const override { return _disabled; }
     IEngine* engine() const override { return _engine; }
 
@@ -43,7 +43,7 @@ class Flow : public IFlow {
 
   private:
     const std::string _id;
-    const std::string _name;
+    const std::string _label;
     const bool _disabled;
     IEngine*const _engine;
     std::vector<std::unique_ptr<IFlowNode>> _nodes;
