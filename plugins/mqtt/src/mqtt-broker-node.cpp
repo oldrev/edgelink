@@ -1,4 +1,5 @@
 #include <edgelink/plugin.hpp>
+#include <edgelink/async/async-lock.hpp>
 #include "mqtt.hpp"
 
 using namespace edgelink;
@@ -51,12 +52,24 @@ class MqttBrokerNode : public EndpointNode,
     }
 
     Awaitable<void> start_async() override {
+        auto exe = co_await this_coro::executor;
+        if (!_lock) { // 因 MQTT 库的限制，此类不运行并发操作
+            _lock = std::make_unique<async::AsyncLock<boost::asio::any_io_executor>>(exe);
+        }
+
+        co_await _lock->async_lock();
         co_await this->async_connect();
+        _lock->unlock();
+
         co_return;
     }
 
     Awaitable<void> stop_async() override {
+
+        co_await _lock->async_lock();
         co_await this->async_close();
+        _lock->unlock();
+
         co_return;
     }
 
@@ -64,6 +77,8 @@ class MqttBrokerNode : public EndpointNode,
 
     Awaitable<void> async_publish(const std::string_view topic, const async_mqtt::buffer& payload_buffer,
                                   async_mqtt::qos qos) override {
+        co_await _lock->async_lock();
+
         this->logger()->debug("MQTT OUT > 发布主题：{0}", topic);
         auto topic_buffer = am::allocate_buffer(topic);
         auto pid = co_await _endpoint->acquire_unique_packet_id(asio::use_awaitable);
@@ -72,6 +87,7 @@ class MqttBrokerNode : public EndpointNode,
                                            asio::use_awaitable);
         if (se) {
             this->logger()->error("MQTT PUBLISH send error: {0}", se.what());
+            _lock->unlock();
             co_return;
         }
         // Recv MQTT PUBLISH and PUBACK (order depends on broker)
@@ -86,6 +102,7 @@ class MqttBrokerNode : public EndpointNode,
         } else {
             this->logger()->error("MQTT recv error: {0}", pv.get<am::system_error>().what());
         }
+        _lock->unlock();
         co_return;
     }
 
@@ -99,6 +116,7 @@ class MqttBrokerNode : public EndpointNode,
 
   private:
     Awaitable<void> async_connect() {
+        BOOST_ASSERT(_lock);
         this->logger()->info("开始连接 MQTT：{}:{}", this->host(), this->port());
 
         auto exe = co_await this_coro::executor;
@@ -156,12 +174,14 @@ class MqttBrokerNode : public EndpointNode,
     /// @brief 关闭连接
     /// @return
     Awaitable<void> async_close() noexcept {
+        BOOST_ASSERT(_lock);
         co_await _endpoint->close(asio::use_awaitable);
         this->logger()->info("MQTT 连接已断开，主机：{0}:{1}", this->host(), this->port());
     }
 
   private:
     std::unique_ptr<Endpoint> _endpoint;
+    std::unique_ptr<async::AsyncLock<boost::asio::any_io_executor>> _lock;
 };
 
 RTTR_PLUGIN_REGISTRATION {
@@ -169,5 +189,6 @@ RTTR_PLUGIN_REGISTRATION {
         "edgelink::plugins::mqtt::MqttBrokerNodeProvider")
         .constructor()(rttr::policy::ctor::as_raw_ptr);
 };
+
 
 }; // namespace edgelink::plugins::mqtt

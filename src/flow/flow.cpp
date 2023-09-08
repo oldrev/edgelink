@@ -28,9 +28,9 @@ Awaitable<void> Flow::emit_async(const std::string_view source_node_id, std::sha
     auto source = this->get_node(source_node_id);
     auto output_ports = source->output_ports();
     for (size_t i = 0; i < output_ports.size(); i++) {
-        // 根据出度把消息复制
-        // boost::asio::co_spawn(exec, this->relay_async(source_node_id, msg, i, true), boost::asio::detached);
-        co_await this->relay_async(source_node_id, msg, i, true);
+        // 根据出度把消息复制，这里是异步非阻塞的
+        boost::asio::co_spawn(exec, this->relay_async(source_node_id, msg, i, true), boost::asio::detached);
+        // co_await this->relay_async(source_node_id, msg, i, true);
     }
     co_return;
 }
