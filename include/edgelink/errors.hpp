@@ -2,24 +2,19 @@
 
 namespace edgelink {
 
-class NotSupportedException : public std::exception {
+class NotSupportedException : public std::logic_error {
   public:
-    NotSupportedException(const std::string& message) : _message(message) {}
-    NotSupportedException(const char* message) : _message(message) {}
-
-    // 重载 std::exception 的 what 函数，返回异常的描述信息
-    const char* what() const noexcept override { return _message.c_str(); }
-
-  private:
-    const std::string _message;
+    explicit NotSupportedException(const std::string str) : std::logic_error(str) {}
+    explicit NotSupportedException(const char* str) : std::logic_error(str) {}
+    NotSupportedException(NotSupportedException&& other) noexcept : std::logic_error(std::move(other)) {}
 };
 
 class ArgumentException : public std::invalid_argument {};
 
 class IOException : public std::exception {
   public:
-    IOException(const std::string& message) : _message(message) {}
-    IOException(const char* message) : _message(message) {}
+    explicit IOException(const std::string& message) : _message(message) {}
+    explicit IOException(const char* message) : _message(message) {}
 
     // 重载 std::exception 的 what 函数，返回异常的描述信息
     const char* what() const noexcept override { return _message.c_str(); }

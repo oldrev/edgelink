@@ -36,6 +36,9 @@
         "id": "source1",
         "z": "flow1",
         "name": "inject 1",
+        "repeat": "",
+        "once": false,
+        "onceDelay": 1.0,
         "crontab": "*/2 * * * * ?",
         "wires": [
             [

@@ -66,9 +66,8 @@ class MqttInNode : public SourceNode {
     }
 
 protected:
-    Awaitable<void> process_async(std::stop_token& stoken) override {
+    Awaitable<void> on_async_run() override {
         //
-
         co_return;
     }
 

@@ -1,0 +1,153 @@
+
+#include <croncpp/croncpp.h>
+
+#include "edgelink/edgelink.hpp"
+
+namespace this_coro = boost::asio::this_coro;
+
+namespace edgelink {
+
+/*
+   {
+    "id": "00c80d77c0c5a9de",
+    "type": "inject",
+    "z": "73e0fcd142fc5256",
+    "name": "",
+    "props": [
+        {
+            "p": "payload"
+        },
+        {
+            "p": "topic",
+            "vt": "str"
+        },
+        {
+            "p": "123",
+            "v": "123",
+            "vt": "flow"
+        }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 270,
+    "y": 80,
+    "wires": [
+        []
+    ]
+}
+*/
+
+struct PropertyEntry {
+    std::string property;
+    std::optional<std::string> value_type;
+    std::optional<boost::json::value> value;
+};
+
+class InjectNode : public SourceNode {
+  public:
+    InjectNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc,
+               const std::vector<OutputPort>&& output_ports, IFlow* flow)
+        : SourceNode(id, desc, move(output_ports), flow, config), _once(config.at("once").as_bool()) {
+
+        if (auto repeat_value = config.if_contains("repeat")) {
+            const std::string_view repeat_str = repeat_value->as_string();
+            if (!repeat_str.empty()) {
+                _repeat = (uint64_t)std::floor(boost::lexical_cast<double>(repeat_str) * 1000);
+            }
+        }
+
+        if (auto crontab_value = config.if_contains("crontab")) {
+            const std::string_view crontab_str = crontab_value->as_string();
+            if (!crontab_str.empty()) {
+                _cron = ::cron::make_cron(crontab_str);
+            }
+        }
+
+        if (auto once_delay_value = config.if_contains("onceDelay")) {
+            auto once_delay = once_delay_value->as_double();
+            if (once_delay != NAN && once_delay > 0) {
+                _once_delay = (uint64_t)std::floor(once_delay * 1000);
+            }
+        }
+    }
+
+  protected:
+    Awaitable<void> on_async_run() override {
+        auto executor = co_await this_coro::executor;
+
+        co_await this->async_once_task();
+
+        // 进入循环执行
+        if (_repeat && *_repeat > 0) {
+            co_await this->async_repeat_task();
+        } else if (_cron) {
+            co_await this->async_cron_task();
+        } else {
+            throw std::logic_error("Bad repeat condition");
+        }
+
+        co_return;
+    }
+
+  private:
+    std::shared_ptr<Msg> create_msg() {
+        auto msg = std::make_shared<Msg>();
+        msg->data()["payload"] = std::time(0);
+        return msg;
+    }
+
+    Awaitable<void> async_once_task() {
+        auto msg = this->create_msg();
+        co_await this->flow()->emit_async(this->id(), msg);
+        co_return;
+    }
+
+    Awaitable<void> async_cron_task() {
+        auto executor = co_await this_coro::executor;
+        while (true) { // TODO  改成等待 stop_token
+            std::time_t now = std::time(0);
+            std::time_t next = ::cron::cron_next(*_cron, now);
+            auto sleep_time = (next - now);
+
+            boost::asio::steady_timer timer(executor, std::chrono::milliseconds(sleep_time));
+            co_await timer.async_wait(boost::asio::use_awaitable);
+
+            auto msg = this->create_msg();
+            co_await this->flow()->emit_async(this->id(), msg);
+        }
+        co_return;
+    }
+
+    Awaitable<void> async_repeat_task() {
+        auto executor = co_await this_coro::executor;
+
+        while (true) { // TODO  改成等待 stop_token
+            boost::asio::steady_timer timer(executor, std::chrono::milliseconds(*_repeat));
+            co_await timer.async_wait(boost::asio::use_awaitable);
+
+            auto msg = this->create_msg();
+            co_await this->flow()->emit_async(this->id(), msg);
+        }
+        co_return;
+    }
+
+  private:
+    // 各个字段
+    std::optional<uint64_t> _repeat;
+    std::optional<cron::cronexpr> _cron;
+    bool _once;
+    std::optional<uint64_t> _once_delay;
+    const std::vector<PropertyEntry> _props;
+};
+
+RTTR_REGISTRATION {
+    rttr::registration::class_<FlowNodeProvider<InjectNode, "inject", NodeKind::SOURCE>>("edgelink::InjectNodeProvider")
+        .constructor()(rttr::policy::ctor::as_raw_ptr);
+};
+
+}; // namespace edgelink

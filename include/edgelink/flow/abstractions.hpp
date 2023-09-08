@@ -199,7 +199,7 @@ class SourceNode : public FlowNode {
         // 线程函数
         auto executor = co_await boost::asio::this_coro::executor;
 
-        auto loop = std::bind(&SourceNode::work_loop, this);
+        auto loop = std::bind(&SourceNode::on_async_run, this);
         boost::asio::co_spawn(executor, loop, boost::asio::detached);
         co_return;
     }
@@ -208,21 +208,11 @@ class SourceNode : public FlowNode {
 
     Awaitable<void> receive_async(std::shared_ptr<Msg> msg) override {
         //
-        throw InvalidDataException("错误的流设置：数据源不允许接收数据");
+        throw NotSupportedException("错误的流设置：数据源不允许接收数据");
     }
 
   protected:
-    virtual Awaitable<void> process_async(std::stop_token& stoken) = 0;
-    std::stop_source _stop;
-
-  private:
-    Awaitable<void> work_loop() {
-        auto stoken = _stop.get_token();
-        while (!_stop.stop_requested()) {
-            co_await this->process_async(stoken);
-        }
-        co_return;
-    }
+    virtual Awaitable<void> on_async_run() = 0;
 };
 
 /// @brief 抽象数据接收器节点

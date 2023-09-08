@@ -12,6 +12,7 @@
 #include <thread>
 #include <type_traits>
 #include <vector>
+#include <cmath>
 
 #include <boost/asio.hpp>
 #include <boost/container/static_vector.hpp>

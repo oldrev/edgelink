@@ -38,7 +38,7 @@ class App {
                 break;
             }
             // 协程 IDLE
-            asio::steady_timer timer(executor, std::chrono::seconds(1));
+            asio::steady_timer timer(executor, std::chrono::milliseconds(1000));
             co_await timer.async_wait(asio::use_awaitable);
         }
         spdlog::info("IDLE 协程已结束");
