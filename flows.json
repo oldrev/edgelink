@@ -59,8 +59,7 @@
         "y": 280,
         "wires": [
             [
-                "6301403be614681a",
-                "78957c1f36845f71"
+                "6301403be614681a"
             ]
         ]
     },
@@ -119,42 +118,6 @@
         "broker": "3c39cf63714c26a4",
         "x": 1020,
         "y": 420,
-        "wires": []
-    },
-    {
-        "id": "78957c1f36845f71",
-        "type": "template",
-        "z": "73e0fcd142fc5256",
-        "name": "",
-        "field": "payload",
-        "fieldType": "msg",
-        "format": "handlebars",
-        "syntax": "mustache",
-        "template": "爱来自时间 {{payload}} !",
-        "output": "str",
-        "x": 730,
-        "y": 340,
-        "wires": [
-            [
-                "29487235f536cc7c",
-                "90392e0ffa1882d4"
-            ]
-        ]
-    },
-    {
-        "id": "90392e0ffa1882d4",
-        "type": "debug",
-        "z": "73e0fcd142fc5256",
-        "name": "debug 2",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 960,
-        "y": 500,
         "wires": []
     }
 ]
