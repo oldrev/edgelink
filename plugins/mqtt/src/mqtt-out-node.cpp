@@ -1,5 +1,4 @@
 #include <edgelink/plugin.hpp>
-#include "mqtt.client.hpp"
 #include "mqtt.hpp"
 
 using namespace edgelink;
