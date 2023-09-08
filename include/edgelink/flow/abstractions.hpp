@@ -195,8 +195,16 @@ class SourceNode : public FlowNode {
         : FlowNode(id, desc, std::move(output_ports), flow, config) {}
 
   public:
-    Awaitable<void> start_async() override;
-    Awaitable<void> stop_async() override;
+    Awaitable<void> start_async() override {
+        // 线程函数
+        auto executor = co_await boost::asio::this_coro::executor;
+
+        auto loop = std::bind(&SourceNode::work_loop, this);
+        boost::asio::co_spawn(executor, loop, boost::asio::detached);
+        co_return;
+    }
+
+    Awaitable<void> stop_async() { co_return; }
 
     Awaitable<void> receive_async(std::shared_ptr<Msg> msg) override {
         //
@@ -208,7 +216,13 @@ class SourceNode : public FlowNode {
     std::stop_source _stop;
 
   private:
-    Awaitable<void> work_loop();
+    Awaitable<void> work_loop() {
+        auto stoken = _stop.get_token();
+        while (!_stop.stop_requested()) {
+            co_await this->process_async(stoken);
+        }
+        co_return;
+    }
 };
 
 /// @brief 抽象数据接收器节点

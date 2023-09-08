@@ -30,7 +30,6 @@ namespace edgelink::plugins::mqtt {
     },
 */
 
-/*
 class MqttInNode : public SourceNode {
   public:
     MqttInNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc,
@@ -85,7 +84,6 @@ RTTR_PLUGIN_REGISTRATION {
         .constructor()(rttr::policy::ctor::as_raw_ptr);
 };
 
-*/
 
 
 }; // namespace edgelink::plugins::mqtt
