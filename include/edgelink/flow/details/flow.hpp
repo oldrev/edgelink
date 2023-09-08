@@ -42,6 +42,7 @@ class Flow : public IFlow {
     inline void emplace_node(std::unique_ptr<IFlowNode>&& node) { _nodes.emplace_back(std::move(node)); }
 
   private:
+    std::shared_ptr<spdlog::logger> _logger;
     const std::string _id;
     const std::string _label;
     const bool _disabled;

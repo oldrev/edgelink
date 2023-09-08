@@ -43,7 +43,8 @@ class MqttBrokerNode : public EndpointNode,
                        public std::enable_shared_from_this<MqttBrokerNode>,
                        public IMqttBrokerEndpoint {
   public:
-    MqttBrokerNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc, IEngine* engine)
+    MqttBrokerNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc,
+                   IEngine* engine)
         : EndpointNode(id, desc, config, engine, config.at("broker").as_string(),
                        boost::lexical_cast<uint16_t>(config.at("port").as_string().c_str())) {
         //
@@ -63,14 +64,14 @@ class MqttBrokerNode : public EndpointNode,
 
     Awaitable<void> async_publish(const std::string_view topic, const async_mqtt::buffer& payload_buffer,
                                   async_mqtt::qos qos) override {
-        spdlog::debug("MQTT OUT > 发布主题：{0}", topic);
+        this->logger()->debug("MQTT OUT > 发布主题：{0}", topic);
         auto topic_buffer = am::allocate_buffer(topic);
         auto pid = co_await _endpoint->acquire_unique_packet_id(asio::use_awaitable);
         // Send MQTT PUBLISH
         auto se = co_await _endpoint->send(am::v3_1_1::publish_packet{*pid, topic_buffer, payload_buffer, qos},
                                            asio::use_awaitable);
         if (se) {
-            spdlog::error("MQTT PUBLISH send error: {0}", se.what());
+            this->logger()->error("MQTT PUBLISH send error: {0}", se.what());
             co_return;
         }
         // Recv MQTT PUBLISH and PUBACK (order depends on broker)
@@ -83,7 +84,7 @@ class MqttBrokerNode : public EndpointNode,
                                   },
                                   [](auto const&) {}});
         } else {
-            spdlog::error("MQTT recv error: {0}", pv.get<am::system_error>().what());
+            this->logger()->error("MQTT recv error: {0}", pv.get<am::system_error>().what());
         }
         co_return;
     }
@@ -98,7 +99,7 @@ class MqttBrokerNode : public EndpointNode,
 
   private:
     Awaitable<void> async_connect() {
-        spdlog::info("开始连接 MQTT：{0}:{1}", this->host(), this->port());
+        this->logger()->info("开始连接 MQTT：{}:{}", this->host(), this->port());
 
         auto exe = co_await this_coro::executor;
 
@@ -111,7 +112,7 @@ class MqttBrokerNode : public EndpointNode,
         asio::ip::tcp::resolver resolver(exe);
 
         // Resolve hostname
-        spdlog::info("MqttBrokerNode > 解析地址");
+        this->logger()->debug("MqttBrokerNode > 解析地址");
 
         auto eps = co_await resolver.async_resolve(this->host(), std::to_string(this->port()), asio::use_awaitable);
 
@@ -119,7 +120,7 @@ class MqttBrokerNode : public EndpointNode,
         // am::stream -> TCP
 
         // Underlying TCP connect
-        spdlog::info("MqttBrokerNode > socket 开始连接");
+        this->logger()->debug("MqttBrokerNode > socket 开始连接");
         co_await asio::async_connect(_endpoint->next_layer(), eps, asio::use_awaitable);
 
         // Send MQTT CONNECT
@@ -145,18 +146,18 @@ class MqttBrokerNode : public EndpointNode,
                                    [](auto const&) {}};
             pv.visit(cb);
         } else {
-            spdlog::error("MqttClient > CONNACK 收到错误：{0}", pv.get<am::system_error>().what());
+            this->logger()->error("MqttClient > CONNACK 收到错误：{0}", pv.get<am::system_error>().what());
             co_return;
         }
 
-        spdlog::info("MQTT 已连接：{0}:{1}", this->host(), this->port());
+        this->logger()->info("MQTT 已连接：{0}:{1}", this->host(), this->port());
     }
 
     /// @brief 关闭连接
     /// @return
     Awaitable<void> async_close() noexcept {
         co_await _endpoint->close(asio::use_awaitable);
-        spdlog::info("MQTT 连接已断开，主机：{0}:{1}", this->host(), this->port());
+        this->logger()->info("MQTT 连接已断开，主机：{0}:{1}", this->host(), this->port());
     }
 
   private:

@@ -8,13 +8,13 @@ bool is_valid_provider_type(const rttr::type& type) {
            type.get_name() != "edgelink::IFlowNodeProvider";
 }
 
-Registry::Registry(const boost::json::object& json_config) : _libs() {
+Registry::Registry(const boost::json::object& json_config) : _logger(spdlog::default_logger()->clone("Flow")), _libs() {
 
     auto node_provider_type = rttr::type::get<INodeProvider>();
 
     // 注册内置节点
     {
-        spdlog::info("开始注册内置流程节点...");
+        _logger->info("开始注册内置流程节点...");
         // 注册节点提供器
         for (auto& type : rttr::type::get_types()) {
             if (is_valid_provider_type(type)) {
@@ -23,7 +23,7 @@ Registry::Registry(const boost::json::object& json_config) : _libs() {
         }
     }
 
-    spdlog::info("开始注册插件提供的流程节点...");
+    _logger->info("开始注册插件提供的流程节点...");
     std::string path = "./plugins";
 
     using std::filesystem::directory_iterator;
@@ -31,7 +31,7 @@ Registry::Registry(const boost::json::object& json_config) : _libs() {
     for (const auto& file : directory_iterator(path)) {
         auto path = std::filesystem::path(file.path());
         std::string lib_path = path.replace_extension("");
-        spdlog::info("找到插件：{0}", lib_path);
+        _logger->info("找到插件：{0}", lib_path);
 
         auto lib = make_unique<rttr::library>(lib_path);
         auto is_loaded = lib->load();
@@ -51,7 +51,7 @@ Registry::Registry(const boost::json::object& json_config) : _libs() {
 
 Registry::~Registry() {
     for (auto const& lib : _libs) {
-        spdlog::info("开始卸载插件动态库：{0}", lib->get_file_name());
+        _logger->info("开始卸载插件动态库：{0}", lib->get_file_name());
         lib->unload();
     }
 }
@@ -64,15 +64,15 @@ void Registry::register_node_provider(const rttr::type& provider_type) {
     if (provider_type.is_derived_from(flow_node_provider_type)) {
         auto provider = provider_type.create().get_value<IFlowNodeProvider*>();
         auto desc = provider->descriptor();
-        spdlog::info("注册流程节点提供器: [{0}]", desc->type_name());
+        _logger->info("注册流程节点提供器: [{0}]", desc->type_name());
         _flow_node_providers.emplace(desc->type_name(), std::move(provider));
     } else if (provider_type.is_derived_from(standalone_node_provider_type)) {
         auto provider = provider_type.create().get_value<IStandaloneNodeProvider*>();
         auto desc = provider->descriptor();
-        spdlog::info("注册流程节点提供器: [{0}]", desc->type_name());
+        _logger->info("注册流程节点提供器: [{0}]", desc->type_name());
         _standalone_node_providers.emplace(desc->type_name(), std::move(provider));
     } else {
-        spdlog::error("未知的节点提供器: [{0}]", provider_type.get_name());
+        _logger->error("未知的节点提供器: [{0}]", provider_type.get_name());
     }
 }
 

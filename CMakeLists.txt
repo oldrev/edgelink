@@ -49,6 +49,7 @@ file(GLOB_RECURSE SOURCES
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 
 # 添加可执行文件
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 add_executable(EdgeLinkApp ${SOURCES})
 
 # target_compile_options(${PROJECT_NAME} PRIVATE -fno-rtti), 不要关掉 RTTI

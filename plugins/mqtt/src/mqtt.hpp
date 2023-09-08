@@ -13,6 +13,8 @@ struct IMqttBrokerEndpoint {
 
     virtual Awaitable<void> async_publish_string(const std::string_view topic, const std::string_view payload,
                                                  async_mqtt::qos qos) = 0;
+
+    RTTR_ENABLE()
 };
 
 }; // namespace edgelink::plugins::mqtt

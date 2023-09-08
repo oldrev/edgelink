@@ -39,6 +39,7 @@ class Engine : public IEngine {
 
 
   private:
+    std::shared_ptr<spdlog::logger> _logger;
     const IFlowFactory& _flow_factory;
     const std::string _flows_json_path;
     std::vector<std::unique_ptr<IStandaloneNode>> _global_nodes;

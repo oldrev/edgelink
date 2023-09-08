@@ -21,7 +21,6 @@ class App {
         // auto self = shared_from_this();
 
         co_await _engine->start_async();
-        spdlog::info("流程引擎启动完毕...");
 
         // co_await this->idle_loop();
     }
@@ -104,9 +103,11 @@ int main(int argc, char* argv[]) {
         asio::co_spawn(io_context, app.run_async(), asio::detached);
 
         io_context.run();
-        spdlog::info("系统协程系统已停止，开始进行清理...");
+        SPDLOG_INFO("系统协程系统已停止，开始进行清理...");
+        spdlog::shutdown();
     } catch (std::exception& ex) {
-        spdlog::critical("程序异常！错误消息：{0}", ex.what());
+        SPDLOG_CRITICAL("程序异常！错误消息：{0}", ex.what());
+        spdlog::shutdown();
         return -1;
     }
 }

@@ -5,6 +5,7 @@ file(GLOB_RECURSE SOURCES "src/*.c" "src/*.cpp")
 
 find_library(LIBMODBUS NAMES modbus REQUIRED)
 
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 add_library(${PLUGIN_MODBUS} SHARED ${SOURCES})
 
 # 包含Boost头文件

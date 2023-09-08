@@ -12,23 +12,22 @@ void init_logging() {
 
     // create console_sink
     auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-    console_sink->set_level(spdlog::level::info);
+    console_sink->set_level(spdlog::level::debug);
 
     // create rotating file sink
     auto file_sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>("logs/log.txt", size, backcount, true);
-    file_sink->set_level(spdlog::level::info);
+    file_sink->set_level(spdlog::level::warn);
 
     // sink's bucket
     spdlog::sinks_init_list sinks{console_sink, file_sink};
 
     // create async logger, and use global threadpool
     spdlog::init_thread_pool(1024 * 8, 1);
-    auto logger = std::make_shared<spdlog::async_logger>("aslogger", sinks, spdlog::thread_pool());
+    auto logger = std::make_shared<spdlog::async_logger>("default_logger", sinks, spdlog::thread_pool());
     spdlog::initialize_logger(logger);
     // set default logger
     spdlog::set_default_logger(logger);
     
-    // not work...
     spdlog::set_level(spdlog::level::debug);
 }
 

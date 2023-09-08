@@ -27,7 +27,7 @@ namespace edgelink::plugins::mqtt {
     }
 */
 
-class MqttOutNode : public SinkNode {
+class MqttOutNode : public SinkNode, public std::enable_shared_from_this<MqttOutNode> {
   public:
     MqttOutNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc,
                 const std::vector<OutputPort>&& output_ports, IFlow* flow)
@@ -67,52 +67,78 @@ class MqttOutNode : public SinkNode {
                 }
             }
         } catch (std::exception& ex) {
-            spdlog::error("加载 MQTT Out 节点配置发生错误：{0}", ex.what());
+            this->logger()->error("加载 MQTT Out 节点配置发生错误：{0}", ex.what());
             throw ex;
         }
     }
 
-    Awaitable<void> start_async() override { co_return; }
+    Awaitable<void> start_async() override {
+
+        this->logger()->info("MQTT OUT > 启动");
+        co_return;
+    }
 
     Awaitable<void> stop_async() override { co_return; }
 
     Awaitable<void> receive_async(std::shared_ptr<Msg> msg) override {
 
-        spdlog::debug("MQTT OUT > 开始发布：{0}", msg->to_string());
-        if (msg->data().contains("payload")) {
-
-            auto topic = _node_topic.has_value() ? std::string_view(*_node_topic)
-                                                 : std::string_view(msg->data().at("topic").as_string());
-            auto qos = _node_qos.has_value() ? *_node_qos : async_mqtt::qos(msg->data().at("qos").to_number<int>());
-
-            auto json_payload_value = msg->data().at("payload");
-
-            auto mqtt_node = this->flow()->engine()->get_global_node(_mqtt_broker_node_id);
-            auto mqtt = dynamic_cast<IMqttBrokerEndpoint*>(mqtt_node);
-
-            if (json_payload_value.is_string()) { // 是字符串就原样发送
-                co_await mqtt->async_publish_string(topic, json_payload_value.as_string(), qos);
-                spdlog::debug("MQTT OUT > 已发送 {0}", json_payload_value.as_string());
-            } else if (json_payload_value.is_array()) { // 是数组就假定要发送的是字节数组
-                // 注意不能直接发，这里是 boost::array，需要转换 buffer
-                auto json_array = json_payload_value.as_array();
-                std::vector<char> bytes(json_array.size());
-                for (size_t i = 0; i < json_array.size(); i++) {
-                    auto v = json_array.at(i);
-                    bytes[i] = v.to_number<char>();
-                }
-                async_mqtt::buffer buffer(bytes.begin(), bytes.end());
-                co_await mqtt->async_publish(topic, buffer, qos);
-                spdlog::debug("MQTT OUT > 已发送 {0}", json_payload_value.as_string());
-            } else if (json_payload_value.is_object()) { // 如果是对象就转换为 JSON 字符串发送
-                auto payload_text = std::move(boost::json::serialize(msg->data().at("payload")));
-                co_await mqtt->async_publish_string(topic, payload_text, qos);
-                spdlog::debug("MQTT OUT > 已发送 {0}", json_payload_value.as_string());
-            } else {
-                throw InvalidDataException(
-                    fmt::format("MQTT 输出节点不支持负载：'{0}'", boost::json::serialize(json_payload_value)));
-            }
+        if (!msg->data().contains("payload")) {
+            co_return;
         }
+
+        auto topic = _node_topic.has_value() ? std::string_view(*_node_topic)
+                                             : std::string_view(msg->data().at("topic").as_string());
+        auto qos = _node_qos.has_value() ? *_node_qos : async_mqtt::qos(msg->data().at("qos").to_number<int>());
+
+        auto json_payload_value = msg->data().at("payload");
+
+        auto mqtt_node = this->flow()->engine()->get_global_node(_mqtt_broker_node_id);
+        auto mqtt = dynamic_cast<IMqttBrokerEndpoint*>(mqtt_node);
+        if (mqtt == nullptr) {
+            SPDLOG_ERROR("转换无效！！！");
+            co_return;
+        }
+
+        std::optional<async_mqtt::buffer> buf_to_send;
+
+        switch (json_payload_value.kind()) {
+
+        case boost::json::kind::array: { // 是数组就假定要发送的是字节数组
+            // 注意不能直接发，这里是 boost::array，需要转换 buffer
+            auto json_array = json_payload_value.as_array();
+            std::vector<char> bytes(json_array.size());
+            for (size_t i = 0; i < json_array.size(); i++) {
+                auto v = json_array.at(i);
+                bytes[i] = v.to_number<char>();
+            }
+            buf_to_send = async_mqtt::allocate_buffer(bytes.begin(), bytes.end());
+        } break;
+
+        case boost::json::kind::string: { // 字符串原样发送
+            buf_to_send = async_mqtt::allocate_buffer(json_payload_value.as_string());
+        } break;
+
+        case boost::json::kind::object:
+        case boost::json::kind::bool_:
+        case boost::json::kind::int64:
+        case boost::json::kind::uint64:
+        case boost::json::kind::double_: { // 如果是对象和其他数字、布尔值就转换为 JSON 字符串发送
+            auto payload_text = boost::json::serialize(json_payload_value);
+            buf_to_send = async_mqtt::allocate_buffer(payload_text);
+        } break;
+
+        default: {
+            auto error_msg =
+                fmt::format("'mqtt out' 节点不支持负载：'{0}'", boost::json::serialize(json_payload_value));
+            SPDLOG_ERROR(error_msg);
+        }
+
+        } // switch
+
+        if (buf_to_send) {
+            co_await mqtt->async_publish(topic, *buf_to_send, qos);
+        }
+
         co_return;
     }
 
@@ -128,5 +154,4 @@ RTTR_PLUGIN_REGISTRATION {
         "edgelink::plugins::mqtt::MqttOutNodeProvider")
         .constructor()(rttr::policy::ctor::as_raw_ptr);
 };
-
 }; // namespace edgelink::plugins::mqtt

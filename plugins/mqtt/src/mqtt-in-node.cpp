@@ -30,7 +30,7 @@ namespace edgelink::plugins::mqtt {
     },
 */
 
-class MqttInNode : public SourceNode {
+class MqttInNode : public SourceNode, public std::enable_shared_from_this<MqttInNode> {
   public:
     MqttInNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc,
                const std::vector<OutputPort>&& output_ports, IFlow* flow)

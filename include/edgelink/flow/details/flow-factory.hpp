@@ -24,6 +24,7 @@ class FlowFactory : public edgelink::IFlowFactory {
                                                  const boost::json::object& flow_node, IEngine* engine) const;
 
   private:
+    std::shared_ptr<spdlog::logger> _logger;
     const IRegistry& _registry;
 };
 

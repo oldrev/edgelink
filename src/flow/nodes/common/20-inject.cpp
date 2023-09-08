@@ -81,14 +81,14 @@ class InjectNode : public SourceNode {
         auto executor = co_await this_coro::executor;
 
         if (_once) {
-            co_await this->async_once_task();
+            co_await this->async_once_task(executor);
         }
 
         // 进入循环执行
         if (_repeat && *_repeat > 0) {
-            co_await this->async_repeat_task();
+            co_await this->async_repeat_task(executor);
         } else if (_cron) {
-            co_await this->async_cron_task();
+            co_await this->async_cron_task(executor);
         } else {
             throw std::logic_error("Bad repeat condition");
         }
@@ -103,14 +103,13 @@ class InjectNode : public SourceNode {
         return msg;
     }
 
-    Awaitable<void> async_once_task() {
+    Awaitable<void> async_once_task(boost::asio::any_io_executor executor) {
         auto msg = this->create_msg();
         co_await this->flow()->emit_async(this->id(), msg);
         co_return;
     }
 
-    Awaitable<void> async_cron_task() {
-        auto executor = co_await this_coro::executor;
+    Awaitable<void> async_cron_task(boost::asio::any_io_executor executor) {
         while (true) { // TODO  改成等待 stop_token
             std::time_t now = std::time(0);
             std::time_t next = ::cron::cron_next(*_cron, now);
@@ -125,8 +124,7 @@ class InjectNode : public SourceNode {
         co_return;
     }
 
-    Awaitable<void> async_repeat_task() {
-        auto executor = co_await this_coro::executor;
+    Awaitable<void> async_repeat_task(boost::asio::any_io_executor executor) {
 
         while (true) { // TODO  改成等待 stop_token
             boost::asio::steady_timer timer(executor, std::chrono::milliseconds(*_repeat));

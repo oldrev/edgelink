@@ -123,7 +123,8 @@ class StandaloneNode : public IStandaloneNode {
   protected:
     StandaloneNode(const std::string_view id, const INodeDescriptor* desc, const boost::json::object& config,
                    IEngine* engine)
-        : _id(id), _name(config.at("name").as_string()), _disabled(edgelink::json::value_or(config, "d", false)),
+        : _logger(spdlog::default_logger()->clone(fmt::format("NODE({}:{})", config.at("type").as_string(), id))),
+          _id(id), _name(config.at("name").as_string()), _disabled(edgelink::json::value_or(config, "d", false)),
           _descriptor(desc), _engine(engine) {
         // constructor
     }
@@ -135,16 +136,20 @@ class StandaloneNode : public IStandaloneNode {
     const INodeDescriptor* descriptor() const override { return _descriptor; }
     IEngine* engine() const override { return _engine; };
 
-  private:
-    const std::string _id;
-    const std::string _name;
-    bool _disabled;
-    const INodeDescriptor* _descriptor;
-    IEngine* const _engine;
+    protected:
+      std::shared_ptr<spdlog::logger> logger() const { return _logger; }
 
-  public:
-    virtual Awaitable<void> start_async() = 0;
-    virtual Awaitable<void> stop_async() = 0;
+    private:
+      std::shared_ptr<spdlog::logger> _logger;
+      const std::string _id;
+      const std::string _name;
+      bool _disabled;
+      const INodeDescriptor* _descriptor;
+      IEngine* const _engine;
+
+    public:
+      virtual Awaitable<void> start_async() = 0;
+      virtual Awaitable<void> stop_async() = 0;
 };
 
 /// @brief 流程节点抽象类
@@ -160,7 +165,8 @@ class FlowNode : public IFlowNode {
   protected:
     FlowNode(const std::string_view id, const INodeDescriptor* desc, const std::vector<OutputPort>&& output_ports,
              IFlow* flow, const boost::json::object& config)
-        : _id(id), _name(config.at("name").as_string()), _disabled(edgelink::json::value_or(config, "d", false)),
+        : _logger(spdlog::default_logger()->clone(fmt::format("NODE({}:{})", config.at("type").as_string(), id))),
+          _id(id), _name(config.at("name").as_string()), _disabled(edgelink::json::value_or(config, "d", false)),
           _descriptor(desc), _output_ports(std::move(output_ports)), _flow(flow) {
         // constructor
     }
@@ -174,7 +180,12 @@ class FlowNode : public IFlowNode {
     const INodeDescriptor* descriptor() const override { return _descriptor; }
     IFlow* flow() const override { return _flow; }
 
+  protected:
+    std::shared_ptr<spdlog::logger> logger() const { return _logger;};
+
+
   private:
+  std::shared_ptr<spdlog::logger> _logger;
     const std::string _id;
     const std::string _name;
     bool _disabled;

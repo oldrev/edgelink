@@ -9,7 +9,8 @@ using CloneMsgStaticVector = boost::container::static_vector<std::shared_ptr<edg
 namespace edgelink {
 
 Engine::Engine(const EdgeLinkConfig& el_config, const IFlowFactory& flow_factory)
-    : _flows_json_path(el_config.flows_json_path), _flow_factory(flow_factory) {
+    : _logger(spdlog::default_logger()->clone("Engine")), _flows_json_path(el_config.flows_json_path),
+      _flow_factory(flow_factory) {
 
     // std::vector<std::unique_ptr<IFlow>> create_flows(const boost::json::array& flows_config);
 }
@@ -17,20 +18,20 @@ Engine::Engine(const EdgeLinkConfig& el_config, const IFlowFactory& flow_factory
 Engine::~Engine() {
     //
     // TODO 同步关闭
-    spdlog::info("流程引擎清理中...");
+    _logger->info("流程引擎清理中...");
 
     asio::io_context io_context(1);
     asio::co_spawn(io_context, this->stop_async(), asio::detached);
     io_context.run();
 
-    spdlog::info("流程引擎已关闭");
+    _logger->info("流程引擎已关闭");
 }
 
 Awaitable<void> Engine::start_async() {
 
     // TODO 检查是否在运行
 
-    spdlog::info("流程引擎 > 开始加载流配置：'{0}'", _flows_json_path);
+    _logger->info("流程引擎 > 开始加载流配置：'{0}'", _flows_json_path);
 
     _flows.clear();
 
@@ -53,25 +54,24 @@ Awaitable<void> Engine::start_async() {
     }
 
     //
-    spdlog::info("开始启动流程引擎");
+    _logger->info("开始启动流程引擎");
     _stop_source = std::make_unique<std::stop_source>();
 
     for (auto& node : _global_nodes) {
-        spdlog::debug("正在启动全局节点：{0}", node->id());
+        _logger->debug("正在启动全局节点：{0}", node->id());
         co_await node->start_async();
     }
 
     for (auto& flow : _flows) {
-        spdlog::debug("正在启动流程：{0}", flow->id());
+        _logger->debug("正在启动流程：{0}", flow->id());
         co_await flow->start_async();
     }
-    spdlog::info("全部流程启动完毕");
-    spdlog::info("流程引擎已启动");
+    _logger->info("流程引擎已启动");
 }
 
 Awaitable<void> Engine::stop_async() {
     // 给出线程池停止信号
-    spdlog::info("开始请求流程引擎停止...");
+    _logger->info("开始请求流程引擎停止...");
     _stop_source->request_stop();
 
     for (auto it = _flows.rbegin(); it != _flows.rend(); ++it) {
@@ -81,12 +81,12 @@ Awaitable<void> Engine::stop_async() {
 
     for (auto it = _global_nodes.rbegin(); it != _global_nodes.rend(); ++it) {
         auto ref = std::reference_wrapper<IStandaloneNode>(**it); // 使用 std::reference_wrapper
-        spdlog::debug("正在停止全局节点：[id={0}, type={1}]", ref.get().id(), ref.get().descriptor()->type_name());
+        _logger->debug("正在停止全局节点：[id={0}, type={1}]", ref.get().id(), ref.get().descriptor()->type_name());
         co_await ref.get().stop_async();
-        spdlog::debug("全局节点已停止");
+        _logger->debug("全局节点已停止");
     }
 
-    spdlog::info("流程引擎已停止");
+    _logger->info("流程引擎已停止");
     co_return;
 }
 

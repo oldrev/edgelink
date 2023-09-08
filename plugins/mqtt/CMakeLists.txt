@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.22)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+
 set(PLUGIN_MQTT "edgelink.plugins.mqtt")
 
 file(GLOB_RECURSE SOURCES "src/*.c" "src/*.cpp")
@@ -12,6 +13,7 @@ get_filename_component(CURRENT_CMAKE_SOURCE_DIR "${CMAKE_CURRENT_LIST_FILE}" DIR
 
 add_subdirectory(${CURRENT_CMAKE_SOURCE_DIR}/libs/async_mqtt)
 
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 add_library(${PLUGIN_MQTT} SHARED ${SOURCES})
 
 # 包含Boost头文件

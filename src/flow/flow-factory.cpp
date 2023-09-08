@@ -9,7 +9,8 @@ using namespace edgelink;
 
 namespace edgelink::flow::details {
 
-FlowFactory::FlowFactory(const IRegistry& registry) : _registry(registry) {}
+FlowFactory::FlowFactory(const IRegistry& registry)
+    : _logger(spdlog::default_logger()->clone("Flow")), _registry(registry) {}
 
 std::vector<std::unique_ptr<IFlow>> FlowFactory::create_flows(const boost::json::array& flows_config, IEngine* engine) const {
     auto node_provider_type = rttr::type::get<IFlowNodeProvider>();
@@ -38,9 +39,8 @@ FlowFactory::create_global_nodes(const boost::json::array& flows_config, IEngine
         const std::string_view elem_id = json_node.at("id").as_string();
         if (elem_type != "tab" && elem_type != "flow" && !json_node.contains("z")) {
             auto const& provider_iter = _registry.get_standalone_node_provider(elem_type);
-            spdlog::info("开始创建独立节点：[type='{0}', id='{1}']", elem_type, elem_id);
+            _logger->info("开始创建独立节点：[type='{0}', id='{1}']", elem_type, elem_id);
             auto node = provider_iter->create(elem_id, json_node, engine);
-            spdlog::info("流程节点创建成功：[type='{0}', id={1}]", elem_type, node->id());
             global_nodes.emplace_back(std::move(node));
         }
     }
@@ -101,10 +101,9 @@ std::unique_ptr<IFlow> FlowFactory::create_flow(const boost::json::array& flows_
             ports.emplace_back(std::move(port));
         }
 
-        spdlog::info("开始创建流程节点：[type='{0}', json_id='{1}']", elem_type, elem_id);
+        _logger->info("开始创建流程节点：[type='{0}', json_id='{1}']", elem_type, elem_id);
         auto const& provider_iter = _registry.get_flow_node_provider(elem_type);
         auto node = provider_iter->create(elem_id, elem, std::move(ports), flow.get());
-        spdlog::info("流程节点创建成功：[type='{0}', json_id='{1}', id={2}]", elem_type, elem_id, node->id());
         node_map[elem_id] = node.get();
         flow->emplace_node(std::move(node));
     }

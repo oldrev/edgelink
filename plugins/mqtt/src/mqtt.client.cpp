@@ -16,7 +16,7 @@ MqttClient::MqttClient(const std::string_view host, uint16_t port) : _host(host)
 MqttClient::~MqttClient() {}
 
 Awaitable<void> MqttClient::async_connect() {
-    spdlog::info("开始连接 MQTT：{0}:{1}", _host, _port);
+    SPDLOG_INFO("开始连接 MQTT：{0}:{1}", _host, _port);
 
     auto exe = co_await this_coro::executor;
 

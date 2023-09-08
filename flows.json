@@ -1,6 +1,6 @@
 [
     {
-        "id": "73e0fcd142fc5256",
+        "id": "7c226c13f2e3b224",
         "type": "tab",
         "label": "流程 1",
         "disabled": true,
@@ -8,12 +8,96 @@
         "env": []
     },
     {
-        "id": "3c39cf63714c26a4",
+        "id": "2d418fb8d326e87e",
+        "type": "inject",
+        "z": "7c226c13f2e3b224",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "1",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 350,
+        "y": 320,
+        "wires": [
+            [
+                "9abcf751aa95c9fc"
+            ]
+        ]
+    },
+    {
+        "id": "9abcf751aa95c9fc",
+        "type": "function",
+        "z": "7c226c13f2e3b224",
+        "name": "function 1",
+        "func": "var ts = msg.payload;\nmsg.payload = {\n    timestamp: ts,\n    say: \"爱来自 JS\"\n};\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 560,
+        "y": 320,
+        "wires": [
+            [
+                "b986508adbc3c4fd",
+                "3e15f44c9859e317"
+            ]
+        ]
+    },
+    {
+        "id": "b986508adbc3c4fd",
+        "type": "mqtt out",
+        "z": "7c226c13f2e3b224",
+        "name": "",
+        "topic": "/yncic-dangerous/data/test1",
+        "qos": "1",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "8e0ebd5f16a0e62c",
+        "x": 900,
+        "y": 320,
+        "wires": []
+    },
+    {
+        "id": "3e15f44c9859e317",
+        "type": "debug",
+        "z": "7c226c13f2e3b224",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 840,
+        "y": 400,
+        "wires": []
+    },
+    {
+        "id": "8e0ebd5f16a0e62c",
         "type": "mqtt-broker",
         "name": "",
         "broker": "test.mosquitto.org",
         "port": "1883",
-        "clientid": "1883",
+        "clientid": "",
         "autoConnect": true,
         "usetls": false,
         "protocolVersion": "4",
@@ -33,91 +117,5 @@
         "willMsg": {},
         "userProps": "",
         "sessionExpiry": ""
-    },
-    {
-        "id": "e978982598e42d37",
-        "type": "inject",
-        "z": "73e0fcd142fc5256",
-        "name": "",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "1",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "",
-        "payload": "",
-        "payloadType": "date",
-        "x": 500,
-        "y": 280,
-        "wires": [
-            [
-                "6301403be614681a"
-            ]
-        ]
-    },
-    {
-        "id": "6301403be614681a",
-        "type": "function",
-        "z": "73e0fcd142fc5256",
-        "name": "function 1",
-        "func": "var timestamp = msg.payload;\nmsg.payload = {\n    say: \"hello world\",\n    time: String(timestamp),\n};\nreturn [msg, msg];",
-        "outputs": 2,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 720,
-        "y": 280,
-        "wires": [
-            [
-                "6b435f6fae0bd992"
-            ],
-            [
-                "29487235f536cc7c"
-            ]
-        ]
-    },
-    {
-        "id": "6b435f6fae0bd992",
-        "type": "debug",
-        "z": "73e0fcd142fc5256",
-        "name": "debug 1",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 960,
-        "y": 280,
-        "wires": []
-    },
-    {
-        "id": "29487235f536cc7c",
-        "type": "mqtt out",
-        "z": "73e0fcd142fc5256",
-        "name": "",
-        "topic": "/yncic-dangerous/data/test1",
-        "qos": "0",
-        "retain": "false",
-        "respTopic": "",
-        "contentType": "",
-        "userProps": "",
-        "correl": "",
-        "expiry": "",
-        "broker": "3c39cf63714c26a4",
-        "x": 1020,
-        "y": 420,
-        "wires": []
     }
 ]
