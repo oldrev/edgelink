@@ -45,6 +45,15 @@ class Msg final {
     }
     inline const std::string to_string() const { return boost::json::serialize(_data); }
 
+    const boost::json::value& get_navigation_property_value(const std::string_view prop_expr) const {
+        return _data.at(prop_expr);
+    }
+
+    template <typename TValue>
+    void set_navigation_property_value(const std::string_view prop_expr, const TValue& value) {
+        _data[prop_expr] = value;
+    }
+
     static MsgID generate_msg_id() {
         static std::atomic<uint32_t> msg_id_counter(0); // 初始化计数器为0
         if (msg_id_counter.load() >= 0xFFFFFFF0) {

@@ -93,7 +93,9 @@ int main(int argc, char* argv[]) {
 
     // 启动主程序
     try {
-        asio::io_context io_context(std::thread::hardware_concurrency() + 1);
+        auto nconcurrency = std::thread::hardware_concurrency() + 1;
+        asio::io_context io_context(nconcurrency);
+        SPDLOG_INFO("系统并发数量：{}", nconcurrency);
 
         asio::signal_set signals(io_context, SIGINT, SIGTERM);
         signals.async_wait([&](auto, auto) {
