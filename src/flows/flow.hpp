@@ -16,6 +16,11 @@ class Flow : public IFlow {
     Flow(const boost::json::object& json_config, IEngine* engine);
     virtual ~Flow();
 
+    FlowOnSendEvent& on_send_event() override { return _on_send_event; }
+    FlowPreRouteEvent& on_pre_route_event() override { return _on_pre_route_event; }
+    FlowPreDeliverEvent& on_pre_deliver_event() override { return _on_pre_deliver_event; }
+    FlowPostDeliverEvent& on_post_deliver_event() override { return _on_post_deliver_event; }
+
     const std::string_view id() const override { return _id; }
     const std::string_view label() const override { return _label; }
     bool is_disabled() const override { return _disabled; }
@@ -24,10 +29,9 @@ class Flow : public IFlow {
     Awaitable<void> start_async() override;
     Awaitable<void> stop_async() override;
 
-    Awaitable<void> emit_async(const std::string_view source_node_id, std::shared_ptr<Msg> msg) override;
+    Awaitable<void> async_send_one(const Envelope&& envelope) override;
 
-    Awaitable<void> relay_async(const std::string_view source_node_id, std::shared_ptr<Msg> msg, size_t port,
-                                bool clone) const override;
+    Awaitable<void> async_send_many(const std::vector<Envelope>&& envelopes) override;
 
     inline IFlowNode* get_node(const std::string_view id) const override {
 
@@ -42,16 +46,25 @@ class Flow : public IFlow {
     inline void emplace_node(std::unique_ptr<IFlowNode>&& node) { _nodes.emplace_back(std::move(node)); }
 
   private:
+    Awaitable<void> async_send_one_internal(const Envelope&& envelope);
+
+  private:
     std::shared_ptr<spdlog::logger> _logger;
     const std::string _id;
     const std::string _label;
     const bool _disabled;
-    IEngine*const _engine;
+    IEngine* const _engine;
     std::vector<std::unique_ptr<IFlowNode>> _nodes;
 
     std::atomic<uint64_t> _msg_id_counter; // 初始化计数器为0
 
     std::unique_ptr<std::stop_source> _stop_source;
+
+  private:
+    FlowOnSendEvent _on_send_event;
+    FlowPreRouteEvent _on_pre_route_event;
+    FlowPreDeliverEvent _on_pre_deliver_event;
+    FlowPostDeliverEvent _on_post_deliver_event;
 };
 
 }; // namespace edgelink::flow::details

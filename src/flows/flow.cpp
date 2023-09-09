@@ -21,20 +21,6 @@ Flow::~Flow() {
     //
 }
 
-Awaitable<void> Flow::emit_async(const std::string_view source_node_id, std::shared_ptr<Msg> msg) {
-    //
-    auto exec = co_await this_coro::executor;
-
-    auto source = this->get_node(source_node_id);
-    auto output_ports = source->output_ports();
-    for (size_t i = 0; i < output_ports.size(); i++) {
-        // 根据出度把消息复制，这里是异步非阻塞的
-        boost::asio::co_spawn(exec, this->relay_async(source_node_id, msg, i, true), boost::asio::detached);
-        // co_await this->relay_async(source_node_id, msg, i, true);
-    }
-    co_return;
-}
-
 Awaitable<void> Flow::start_async() {
     //
     _stop_source = std::make_unique<std::stop_source>();
@@ -62,32 +48,56 @@ Awaitable<void> Flow::stop_async() {
     co_return;
 }
 
-Awaitable<void> Flow::relay_async(const std::string_view source_node_id, std::shared_ptr<Msg> orig_msg, size_t port,
-                                  bool clone) const {
-    auto source = this->get_node(source_node_id);
-    // 根据出度把消息复制
-    auto output_ports = source->output_ports();
-
-    auto output_port = output_ports.at(port);
-    for (auto j = 0; j < output_port.wires().size(); j++) {
-        auto endpoint = output_port.wires().at(j);
-        auto msg = clone && j > 0 ? std::make_shared<Msg>(*orig_msg) : orig_msg;
-
-        // 线程池中处理流程
-        //
-        switch (endpoint->descriptor()->kind()) {
-
-        case NodeKind::FILTER:
-        case NodeKind::SINK:
-        case NodeKind::JUNCTION: {
-            co_await endpoint->receive_async(msg);
-        } break;
-
-        default:
-            throw InvalidDataException("错误的节点连线");
-        }
+Awaitable<void> Flow::async_send_many(const std::vector<Envelope>&& envelopes) {
+    for (auto& e : envelopes) {
+        co_await this->async_send_one(std::forward<const Envelope>(e));
     }
     co_return;
+}
+
+Awaitable<void> Flow::async_send_one(const Envelope&& e) {
+
+    this->on_send_event()(this, e);
+
+    if (e.source_node->descriptor()->kind() == NodeKind::SOURCE) {
+        auto exec = co_await this_coro::executor;
+        // 根据出度把消息复制，这里是异步非阻塞的
+        boost::asio::co_spawn(exec, this->async_send_one_internal(std::move(e)), boost::asio::detached);
+    } else {
+        co_await this->async_send_one_internal(std::move(e));
+    }
+    co_return;
+}
+
+Awaitable<void> Flow::async_send_one_internal(const Envelope&& envelope) {
+
+    this->on_pre_route_event()(this, envelope);
+
+    auto msg = envelope.clone_message ? std::make_shared<Msg>(*envelope.msg) : envelope.msg;
+
+    // 线程池中处理流程
+    //
+    bool can_deliver = false;
+    switch (envelope.destination_node->descriptor()->kind()) {
+
+    case NodeKind::FILTER:
+    case NodeKind::SINK:
+    case NodeKind::JUNCTION: {
+        can_deliver = true;
+    } break;
+
+    default:
+        auto error_msg = fmt::format("错误的节点类型 [msg_id={}, source={}, destination={}]", envelope.msg->id(),
+                                     envelope.source_id, envelope.destination_id);
+        _logger->error(error_msg);
+        throw InvalidDataException(error_msg);
+    }
+
+    if (can_deliver) {
+        this->on_pre_deliver_event()(this, envelope);
+        co_await envelope.destination_node->receive_async(msg);
+        this->on_post_deliver_event()(this, envelope);
+    }
 }
 
 }; // namespace edgelink::flow::details

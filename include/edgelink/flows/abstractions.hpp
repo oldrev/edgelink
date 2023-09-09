@@ -10,6 +10,8 @@ struct IEngine;
 struct INode;
 struct IFlowNode;
 struct IStandaloneNode;
+struct Envelope;
+class OutputPort;
 
 /// @brief 数据处理上下文
 class FlowContext {
@@ -25,25 +27,63 @@ class FlowContext {
     Msg* _msg;
 };
 
+/// @brief 路由中的消息封装
 struct Envelope {
     std::shared_ptr<Msg> msg;
-    struct {
-        std::string_view id;
-        IFlowNode* node;
-        size_t port;
-    } source;
-    struct {
-        std::string_view id;
-        IFlowNode* node;
-    } destination;
-
     bool clone_message;
+    std::string_view source_id;
+    IFlowNode* source_node;
+    const OutputPort* source_port;
+    std::string_view destination_id;
+    IFlowNode* destination_node;
+
+    /// @brief 默认构造函数
+    Envelope()
+        : clone_message(true), source_id(), source_node(nullptr), source_port(0), destination_id(),
+          destination_node(nullptr) {}
+
+    /// @brief 构造函数，用于初始化所有成员，并指定源信息
+    Envelope(std::shared_ptr<Msg> message, bool clone, const std::string_view& src_id, IFlowNode* src_node,
+             const OutputPort* src_port)
+        : msg(message), clone_message(clone), source_id(src_id), source_node(src_node), source_port(src_port),
+          destination_id(), destination_node(nullptr) {}
+
+    /// @brief 复制构造函数
+    Envelope(const Envelope& other)
+        : msg(other.msg), clone_message(other.clone_message), source_id(other.source_id),
+          source_node(other.source_node), source_port(other.source_port), destination_id(other.destination_id),
+          destination_node(other.destination_node) {}
+
+    /// @brief = 操作符重载
+    Envelope& operator=(const Envelope& other) {
+        if (this != &other) {
+            // 复制所有非const成员
+            msg = other.msg;
+            clone_message = other.clone_message;
+            source_id = other.source_id;
+            source_node = other.source_node;
+            source_port = other.source_port;
+            destination_id = other.destination_id;
+            destination_node = other.destination_node;
+        }
+        return *this;
+    }
+
+    /*
+    /// @brief 修改目标节点信息
+    void change_destination(IFlowNode* node) {
+        BOOST_ASSERT(node != nullptr);
+        this->destination_id = node->id();
+        this->destination_node = node;
+    }
+    */
 };
 
-using FlowOnSendEvent = boost::signals2::signal<Awaitable<void>(IFlow* sender, std::shared_ptr<Msg> msg)>;
-using FlowPreRouteEvent = boost::signals2::signal<Awaitable<void>(IFlow* sender, std::shared_ptr<Msg> msg)>;
-using PreDeliverEvent = boost::signals2::signal<Awaitable<void>(IFlow* sender, std::shared_ptr<Msg> msg)>;
-using PostDeliverEvent = boost::signals2::signal<Awaitable<void>(IFlow* sender, std::shared_ptr<Msg> msg)>;
+using FlowOnSendEvent = boost::signals2::signal<void(IFlow* sender, const Envelope& env)>;
+using FlowPreRouteEvent = boost::signals2::signal<void(IFlow* sender, const Envelope& env)>;
+using FlowPreDeliverEvent = boost::signals2::signal<void(IFlow* sender, const Envelope& env)>;
+using FlowPostDeliverEvent = boost::signals2::signal<void(IFlow* sender, const Envelope& env)>;
+
 using NodeOnReceiveEvent = boost::signals2::signal<Awaitable<void>(IFlowNode* sender, std::shared_ptr<Msg> msg)>;
 using NodePostReceiveEvent = boost::signals2::signal<Awaitable<void>(IFlowNode* sender, std::shared_ptr<Msg> msg)>;
 using OnDoneEvent = boost::signals2::signal<Awaitable<void>(IFlow* sender, std::shared_ptr<Msg> msg)>;
@@ -52,20 +92,19 @@ using OnErrorEvent = boost::signals2::signal<Awaitable<void>(IFlow* sender, std:
 /// @brief 消息流
 struct IFlow {
 
+    virtual FlowOnSendEvent& on_send_event() = 0;
+    virtual FlowPreRouteEvent& on_pre_route_event() = 0;
+    virtual FlowPreDeliverEvent& on_pre_deliver_event()= 0;
+    virtual FlowPostDeliverEvent& on_post_deliver_event() = 0;
 
     virtual const std::string_view id() const = 0;
     virtual const std::string_view label() const = 0;
     virtual bool is_disabled() const = 0;
     virtual IEngine* engine() const = 0;
 
-    /// @brief 向流里发送产生的第一手消息
-    virtual Awaitable<void> emit_async(const std::string_view source_node_id, std::shared_ptr<Msg> msg) = 0;
+    virtual Awaitable<void> async_send_one(const Envelope&& envelope) = 0;
 
-    /// @brief 从来源节点向后路由消息
-    /// @param src
-    /// @param msg
-    virtual Awaitable<void> relay_async(const std::string_view source_node_id, std::shared_ptr<Msg> msg, size_t port,
-                                        bool clone) const = 0;
+    virtual Awaitable<void> async_send_many(const std::vector<Envelope>&& envelopes) = 0;
 
     virtual IFlowNode* get_node(const std::string_view id) const = 0;
 
@@ -180,12 +219,13 @@ class StandaloneNode : public IStandaloneNode {
 
 /// @brief 流程节点抽象类
 struct IFlowNode : public INode {
-    virtual FlowOnSendEvent& on_send_event() = 0;
 
     virtual const std::vector<OutputPort>& output_ports() const = 0;
     virtual const size_t output_count() const = 0;
     virtual IFlow* flow() const = 0;
     virtual Awaitable<void> receive_async(std::shared_ptr<Msg> msg) = 0;
+    virtual Awaitable<void> async_send_to_one_port(std::shared_ptr<Msg> msg) = 0;
+    virtual Awaitable<void> async_send_to_many_port(const std::vector<std::shared_ptr<Msg>>&& msgs) = 0;
 };
 
 /// @brief 流程节点抽象类
@@ -200,9 +240,6 @@ class FlowNode : public IFlowNode {
     }
 
   public:
-    FlowOnSendEvent& on_send_event() override { return _on_send_event; }
-
-  public:
     const std::string_view id() const override { return _id; }
     const std::string_view name() const override { return _name; }
     const bool is_disabled() const override { return _disabled; }
@@ -211,11 +248,53 @@ class FlowNode : public IFlowNode {
     const INodeDescriptor* descriptor() const override { return _descriptor; }
     IFlow* flow() const override { return _flow; }
 
+    Awaitable<void> async_send_to_one_port(std::shared_ptr<Msg> msg) override {
+        if (this->output_ports().size() == 0) {
+            co_return;
+        }
+
+        bool msg_sent = false;
+        auto const& port = this->output_ports().front();
+        for (size_t iwire = 0; iwire < port.wires().size(); iwire++) {
+            auto const& dest_node = port.wires().at(iwire);
+            Envelope env(msg, msg_sent, this->id(), this, &port);
+            env.destination_id = dest_node->id();
+            env.destination_node = dest_node;
+            co_await this->flow()->async_send_one(std::forward<const Envelope>(env));
+            msg_sent = true;
+        }
+        co_return;
+    }
+
+    Awaitable<void> async_send_to_many_port(const std::vector<std::shared_ptr<Msg>>&& msgs) override {
+        auto const& ports = this->output_ports();
+        if(msgs.size() > ports.size() ) {
+            auto error_msg = "发送的消息超出端口数量";
+            this->logger()->error(error_msg);
+            throw std::out_of_range(error_msg);
+        }
+        std::vector<Envelope> envelopes;
+        bool msg_sent = false;
+        for(size_t iport = 0; iport < msgs.size(); iport++) {
+            auto const& port = &ports.at(iport);
+            for (size_t iwire = 0; iwire < ports.size(); iwire++) {
+                auto const& dest_node = port->wires().at(iwire);
+                Envelope env(msgs[iport], msg_sent, this->id(), this, port);
+                env.destination_id = dest_node->id();
+                env.destination_node = dest_node;
+
+                envelopes.emplace_back(env);
+
+                msg_sent = true;
+            }
+        }
+
+        co_await this->flow()->async_send_many(std::forward<const std::vector<Envelope>>(envelopes));
+        co_return;
+    }
+
   protected:
     std::shared_ptr<spdlog::logger> logger() const { return _logger;};
-
-  private:
-    FlowOnSendEvent _on_send_event;
 
   private:
     std::shared_ptr<spdlog::logger> _logger;

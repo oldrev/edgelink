@@ -115,7 +115,7 @@ class InjectNode : public SourceNode {
 
     Awaitable<void> async_once_task(boost::asio::any_io_executor executor) {
         auto msg = this->create_msg();
-        co_await this->flow()->emit_async(this->id(), msg);
+        co_await this->async_send_to_one_port(msg);
         co_return;
     }
 
@@ -129,7 +129,7 @@ class InjectNode : public SourceNode {
             co_await timer.async_wait(boost::asio::use_awaitable);
 
             auto msg = this->create_msg();
-            co_await this->flow()->emit_async(this->id(), msg);
+            co_await this->async_send_to_one_port(msg);
         }
         co_return;
     }
@@ -141,7 +141,7 @@ class InjectNode : public SourceNode {
             co_await timer.async_wait(boost::asio::use_awaitable);
 
             auto msg = this->create_msg();
-            co_await this->flow()->emit_async(this->id(), msg);
+            co_await this->async_send_to_one_port(msg);
         }
         co_return;
     }

@@ -35,7 +35,7 @@ class TemplateNode : public FlowNode {
 
         msg->data()[_field] = parsed_msg_field_value;
 
-        co_await this->flow()->relay_async(this->id(), msg, 0, true);
+        co_await this->async_send_to_one_port(msg);
 
         co_return;
     }

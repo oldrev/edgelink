@@ -90,21 +90,28 @@ class FunctionNode : public FlowNode {
         if (js_result.kind() == boost::json::kind::array) { // 多个端口消息的情况
             int port = 0;
             auto array = js_result.as_array();
+            if(array.size() > this->output_ports().size() ) {
+                auto error_msg = "JS 脚本输出错误的端口数";
+                this->logger()->error(error_msg);
+                throw std::out_of_range(error_msg);
+            }
+            std::vector<std::shared_ptr<Msg>> msgs;
+
             for (auto& msg_json_value : array) {
                 // 直接分发消息，只有是对象的才分发
                 if (msg_json_value.kind() == boost::json::kind::object) {
                     auto msg_json = msg_json_value.as_object();
                     auto evaled_msg = std::make_shared<Msg>(std::move(msg_json));
-                    co_await this->flow()->relay_async(this->id(), evaled_msg, port, true);
+                    msgs.emplace_back(evaled_msg);
                 }
-                port++;
             }
+            co_await this->async_send_to_many_port(std::forward<std::vector<std::shared_ptr<Msg>>>(msgs));
         } else if (js_result.kind() == boost::json::kind::object) { // 单个端口消息的情况
             auto object_result = js_result.as_object();
             auto evaled_msg = std::make_shared<Msg>(std::move(object_result));
-            co_await this->flow()->relay_async(this->id(), evaled_msg, 0, true);
+            co_await this->async_send_to_one_port(evaled_msg);
         } else { // 其他类型不支持
-            spdlog::error("不支持的消息格式：{0}", result_json);
+            this->logger()->error("不支持的消息格式：{0}", result_json);
         }
     }
 

@@ -14,7 +14,7 @@ class JunctionNode : public FlowNode {
 
     Awaitable<void> receive_async(std::shared_ptr<Msg> msg) override {
         // 直接分发消息
-        co_await this->flow()->relay_async(this->id(), msg, 0, true);
+        co_await this->async_send_to_one_port(msg);
     }
 };
 
