@@ -66,6 +66,7 @@ class Msg final {
 
   private:
     boost::json::object _data;
+
 };
 
 using MsgPtr = std::shared_ptr<Msg>;

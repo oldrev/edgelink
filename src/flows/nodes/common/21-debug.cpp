@@ -25,7 +25,7 @@ namespace edgelink {
 class DebugNode : public SinkNode {
   public:
     DebugNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc,
-            const std::vector<OutputPort>&& output_ports, IFlow* flow)
+              const std::vector<OutputPort>&& output_ports, IFlow* flow)
         : SinkNode(id, desc, std::move(output_ports), flow, config) {}
 
     Awaitable<void> start_async() override { co_return; }
@@ -34,7 +34,7 @@ class DebugNode : public SinkNode {
 
     Awaitable<void> receive_async(std::shared_ptr<Msg> msg) override {
         //
-        this->logger()->info(msg->to_string());
+        std::cout << fmt::format("node {}\n{}", this->name(), msg->to_string()) << std::endl;
         co_return;
     }
 };

@@ -3,9 +3,26 @@
         "id": "7c226c13f2e3b224",
         "type": "tab",
         "label": "流程 1",
-        "disabled": true,
+        "disabled": false,
         "info": "",
         "env": []
+    },
+    {
+        "id": "916fe0d41c3b82c9",
+        "type": "debug",
+        "z": "7c226c13f2e3b224",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 840,
+        "y": 320,
+        "wires": []
     },
     {
         "id": "2d418fb8d326e87e",
@@ -24,15 +41,15 @@
         "repeat": "1",
         "crontab": "",
         "once": true,
-        "onceDelay": 0.1,
+        "onceDelay": "",
         "topic": "",
         "payload": "",
         "payloadType": "date",
-        "x": 350,
+        "x": 140,
         "y": 320,
         "wires": [
             [
-                "9abcf751aa95c9fc"
+                "588889e4e95dd46c"
             ]
         ]
     },
@@ -40,82 +57,92 @@
         "id": "9abcf751aa95c9fc",
         "type": "function",
         "z": "7c226c13f2e3b224",
-        "name": "function 1",
-        "func": "var ts = msg.payload;\nmsg.payload = {\n    timestamp: ts,\n    say: \"爱来自 JS\"\n};\nreturn msg;",
+        "name": "增加字段",
+        "func": "var ts = msg.payload;\nmsg.payload = {\n    timestamp: ts,\n    say: \"We're so back!\"\n};\nreturn msg;",
         "outputs": 1,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 560,
+        "x": 660,
         "y": 320,
         "wires": [
             [
-                "b986508adbc3c4fd",
-                "3e15f44c9859e317"
+                "916fe0d41c3b82c9"
             ]
         ]
     },
     {
-        "id": "b986508adbc3c4fd",
-        "type": "mqtt out",
+        "id": "b1c267019d45655a",
+        "type": "range",
         "z": "7c226c13f2e3b224",
+        "minin": "0",
+        "maxin": "100",
+        "minout": "0",
+        "maxout": "10000",
+        "action": "scale",
+        "round": true,
+        "property": "payload",
         "name": "",
-        "topic": "/yncic-dangerous/data/test1",
-        "qos": "1",
-        "retain": "",
-        "respTopic": "",
-        "contentType": "",
-        "userProps": "",
-        "correl": "",
-        "expiry": "",
-        "broker": "8e0ebd5f16a0e62c",
-        "x": 900,
+        "x": 460,
         "y": 320,
-        "wires": []
+        "wires": [
+            [
+                "9abcf751aa95c9fc",
+                "5d8ccc1b11c44a04"
+            ]
+        ]
     },
     {
-        "id": "3e15f44c9859e317",
+        "id": "588889e4e95dd46c",
+        "type": "function",
+        "z": "7c226c13f2e3b224",
+        "name": "价值",
+        "func": "msg.payload = msg.payload % 100;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 290,
+        "y": 320,
+        "wires": [
+            [
+                "b1c267019d45655a",
+                "61f741d54ca827ea"
+            ]
+        ]
+    },
+    {
+        "id": "5d8ccc1b11c44a04",
         "type": "debug",
         "z": "7c226c13f2e3b224",
-        "name": "debug 1",
+        "name": "debug 2",
         "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
+        "complete": "false",
         "statusVal": "",
         "statusType": "auto",
-        "x": 840,
-        "y": 400,
+        "x": 660,
+        "y": 240,
         "wires": []
     },
     {
-        "id": "8e0ebd5f16a0e62c",
-        "type": "mqtt-broker",
-        "name": "",
-        "broker": "test.mosquitto.org",
-        "port": "1883",
-        "clientid": "",
-        "autoConnect": true,
-        "usetls": false,
-        "protocolVersion": "4",
-        "keepalive": "60",
-        "cleansession": true,
-        "birthTopic": "",
-        "birthQos": "0",
-        "birthPayload": "",
-        "birthMsg": {},
-        "closeTopic": "",
-        "closeQos": "0",
-        "closePayload": "",
-        "closeMsg": {},
-        "willTopic": "",
-        "willQos": "0",
-        "willPayload": "",
-        "willMsg": {},
-        "userProps": "",
-        "sessionExpiry": ""
+        "id": "61f741d54ca827ea",
+        "type": "debug",
+        "z": "7c226c13f2e3b224",
+        "name": "debug 3",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 460,
+        "y": 200,
+        "wires": []
     }
 ]

@@ -59,7 +59,7 @@ class RangeNode : public FlowNode {
 
         auto value = msg->get_navigation_property_value(_property);
         if (value.is_number()) {
-            double n = value.as_double();
+            double n = value.to_number<double>();
             if (_action == "clamp") {
                 if (n < _minin) {
                     n = _minin;
