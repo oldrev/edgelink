@@ -4,7 +4,7 @@ project(EdgeLinkApp)
 set(CMAKE_GENERATOR "Ninja")
 
 # 设置C++标准
-set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # 设置 C++ 编译器为 ccache

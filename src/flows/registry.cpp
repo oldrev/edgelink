@@ -31,12 +31,12 @@ Registry::Registry(const boost::json::object& json_config) : _logger(spdlog::def
     for (const auto& file : directory_iterator(path)) {
         auto path = std::filesystem::path(file.path());
         std::string lib_path = path.replace_extension("");
-        _logger->info("找到插件：{0}", lib_path);
+        _logger->info("找到插件：{}", lib_path);
 
         auto lib = make_unique<rttr::library>(lib_path);
         auto is_loaded = lib->load();
         if (!is_loaded) {
-            throw std::runtime_error(fmt::format("无法加载插件 '{0}'：{1}", lib_path, lib->get_error_string()));
+            throw std::runtime_error(fmt::format("无法加载插件 '{}'：{}", lib_path, std::string(lib->get_error_string())));
         }
 
         for (auto type : lib->get_types()) {
@@ -51,7 +51,7 @@ Registry::Registry(const boost::json::object& json_config) : _logger(spdlog::def
 
 Registry::~Registry() {
     for (auto const& lib : _libs) {
-        _logger->info("开始卸载插件动态库：{0}", lib->get_file_name());
+        _logger->info("开始卸载插件动态库：{}", std::string(lib->get_file_name()));
         lib->unload();
     }
 }
@@ -64,15 +64,15 @@ void Registry::register_node_provider(const rttr::type& provider_type) {
     if (provider_type.is_derived_from(flow_node_provider_type)) {
         auto provider = provider_type.create().get_value<IFlowNodeProvider*>();
         auto desc = provider->descriptor();
-        _logger->info("注册流程节点提供器: [{0}]", desc->type_name());
+        _logger->info("注册流程节点提供器: '{}'", desc->type_name());
         _flow_node_providers.emplace(desc->type_name(), std::move(provider));
     } else if (provider_type.is_derived_from(standalone_node_provider_type)) {
         auto provider = provider_type.create().get_value<IStandaloneNodeProvider*>();
         auto desc = provider->descriptor();
-        _logger->info("注册流程节点提供器: [{0}]", desc->type_name());
+        _logger->info("注册流程节点提供器: '{}'", desc->type_name());
         _standalone_node_providers.emplace(desc->type_name(), std::move(provider));
     } else {
-        _logger->error("未知的节点提供器: [{0}]", provider_type.get_name());
+        _logger->error("未知的节点提供器: '{}'", std::string(provider_type.get_name()));
     }
 }
 
