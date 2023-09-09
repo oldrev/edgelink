@@ -1,8 +1,8 @@
 #include "edgelink/edgelink.hpp"
-#include "edgelink/logging.hpp"
+#include "logging.hpp"
 
-#include "edgelink/flow/details/flow.hpp"
-#include "edgelink/flow/details/flow-factory.hpp"
+#include "flows/flow.hpp"
+#include "flows/flow-factory.hpp"
 
 using namespace boost;
 namespace this_coro = boost::asio::this_coro;

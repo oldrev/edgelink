@@ -4,11 +4,10 @@
 #include "edgelink/errors.hpp"
 #include "edgelink/utils.hpp"
 #include "edgelink/json.hpp"
-#include "edgelink/logging.hpp"
 
-#include "edgelink/flow/common.hpp"
-#include "edgelink/flow/msg.hpp"
-#include "edgelink/flow/abstractions.hpp"
+#include "edgelink/flows/common.hpp"
+#include "edgelink/flows/msg.hpp"
+#include "edgelink/flows/abstractions.hpp"
 
 namespace edgelink {
 

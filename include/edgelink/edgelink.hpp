@@ -2,15 +2,14 @@
 
 #include "common.hpp"
 #include "errors.hpp"
-#include "logging.hpp"
 #include "utils.hpp"
 #include "json.hpp"
 
-#include "flow/common.hpp"
-#include "flow/msg.hpp"
-#include "flow/abstractions.hpp"
-#include "flow/registry.hpp"
-#include "flow/engine.hpp"
+#include "flows/common.hpp"
+#include "flows/msg.hpp"
+#include "flows/abstractions.hpp"
+#include "flows/registry.hpp"
+#include "flows/engine.hpp"
 
 namespace edgelink {
 

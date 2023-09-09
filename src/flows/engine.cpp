@@ -1,5 +1,5 @@
 #include "edgelink/edgelink.hpp"
-#include "edgelink/flow/dependency-sorter.hpp"
+#include "edgelink/flows/dependency-sorter.hpp"
 
 using namespace boost;
 namespace this_coro = boost::asio::this_coro;
