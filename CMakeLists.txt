@@ -33,7 +33,7 @@ find_library(LIBDUKTAPE NAMES duktape REQUIRED)
 include_directories(
     ./include
     ./libs/duktape-cpp/src
-    ./libs/mustache/include
+    "${CMAKE_CURRENT_SOURCE_DIR}/libs/mustache/include"
 )
 
 file(GLOB_RECURSE SOURCES 

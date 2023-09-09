@@ -22,6 +22,9 @@ EdgeLink 是一个用于物联网边缘网关的数据采集与推送系统，�
 ### 安装与配置
 
 1. 安装库依赖
+
+    假设 Ubuntu:
+
     ```bash
     sudo apt install libmodbus-dev libboost1.81-all-dev libboost-url1.81-dev
     ```
@@ -29,7 +32,10 @@ EdgeLink 是一个用于物联网边缘网关的数据采集与推送系统，�
 2. 克隆本仓库到您的设备上：
 
     ```bash
-    git clone https://github.com/oldrev/edgelink-linux-device-side.git
+    git clone git@github.com:edge-link/edgelink.git
+    cd edgelink
+    git submodule init                  # 仅第一次需要
+    git submodule update --recursive    # 仅第一次需要
     ```
 
 3. 执行构建
