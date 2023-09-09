@@ -4,6 +4,7 @@
 
 namespace edgelink {
 
+struct IFlow;
 struct INodeDescriptor;
 struct IEngine;
 struct INode;
@@ -24,8 +25,33 @@ class FlowContext {
     Msg* _msg;
 };
 
+struct Envelope {
+    std::shared_ptr<Msg> msg;
+    struct {
+        std::string_view id;
+        IFlowNode* node;
+        size_t port;
+    } source;
+    struct {
+        std::string_view id;
+        IFlowNode* node;
+    } destination;
+
+    bool clone_message;
+};
+
+using FlowOnSendEvent = boost::signals2::signal<Awaitable<void>(IFlow* sender, std::shared_ptr<Msg> msg)>;
+using FlowPreRouteEvent = boost::signals2::signal<Awaitable<void>(IFlow* sender, std::shared_ptr<Msg> msg)>;
+using PreDeliverEvent = boost::signals2::signal<Awaitable<void>(IFlow* sender, std::shared_ptr<Msg> msg)>;
+using PostDeliverEvent = boost::signals2::signal<Awaitable<void>(IFlow* sender, std::shared_ptr<Msg> msg)>;
+using NodeOnReceiveEvent = boost::signals2::signal<Awaitable<void>(IFlowNode* sender, std::shared_ptr<Msg> msg)>;
+using NodePostReceiveEvent = boost::signals2::signal<Awaitable<void>(IFlowNode* sender, std::shared_ptr<Msg> msg)>;
+using OnDoneEvent = boost::signals2::signal<Awaitable<void>(IFlow* sender, std::shared_ptr<Msg> msg)>;
+using OnErrorEvent = boost::signals2::signal<Awaitable<void>(IFlow* sender, std::shared_ptr<Msg> msg)>;
+
 /// @brief 消息流
 struct IFlow {
+
 
     virtual const std::string_view id() const = 0;
     virtual const std::string_view label() const = 0;
@@ -154,6 +180,8 @@ class StandaloneNode : public IStandaloneNode {
 
 /// @brief 流程节点抽象类
 struct IFlowNode : public INode {
+    virtual FlowOnSendEvent& on_send_event() = 0;
+
     virtual const std::vector<OutputPort>& output_ports() const = 0;
     virtual const size_t output_count() const = 0;
     virtual IFlow* flow() const = 0;
@@ -172,6 +200,9 @@ class FlowNode : public IFlowNode {
     }
 
   public:
+    FlowOnSendEvent& on_send_event() override { return _on_send_event; }
+
+  public:
     const std::string_view id() const override { return _id; }
     const std::string_view name() const override { return _name; }
     const bool is_disabled() const override { return _disabled; }
@@ -183,9 +214,11 @@ class FlowNode : public IFlowNode {
   protected:
     std::shared_ptr<spdlog::logger> logger() const { return _logger;};
 
+  private:
+    FlowOnSendEvent _on_send_event;
 
   private:
-  std::shared_ptr<spdlog::logger> _logger;
+    std::shared_ptr<spdlog::logger> _logger;
     const std::string _id;
     const std::string _name;
     bool _disabled;
