@@ -1,0 +1,21 @@
+{
+    "name": "linux-default",
+    "displayName": "Linux Debug",
+    "description": "Sets Ninja generator, compilers, build and install directory, debug build type",
+    "generator": "Ninja",
+    "binaryDir": "${sourceDir}/build/bin/${presetName}",
+    "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/build/install/${presetName}"
+    },
+    "vendor": {
+        "microsoft.com/VisualStudioSettings/CMake/1.0": {
+            "hostOS": [
+                "Linux"
+            ]
+        },
+        "microsoft.com/VisualStudioRemoteSettings/CMake/1.0": {
+            "sourceDir": "$env{HOME}/.vs/$ms{projectDirName}"
+        }
+    }
+}
