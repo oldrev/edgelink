@@ -23,11 +23,12 @@ Flow::~Flow() {
 
 Awaitable<void> Flow::start_async() {
     //
+    auto executor = co_await boost::asio::this_coro::executor;
     _stop_source = std::make_unique<std::stop_source>();
 
     for (auto const& node : _nodes) {
         _logger->debug("正在启动流程节点：[id={0}, type={1}]", node->id(), node->descriptor()->type_name());
-        co_await node->start_async();
+        boost::asio::co_spawn(executor, node->start_async(), boost::asio::detached);
         _logger->debug("流程节点已启动");
     }
 }
@@ -73,7 +74,7 @@ Awaitable<void> Flow::async_send_one_internal(Envelope&& envelope) {
 
     this->on_pre_route_event()(this, &envelope);
 
-    auto msg = envelope.clone_message ? std::make_shared<Msg>(*envelope.msg) : envelope.msg;
+    auto msg = envelope.clone_message ? envelope.msg->clone() : envelope.msg;
 
     // 线程池中处理流程
     //

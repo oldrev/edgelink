@@ -67,7 +67,7 @@ class MqttOutNode : public SinkNode, public std::enable_shared_from_this<MqttOut
             }
         } catch (std::exception& ex) {
             this->logger()->error("加载 MQTT Out 节点配置发生错误：{0}", ex.what());
-            throw ex;
+            throw;
         }
     }
 

@@ -74,7 +74,7 @@ class RangeNode : public FlowNode {
             }
             n = ((n - _minin) / (_maxin - _minin) * (_maxout - _minout)) + _minout;
             if (_round) {
-                n = std::round(n);
+                n = static_cast<int64_t>(std::round(n));
             }
             msg->set_navigation_property_value(_property, n);
             co_await this->async_send_to_one_port(msg);

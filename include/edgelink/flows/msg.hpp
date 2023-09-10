@@ -40,7 +40,7 @@ class Msg final {
         return id;
     }
 
-    inline void set_id(MsgID new_id) { _data.emplace("_msgid", new_id); }
+    inline void set_id(MsgID new_id) { this->set_navigation_property_value("_msgid", new_id); }
 
     std::shared_ptr<Msg> clone() const;
 
@@ -55,7 +55,12 @@ class Msg final {
 
     template <typename TValue>
     void set_navigation_property_value(const std::string_view prop_expr, const TValue& value) {
-        _data[prop_expr] = value;
+        auto it = _data.find(prop_expr);
+        if (it != _data.end()) {
+            it->value() = value;
+        } else {
+            _data.emplace(prop_expr, value);
+        }
     }
 
     static MsgID generate_msg_id();

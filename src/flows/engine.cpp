@@ -29,6 +29,7 @@ Engine::~Engine() {
 
 Awaitable<void> Engine::start_async() {
 
+    auto executor = co_await boost::asio::this_coro::executor;
     // TODO 检查是否在运行
 
     _logger->info("流程引擎 > 开始加载流配置：'{0}'", _flows_json_path);
@@ -59,12 +60,12 @@ Awaitable<void> Engine::start_async() {
 
     for (auto& node : _global_nodes) {
         _logger->debug("正在启动全局节点：{0}", node->id());
-        co_await node->start_async();
+        boost::asio::co_spawn(executor, node->start_async(), boost::asio::detached);
     }
 
     for (auto& flow : _flows) {
         _logger->debug("正在启动流程：{0}", flow->id());
-        co_await flow->start_async();
+        boost::asio::co_spawn(executor, flow->start_async(), boost::asio::detached);
     }
     _logger->info("流程引擎已启动");
 }

@@ -32,11 +32,12 @@ target_link_libraries(
 target_precompile_headers(${THE_LIB} PRIVATE src/pch.hpp)
 
 
-add_custom_command(
-    TARGET ${THE_LIB}
-    POST_BUILD
-    COMMAND cp $<TARGET_FILE:${THE_LIB}> ${PLUGINS_OUTPUT_DIR}/..
-)
+
+#add_custom_command(
+#    TARGET ${THE_LIB}
+#    POST_BUILD
+#    COMMAND cp $<TARGET_FILE:${THE_LIB}> ${PLUGINS_OUTPUT_DIR}/..
+#)
 
 
 #file(COPY "${CMAKE_BINARY_DIR}/${PLUGIN_MQTT}.so" DESTINATION "${PLUGINS_OUTPUT_DIR}")

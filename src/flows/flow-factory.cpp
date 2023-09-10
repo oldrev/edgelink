@@ -40,8 +40,13 @@ FlowFactory::create_global_nodes(const boost::json::array& flows_config, IEngine
         if (elem_type != "tab" && elem_type != "flow" && !json_node.contains("z")) {
             auto const& provider_iter = _registry.get_standalone_node_provider(elem_type);
             _logger->info("开始创建独立节点：[type='{0}', id='{1}']", elem_type, elem_id);
-            auto node = provider_iter->create(elem_id, json_node, engine);
-            global_nodes.emplace_back(std::move(node));
+            try {
+                auto node = provider_iter->create(elem_id, json_node, engine);
+                global_nodes.emplace_back(std::move(node));
+            } catch (std::exception& ex) {
+                _logger->error("开始创建独立节点：[type='{}', id='{}'] 发生错误：{}", elem_type, elem_id, ex.what());
+                throw;
+            }
         }
     }
 
@@ -103,9 +108,14 @@ std::unique_ptr<IFlow> FlowFactory::create_flow(const boost::json::array& flows_
 
         _logger->info("开始创建流程节点：[type='{0}', json_id='{1}']", elem_type, elem_id);
         auto const& provider_iter = _registry.get_flow_node_provider(elem_type);
-        auto node = provider_iter->create(elem_id, elem, std::move(ports), flow.get());
-        node_map[elem_id] = node.get();
-        flow->emplace_node(std::move(node));
+        try {
+            auto node = provider_iter->create(elem_id, elem, std::move(ports), flow.get());
+            node_map[elem_id] = node.get();
+            flow->emplace_node(std::move(node));
+        } catch (std::exception& ex) {
+            _logger->error("开始创建独立节点：[type='{}', id='{}'] 发生错误：{}", elem_type, elem_id, ex.what());
+            throw;
+        }
     }
     std::unique_ptr<IFlow> ret = std::move(flow);
 

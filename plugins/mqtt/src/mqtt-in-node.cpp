@@ -60,7 +60,7 @@ class MqttInNode : public SourceNode, public std::enable_shared_from_this<MqttIn
 
         } catch (std::exception& ex) {
             spdlog::error("加载 MQTT In 节点配置发生错误：{0}", ex.what());
-            throw ex;
+            throw;
         }
     }
 
