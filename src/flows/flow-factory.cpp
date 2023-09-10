@@ -10,12 +10,14 @@ using namespace edgelink;
 namespace edgelink::flow::details {
 
 FlowFactory::FlowFactory(const IRegistry& registry)
-    : _logger(spdlog::default_logger()->clone("Flow")), _registry(registry) {}
+    : _logger(spdlog::default_logger()->clone("Flow")), _registry(registry) {
+    //
+}
 
-std::vector<std::unique_ptr<IFlow>> FlowFactory::create_flows(const boost::json::array& flows_config, IEngine* engine) const {
+std::vector<std::unique_ptr<IFlow>> FlowFactory::create_flows(const boost::json::array& flows_config,
+                                                              IEngine* engine) const {
     auto node_provider_type = rttr::type::get<IFlowNodeProvider>();
 
-    // 这里注册测试用的
     // auto dataflow_elements = flows_config["dataflow"];
     std::vector<std::unique_ptr<IFlow>> flows;
     for (const auto& json_node_value : flows_config) {
@@ -29,8 +31,8 @@ std::vector<std::unique_ptr<IFlow>> FlowFactory::create_flows(const boost::json:
     return flows;
 }
 
-std::vector<std::unique_ptr<IStandaloneNode>>
-FlowFactory::create_global_nodes(const boost::json::array& flows_config, IEngine* engine) const {
+std::vector<std::unique_ptr<IStandaloneNode>> FlowFactory::create_global_nodes(const boost::json::array& flows_config,
+                                                                               IEngine* engine) const {
     // 创建全局节点
     std::vector<std::unique_ptr<IStandaloneNode>> global_nodes;
     for (const auto& json_node_value : flows_config) {
@@ -67,7 +69,10 @@ std::unique_ptr<IFlow> FlowFactory::create_flow(const boost::json::array& flows_
     std::map<const std::string_view, const boost::json::object*> json_nodes;
     for (const auto& elem_value : flows_config) {
         const auto& elem = elem_value.as_object();
-        if (!elem.contains("z")) {
+        const auto& elem_type = elem.at("type").as_string();
+
+        // 跳过全局节点和注释
+        if (!elem.contains("z") || elem_type == "comment") { 
             continue;
         }
         const auto& z = elem.at("z").as_string();

@@ -8,6 +8,30 @@
 using namespace edgelink;
 using namespace edgelink::scripting;
 
+/*
+    {
+        "id": "588889e4e95dd46c",
+        "type": "function",
+        "z": "7c226c13f2e3b224",
+        "name": "价值",
+        "func": "msg.payload = msg.payload % 100;\nreturn msg;",
+        "outputs": 2,
+        "noerr": 0,
+        "initialize": "// 部署节点后，此处添加的代码将运行一次。 \nvar xxxx = 0;",
+        "finalize": "// 节点正在停止或重新部署时，将运行此处添加的代码。 \nvar xxxxx = 0;",
+        "libs": [],
+        "x": 290,
+        "y": 320,
+        "wires": [
+            [
+                "b1c267019d45655a",
+                "3596fa8fefd657e4"
+            ],
+            []
+        ]
+    }
+*/
+
 class EvalEnv final {
   public:
     EvalEnv() {}
@@ -56,13 +80,28 @@ constexpr char JS_CODE_TEMPLATE[] = R"(
     JSON.stringify(__func_node_proc());
 )";
 
+struct ModuleEntry {
+    const std::string module;
+    const std::string var;
+};
+
 class FunctionNode : public FlowNode {
 
   public:
     FunctionNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc,
                  const std::vector<OutputPort>&& output_ports, IFlow* flow)
         : FlowNode(id, desc, std::move(output_ports), flow, config), _func(config.at("func").as_string()),
-          _outputs(config.at("outputs").to_number<size_t>()) {
+          _outputs(config.at("outputs").to_number<size_t>()), _initialize(config.at("initialize").as_string()),
+          _finalize(config.at("finalize").as_string()) {
+
+        for (auto const& module_json : config.at("libs").as_array()) {
+            auto const& entry = module_json.as_object();
+            auto me = ModuleEntry{
+                std::string(entry.at("module").as_string()),
+                std::string(entry.at("var").as_string()),
+            };
+            _modules.emplace_back(std::move(me));
+        }
 
         _ctx.registerClass<EvalEnv>();
 
@@ -92,7 +131,7 @@ class FunctionNode : public FlowNode {
         if (js_result.kind() == boost::json::kind::array) { // 多个端口消息的情况
             int port = 0;
             auto array = js_result.as_array();
-            if(array.size() > this->output_ports().size() ) {
+            if (array.size() > this->output_ports().size()) {
                 auto error_msg = "JS 脚本输出错误的端口数";
                 this->logger()->error(error_msg);
                 throw std::out_of_range(error_msg);
@@ -121,6 +160,10 @@ class FunctionNode : public FlowNode {
   private:
     const size_t _outputs;
     const std::string _func;
+    const std::string _initialize;
+    const std::string _finalize;
+    unsigned int _noerr;
+    std::vector<ModuleEntry> _modules;
     duk::Context _ctx;
 };
 
