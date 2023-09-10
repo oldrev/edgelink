@@ -19,7 +19,7 @@ using MsgObjectValue = std::map<std::string, MsgValue>;
 
 struct FlowNode;
 
-using JsonPathExpression = boost::static_string<256>;
+using JsonPointerExpression = boost::static_string<256>;
 
 class Msg final : private boost::noncopyable {
   public:
@@ -40,7 +40,7 @@ class Msg final : private boost::noncopyable {
         return id;
     }
 
-    inline void set_id(MsgID new_id) { this->set_navigation_property_value("_msgid", new_id); }
+    inline void set_id(MsgID new_id) { this->set_property_value("_msgid", new_id); }
 
     std::shared_ptr<Msg> clone() const;
 
@@ -49,9 +49,7 @@ class Msg final : private boost::noncopyable {
     }
     inline const std::string to_string() const { return boost::json::serialize(_data); }
 
-    const boost::json::value& get_navigation_property_value(const std::string_view prop_expr) const {
-        return _data.at(prop_expr);
-    }
+    boost::json::value const& get_navigation_property_value(const std::string_view red_prop) const;
 
     const boost::json::value& get_property_value(const std::string_view prop_expr) const { return _data.at(prop_expr); }
 
@@ -64,27 +62,17 @@ class Msg final : private boost::noncopyable {
         }
     }
 
-    template <typename TValue>
-    void set_navigation_property_value(const std::string_view prop_expr, const TValue& value) {
-        auto it = _data.find(prop_expr);
-        if (it != _data.end()) {
-            it->value() = value;
-        } else {
-            _data.emplace(prop_expr, value);
-        }
-    }
-
     static MsgID generate_msg_id();
 
-    static JsonPathExpression convert_red_property_to_json_path(const std::string_view prop) {
+    static JsonPointerExpression convert_red_property_to_json_path(const std::string_view prop) {
         // TODO 检查参数长度
-        auto path_to_replace = JsonPathExpression(prop.begin(), prop.end());
+        auto path_to_replace = JsonPointerExpression(prop.begin(), prop.end());
         for (auto it = path_to_replace.begin(); it != path_to_replace.end(); ++it) {
             if (*it == '.') {
                 *it = '/';
             }
         }
-        auto ret = JsonPathExpression("/");
+        auto ret = JsonPointerExpression("/");
         ret.append(path_to_replace);
         return ret;
     }

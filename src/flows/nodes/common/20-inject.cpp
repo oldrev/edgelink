@@ -110,7 +110,7 @@ class InjectNode : public SourceNode {
         // 获取毫秒时间戳
         int64_t milliseconds = millis.count();
 
-        msg->set_navigation_property_value("payload", milliseconds);
+        msg->set_property_value("payload", milliseconds);
         return std::move(msg);
     }
 

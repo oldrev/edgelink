@@ -9,6 +9,15 @@ class NotSupportedException : public std::logic_error {
     NotSupportedException(NotSupportedException&& other) noexcept : std::logic_error(std::move(other)) {}
 };
 
+class NotImplementedException : public std::logic_error {
+  public:
+    explicit NotImplementedException(const std::string str) : std::logic_error(str) {}
+    explicit NotImplementedException(const char* str) : std::logic_error(str) {}
+    NotImplementedException(NotImplementedException&& other) noexcept : std::logic_error(std::move(other)) {}
+};
+
+inline void todo(std::string msg) { throw NotImplementedException(msg); }
+
 class ArgumentException : public std::invalid_argument {};
 
 class IOException : public std::exception {
