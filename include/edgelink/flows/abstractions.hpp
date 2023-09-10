@@ -79,10 +79,10 @@ struct Envelope {
     */
 };
 
-using FlowOnSendEvent = boost::signals2::signal<void(IFlow* sender, const Envelope& env)>;
-using FlowPreRouteEvent = boost::signals2::signal<void(IFlow* sender, const Envelope& env)>;
-using FlowPreDeliverEvent = boost::signals2::signal<void(IFlow* sender, const Envelope& env)>;
-using FlowPostDeliverEvent = boost::signals2::signal<void(IFlow* sender, const Envelope& env)>;
+using FlowOnSendEvent = boost::signals2::signal<void(IFlow* sender, Envelope* env)>;
+using FlowPreRouteEvent = boost::signals2::signal<void(IFlow* sender, Envelope* env)>;
+using FlowPreDeliverEvent = boost::signals2::signal<void(IFlow* sender, Envelope* env)>;
+using FlowPostDeliverEvent = boost::signals2::signal<void(IFlow* sender, Envelope* env)>;
 
 using NodeOnReceiveEvent = boost::signals2::signal<Awaitable<void>(IFlowNode* sender, std::shared_ptr<Msg> msg)>;
 using NodePostReceiveEvent = boost::signals2::signal<Awaitable<void>(IFlowNode* sender, std::shared_ptr<Msg> msg)>;
@@ -102,9 +102,9 @@ struct IFlow {
     virtual bool is_disabled() const = 0;
     virtual IEngine* engine() const = 0;
 
-    virtual Awaitable<void> async_send_one(const Envelope&& envelope) = 0;
+    virtual Awaitable<void> async_send_one(Envelope&& envelope) = 0;
 
-    virtual Awaitable<void> async_send_many(const std::vector<Envelope>&& envelopes) = 0;
+    virtual Awaitable<void> async_send_many(std::vector<Envelope>&& envelopes) = 0;
 
     virtual IFlowNode* get_node(const std::string_view id) const = 0;
 
@@ -225,7 +225,7 @@ struct IFlowNode : public INode {
     virtual IFlow* flow() const = 0;
     virtual Awaitable<void> receive_async(std::shared_ptr<Msg> msg) = 0;
     virtual Awaitable<void> async_send_to_one_port(std::shared_ptr<Msg> msg) = 0;
-    virtual Awaitable<void> async_send_to_many_port(const std::vector<std::shared_ptr<Msg>>&& msgs) = 0;
+    virtual Awaitable<void> async_send_to_many_port(std::vector<std::shared_ptr<Msg>>&& msgs) = 0;
 };
 
 /// @brief 流程节点抽象类
@@ -248,50 +248,9 @@ class FlowNode : public IFlowNode {
     const INodeDescriptor* descriptor() const override { return _descriptor; }
     IFlow* flow() const override { return _flow; }
 
-    Awaitable<void> async_send_to_one_port(std::shared_ptr<Msg> msg) override {
-        if (this->output_ports().size() == 0) {
-            co_return;
-        }
+    Awaitable<void> async_send_to_one_port(std::shared_ptr<Msg> msg) override;
 
-        bool msg_sent = false;
-        auto const& port = this->output_ports().front();
-        for (size_t iwire = 0; iwire < port.wires().size(); iwire++) {
-            auto const& dest_node = port.wires().at(iwire);
-            Envelope env(msg, msg_sent, this->id(), this, &port);
-            env.destination_id = dest_node->id();
-            env.destination_node = dest_node;
-            co_await this->flow()->async_send_one(std::forward<const Envelope>(env));
-            msg_sent = true;
-        }
-        co_return;
-    }
-
-    Awaitable<void> async_send_to_many_port(const std::vector<std::shared_ptr<Msg>>&& msgs) override {
-        auto const& ports = this->output_ports();
-        if(msgs.size() > ports.size() ) {
-            auto error_msg = "发送的消息超出端口数量";
-            this->logger()->error(error_msg);
-            throw std::out_of_range(error_msg);
-        }
-        std::vector<Envelope> envelopes;
-        bool msg_sent = false;
-        for(size_t iport = 0; iport < msgs.size(); iport++) {
-            auto const& port = &ports.at(iport);
-            for (size_t iwire = 0; iwire < ports.size(); iwire++) {
-                auto const& dest_node = port->wires().at(iwire);
-                Envelope env(msgs[iport], msg_sent, this->id(), this, port);
-                env.destination_id = dest_node->id();
-                env.destination_node = dest_node;
-
-                envelopes.emplace_back(env);
-
-                msg_sent = true;
-            }
-        }
-
-        co_await this->flow()->async_send_many(std::forward<const std::vector<Envelope>>(envelopes));
-        co_return;
-    }
+    Awaitable<void> async_send_to_many_port(std::vector<std::shared_ptr<Msg>>&& msgs) override;
 
   protected:
     std::shared_ptr<spdlog::logger> logger() const { return _logger;};

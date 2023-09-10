@@ -48,16 +48,16 @@ Awaitable<void> Flow::stop_async() {
     co_return;
 }
 
-Awaitable<void> Flow::async_send_many(const std::vector<Envelope>&& envelopes) {
+Awaitable<void> Flow::async_send_many(std::vector<Envelope>&& envelopes) {
     for (auto& e : envelopes) {
-        co_await this->async_send_one(std::forward<const Envelope>(e));
+        co_await this->async_send_one(std::forward<Envelope>(e));
     }
     co_return;
 }
 
-Awaitable<void> Flow::async_send_one(const Envelope&& e) {
+Awaitable<void> Flow::async_send_one(Envelope&& e) {
 
-    this->on_send_event()(this, e);
+    this->on_send_event()(this, &e);
 
     if (e.source_node->descriptor()->kind() == NodeKind::SOURCE) {
         auto exec = co_await this_coro::executor;
@@ -69,9 +69,9 @@ Awaitable<void> Flow::async_send_one(const Envelope&& e) {
     co_return;
 }
 
-Awaitable<void> Flow::async_send_one_internal(const Envelope&& envelope) {
+Awaitable<void> Flow::async_send_one_internal(Envelope&& envelope) {
 
-    this->on_pre_route_event()(this, envelope);
+    this->on_pre_route_event()(this, &envelope);
 
     auto msg = envelope.clone_message ? std::make_shared<Msg>(*envelope.msg) : envelope.msg;
 
@@ -94,9 +94,9 @@ Awaitable<void> Flow::async_send_one_internal(const Envelope&& envelope) {
     }
 
     if (can_deliver) {
-        this->on_pre_deliver_event()(this, envelope);
+        this->on_pre_deliver_event()(this, &envelope);
         co_await envelope.destination_node->receive_async(msg);
-        this->on_post_deliver_event()(this, envelope);
+        this->on_post_deliver_event()(this, &envelope);
     }
 }
 

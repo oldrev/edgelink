@@ -13,8 +13,10 @@ set(CMAKE_C_COMPILER_LAUNCHER ccache)
 
 # 按代码尺寸优化
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
-    set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -Os")
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Os")
+    string(REPLACE "-O3" "-Os" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
+    string(REPLACE "-O3" "-Os" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
+    set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -s")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -s")
 endif()
 
 
@@ -48,9 +50,14 @@ file(GLOB_RECURSE SOURCES
 
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 
+
+
 # 添加可执行文件
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-add_executable(EdgeLinkApp ${SOURCES})
+add_executable(${PROJECT_NAME} ${SOURCES})
+
+add_subdirectory(./abstractions)
+add_dependencies(${PROJECT_NAME} "edgelink-abstractions")
 
 # target_compile_options(${PROJECT_NAME} PRIVATE -fno-rtti), 不要关掉 RTTI
 
@@ -61,6 +68,7 @@ target_link_libraries(
     PRIVATE ${LIBFMT}
     PRIVATE ${LIBRTTR_CORE}
     PRIVATE ${LIBDUKTAPE}
+    PRIVATE "edgelink-abstractions"
 )
 add_definitions(-DBOOST_LOG_DYN_LINK)
 
@@ -80,8 +88,6 @@ file(MAKE_DIRECTORY ${PLUGINS_OUTPUT_DIR})
 
 # modbus 插件
 add_subdirectory(./plugins/modbus)
-add_dependencies(${PROJECT_NAME} "edgelink.plugins.modbus")
 
 # mqtt 插件
 add_subdirectory(./plugins/mqtt)
-add_dependencies(${PROJECT_NAME} "edgelink.plugins.mqtt")

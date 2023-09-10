@@ -8,6 +8,8 @@ find_library(LIBMODBUS NAMES modbus REQUIRED)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 add_library(${PLUGIN_MODBUS} SHARED ${SOURCES})
 
+add_dependencies(${PLUGIN_MODBUS} "edgelink-abstractions")
+
 # 包含Boost头文件
 target_include_directories(${PLUGIN_MODBUS} 
     PRIVATE ${Boost_INCLUDE_DIRS}
@@ -22,6 +24,7 @@ target_link_libraries(
     PRIVATE ${LIBSPDLOG}
     PRIVATE ${LIBFMT}
     PRIVATE ${LIBRTTR_CORE}
+    PRIVATE "edgelink-abstractions"
 )
 
 target_precompile_headers(${PLUGIN_MODBUS} PRIVATE src/pch.hpp)

@@ -1,0 +1,20 @@
+#include "edgelink/edgelink.hpp"
+
+namespace edgelink {
+
+std::shared_ptr<Msg> Msg::clone() const {
+    //? 是否要重新生成消息 ID?
+    return std::make_shared<Msg>(*this);
+}
+
+MsgID Msg::generate_msg_id() {
+    static std::atomic<uint32_t> msg_id_counter(0); // 初始化计数器为0
+    if (msg_id_counter.load() >= 0xFFFFFFF0) {
+        msg_id_counter.store(0);
+        return msg_id_counter.fetch_add(1);
+    } else {
+        return msg_id_counter.fetch_add(1);
+    }
+}
+
+}; // namespace edgelink

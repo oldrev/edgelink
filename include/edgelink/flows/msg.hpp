@@ -40,6 +40,10 @@ class Msg final {
         return id;
     }
 
+    inline void set_id(MsgID new_id) { _data.emplace("_msgid", new_id); }
+
+    std::shared_ptr<Msg> clone() const;
+
     inline const boost::json::string to_json_string() const {
         return boost::json::string(std::move(boost::json::serialize(_data)));
     }
@@ -54,15 +58,7 @@ class Msg final {
         _data[prop_expr] = value;
     }
 
-    static MsgID generate_msg_id() {
-        static std::atomic<uint32_t> msg_id_counter(0); // 初始化计数器为0
-        if (msg_id_counter.load() >= 0xFFFFFFF0) {
-            msg_id_counter.store(0);
-            return msg_id_counter.fetch_add(1);
-        } else {
-            return msg_id_counter.fetch_add(1);
-        }
-    }
+    static MsgID generate_msg_id();
 
   private:
     boost::json::object _data;
