@@ -28,7 +28,7 @@ class FlowContext {
 };
 
 /// @brief 路由中的消息封装
-struct Envelope {
+struct Envelope : private boost::noncopyable {
     std::shared_ptr<Msg> msg;
     bool clone_message;
     std::string_view source_id;
@@ -48,27 +48,6 @@ struct Envelope {
         : msg(message), clone_message(clone), source_id(src_id), source_node(src_node), source_port(src_port),
           destination_id(), destination_node(nullptr) {}
 
-    /// @brief 复制构造函数
-    Envelope(const Envelope& other)
-        : msg(other.msg), clone_message(other.clone_message), source_id(other.source_id),
-          source_node(other.source_node), source_port(other.source_port), destination_id(other.destination_id),
-          destination_node(other.destination_node) {}
-
-    /// @brief = 操作符重载
-    Envelope& operator=(const Envelope& other) {
-        if (this != &other) {
-            // 复制所有非const成员
-            msg = other.msg;
-            clone_message = other.clone_message;
-            source_id = other.source_id;
-            source_node = other.source_node;
-            source_port = other.source_port;
-            destination_id = other.destination_id;
-            destination_node = other.destination_node;
-        }
-        return *this;
-    }
-
     /*
     /// @brief 修改目标节点信息
     void change_destination(IFlowNode* node) {
@@ -79,7 +58,7 @@ struct Envelope {
     */
 };
 
-using FlowOnSendEvent = boost::signals2::signal<void(IFlow* sender, Envelope* env)>;
+using FlowOnSendEvent = boost::signals2::signal<void(IFlow* sender, std::vector<std::unique_ptr<Envelope>>& env)>;
 using FlowPreRouteEvent = boost::signals2::signal<void(IFlow* sender, Envelope* env)>;
 using FlowPreDeliverEvent = boost::signals2::signal<void(IFlow* sender, Envelope* env)>;
 using FlowPostDeliverEvent = boost::signals2::signal<void(IFlow* sender, Envelope* env)>;
@@ -94,7 +73,7 @@ struct IFlow {
 
     virtual FlowOnSendEvent& on_send_event() = 0;
     virtual FlowPreRouteEvent& on_pre_route_event() = 0;
-    virtual FlowPreDeliverEvent& on_pre_deliver_event()= 0;
+    virtual FlowPreDeliverEvent& on_pre_deliver_event() = 0;
     virtual FlowPostDeliverEvent& on_post_deliver_event() = 0;
 
     virtual const std::string_view id() const = 0;
@@ -102,9 +81,7 @@ struct IFlow {
     virtual bool is_disabled() const = 0;
     virtual IEngine* engine() const = 0;
 
-    virtual Awaitable<void> async_send_one(Envelope envelope) = 0;
-
-    virtual Awaitable<void> async_send_many(std::vector<Envelope> envelopes) = 0;
+    virtual Awaitable<void> async_send_many(std::vector<std::unique_ptr<Envelope>>&& envelopes) = 0;
 
     virtual IFlowNode* get_node(const std::string_view id) const = 0;
 
@@ -133,7 +110,6 @@ struct IEngine {
     virtual IFlow* get_flow(const std::string_view flow_id) const = 0;
     virtual IStandaloneNode* get_global_node(const std::string_view node_id) const = 0;
     virtual bool is_disabled() const = 0;
-
 };
 
 /// @brief 流工厂
@@ -142,9 +118,8 @@ struct IFlowFactory {
     virtual std::vector<std::unique_ptr<IFlow>> create_flows(const boost::json::array& flows_config,
                                                              IEngine* engine) const = 0;
 
-    virtual std::vector<std::unique_ptr<IStandaloneNode>>
-    create_global_nodes(const boost::json::array& flows_config, IEngine* engine) const = 0;
-
+    virtual std::vector<std::unique_ptr<IStandaloneNode>> create_global_nodes(const boost::json::array& flows_config,
+                                                                              IEngine* engine) const = 0;
 };
 
 /// @brief 节点的发出连接端口
@@ -202,20 +177,20 @@ class StandaloneNode : public IStandaloneNode {
     const INodeDescriptor* descriptor() const override { return _descriptor; }
     IEngine* engine() const override { return _engine; };
 
-    protected:
-      std::shared_ptr<spdlog::logger> logger() const { return _logger; }
+  protected:
+    std::shared_ptr<spdlog::logger> logger() const { return _logger; }
 
-    private:
-      std::shared_ptr<spdlog::logger> _logger;
-      const std::string _id;
-      const std::string _name;
-      bool _disabled;
-      const INodeDescriptor* _descriptor;
-      IEngine* const _engine;
+  private:
+    std::shared_ptr<spdlog::logger> _logger;
+    const std::string _id;
+    const std::string _name;
+    bool _disabled;
+    const INodeDescriptor* _descriptor;
+    IEngine* const _engine;
 
-    public:
-      virtual Awaitable<void> start_async() = 0;
-      virtual Awaitable<void> stop_async() = 0;
+  public:
+    virtual Awaitable<void> start_async() = 0;
+    virtual Awaitable<void> stop_async() = 0;
 };
 
 /// @brief 流程节点抽象类
@@ -254,7 +229,7 @@ class FlowNode : public IFlowNode {
     Awaitable<void> async_send_to_many_port(std::vector<std::shared_ptr<Msg>>&& msgs) override;
 
   protected:
-    std::shared_ptr<spdlog::logger> logger() const { return _logger;};
+    std::shared_ptr<spdlog::logger> logger() const { return _logger; };
 
   private:
     std::shared_ptr<spdlog::logger> _logger;
@@ -282,8 +257,8 @@ class SourceNode : public FlowNode {
         // 线程函数
         auto executor = co_await boost::asio::this_coro::executor;
 
-        auto loop = std::bind(&SourceNode::on_async_run, this);
-        boost::asio::co_spawn(executor, loop, boost::asio::detached);
+        //auto loop = std::bind(&SourceNode::on_async_run, this);
+        boost::asio::co_spawn(executor, this->on_async_run(), boost::asio::detached);
         co_return;
     }
 
@@ -309,7 +284,8 @@ class SinkNode : public FlowNode {
 /// @brief 全局配置节点
 class GlobalConfigNode : public StandaloneNode {
   protected:
-    GlobalConfigNode(const std::string_view id, const INodeDescriptor* desc, const boost::json::object& config, IEngine* engine)
+    GlobalConfigNode(const std::string_view id, const INodeDescriptor* desc, const boost::json::object& config,
+                     IEngine* engine)
         : StandaloneNode(id, desc, config, engine) {}
 };
 
@@ -397,8 +373,8 @@ class StandaloneNodeProvider final : public IStandaloneNodeProvider, public INod
     const std::string_view type_name() const override { return _type_name; }
     inline const NodeKind kind() const override { return TKind; }
 
-    std::unique_ptr<IStandaloneNode> create(const std::string_view id,
-                                            const boost::json::object& config, IEngine* engine) const override {
+    std::unique_ptr<IStandaloneNode> create(const std::string_view id, const boost::json::object& config,
+                                            IEngine* engine) const override {
         return std::make_unique<TNode>(id, config, this, engine);
     }
 

@@ -22,11 +22,11 @@ void init_logging() {
     spdlog::sinks_init_list sinks{console_sink, file_sink};
 
     // create async logger, and use global threadpool
-    spdlog::init_thread_pool(1024 * 8, 1);
-    auto logger = std::make_shared<spdlog::async_logger>("default_logger", sinks, spdlog::thread_pool());
-    spdlog::initialize_logger(logger);
+    //spdlog::init_thread_pool(1024 * 8, 1);
+    //auto logger = std::make_shared<spdlog::logger>("default_logger", sinks, spdlog::thread_pool());
+    //spdlog::initialize_logger(logger);
     // set default logger
-    spdlog::set_default_logger(logger);
+    //spdlog::set_default_logger(logger);
     
     spdlog::set_level(spdlog::level::debug);
 }

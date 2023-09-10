@@ -9,45 +9,38 @@ Awaitable<void> FlowNode::async_send_to_one_port(std::shared_ptr<Msg> msg) {
         co_return;
     }
 
-    bool msg_sent = false;
-    auto const& port = this->output_ports().front();
-    for (auto const& dest_node : port.wires()) {
-        Envelope env(msg, msg_sent, this->id(), this, &port);
-        env.clone_message = msg_sent;
-        env.destination_id = dest_node->id();
-        env.destination_node = dest_node;
+    std::vector<std::shared_ptr<Msg>> envelopes;
+    
+    envelopes.emplace_back(msg);
 
-        co_await this->flow()->async_send_one(std::forward<Envelope>(env));
-
-        msg_sent = true;
-    }
+    co_await this->async_send_to_many_port(std::move(envelopes));
     co_return;
 }
 
 Awaitable<void> FlowNode::async_send_to_many_port(std::vector<std::shared_ptr<Msg>>&& msgs) {
-    auto const& ports = this->output_ports();
+    auto&& ports = this->output_ports();
     if (msgs.size() > ports.size()) {
         auto error_msg = "发送的消息超出端口数量";
         this->logger()->error(error_msg);
         throw std::out_of_range(error_msg);
     }
-    std::vector<Envelope> envelopes;
+    std::vector<std::unique_ptr<Envelope>> envelopes;
     bool msg_sent = false;
     for (size_t iport = 0; iport < msgs.size(); iport++) {
-        auto const& port = &ports.at(iport);
-        for (size_t iwire = 0; iwire < ports.size(); iwire++) {
+        auto&& port = &ports.at(iport);
+        for (size_t iwire = 0; iwire < port->wires().size(); iwire++) {
 
-            auto const& dest_node = port->wires().at(iwire);
+            IFlowNode* dest_node = port->wires().at(iwire);
 
-            Envelope env(msgs[iport], msg_sent, this->id(), this, port);
-            env.clone_message = msg_sent;
-            env.destination_id = dest_node->id();
-            env.destination_node = dest_node;
+            auto env = std::make_unique<Envelope>(msgs[iport], msg_sent, this->id(), this, port);
+            env->destination_id = dest_node->id();
+            env->destination_node = dest_node;
 
-            envelopes.emplace_back(env);
+            envelopes.emplace_back(std::move(env));
             msg_sent = true;
         }
     }
+    co_await this->flow()->async_send_many(std::move(envelopes));
     co_return;
 }
 

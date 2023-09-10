@@ -30,7 +30,7 @@ Registry::Registry(const boost::json::object& json_config) : _logger(spdlog::def
 
     for (const auto& file : directory_iterator(path)) {
         auto path = std::filesystem::path(file.path());
-        std::string lib_path = path.replace_extension("");
+        std::string lib_path = path; // path.replace_extension("");
         _logger->info("找到插件：{}", lib_path);
 
         auto lib = make_unique<rttr::library>(lib_path);

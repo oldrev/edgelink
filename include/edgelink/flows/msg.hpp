@@ -19,6 +19,8 @@ using MsgObjectValue = std::map<std::string, MsgValue>;
 
 struct FlowNode;
 
+using JsonPathExpression = boost::static_string<256>;
+
 class Msg final : private boost::noncopyable {
   public:
     Msg() : Msg(Msg::generate_msg_id()) {}
@@ -51,6 +53,17 @@ class Msg final : private boost::noncopyable {
         return _data.at(prop_expr);
     }
 
+    const boost::json::value& get_property_value(const std::string_view prop_expr) const { return _data.at(prop_expr); }
+
+    template <typename TValue> void set_property_value(const std::string_view prop_expr, const TValue& value) {
+        auto it = _data.find(prop_expr);
+        if (it != _data.end()) {
+            it->value() = value;
+        } else {
+            _data.emplace(prop_expr, value);
+        }
+    }
+
     template <typename TValue>
     void set_navigation_property_value(const std::string_view prop_expr, const TValue& value) {
         auto it = _data.find(prop_expr);
@@ -63,10 +76,21 @@ class Msg final : private boost::noncopyable {
 
     static MsgID generate_msg_id();
 
+    static JsonPathExpression convert_red_property_to_json_path(const std::string_view prop) {
+        // TODO 检查参数长度
+        auto path_to_replace = JsonPathExpression(prop.begin(), prop.end());
+        for (auto it = path_to_replace.begin(); it != path_to_replace.end(); ++it) {
+            if (*it == '.') {
+                *it = '/';
+            }
+        }
+        auto ret = JsonPathExpression("/");
+        ret.append(path_to_replace);
+        return ret;
+    }
 
   private:
     boost::json::object _data;
-
 };
 
 using MsgPtr = std::shared_ptr<Msg>;

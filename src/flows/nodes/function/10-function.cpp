@@ -75,7 +75,6 @@ class FunctionNode : public FlowNode {
 
     Awaitable<void> receive_async(std::shared_ptr<Msg> msg) override {
 
-        this->logger()->info("{} BEFORE >>>>>>>> msg={}", this->name(), msg->to_string());
         edgelink::scripting::DuktapeStashingGuard stash_guard(_ctx);
 
         auto eval_env = EvalEnv::create(this, msg);
@@ -104,15 +103,14 @@ class FunctionNode : public FlowNode {
                 if (msg_json_value.kind() == boost::json::kind::object) {
                     auto msg_json = msg_json_value.as_object();
                     auto evaled_msg = std::make_shared<Msg>(msg_json);
-                    msgs.emplace_back(evaled_msg);
+                    msgs.emplace_back(std::move(evaled_msg));
                 }
             }
             co_await this->async_send_to_many_port(std::forward<std::vector<std::shared_ptr<Msg>>>(msgs));
         } else if (js_result.kind() == boost::json::kind::object) { // 单个端口消息的情况
             auto object_result = js_result.as_object();
             auto evaled_msg = std::make_shared<Msg>(std::move(object_result));
-            this->logger()->info("{} AFTER >>>>>>>> msg={}", this->name(), evaled_msg->to_string());
-            co_await this->async_send_to_one_port(evaled_msg);
+            co_await this->async_send_to_one_port(std::move(evaled_msg));
         } else { // 其他类型不支持
             this->logger()->error("不支持的消息格式：{0}", result_json);
         }
