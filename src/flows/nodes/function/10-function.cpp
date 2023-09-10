@@ -61,7 +61,8 @@ class FunctionNode : public FlowNode {
   public:
     FunctionNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc,
                  const std::vector<OutputPort>&& output_ports, IFlow* flow)
-        : FlowNode(id, desc, std::move(output_ports), flow, config), _func(config.at("func").as_string()) {
+        : FlowNode(id, desc, std::move(output_ports), flow, config), _func(config.at("func").as_string()),
+          _outputs(config.at("outputs").to_number<size_t>()) {
 
         _ctx.registerClass<EvalEnv>();
 
@@ -118,6 +119,7 @@ class FunctionNode : public FlowNode {
     }
 
   private:
+    const size_t _outputs;
     const std::string _func;
     duk::Context _ctx;
 };
