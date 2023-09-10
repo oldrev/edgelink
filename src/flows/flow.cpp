@@ -49,28 +49,28 @@ Awaitable<void> Flow::stop_async() {
     co_return;
 }
 
-Awaitable<void> Flow::async_send_many(std::vector<Envelope>&& envelopes) {
-    for (auto& e : envelopes) {
-        co_await this->async_send_one(std::forward<Envelope>(e));
+Awaitable<void> Flow::async_send_many(std::vector<Envelope> envelopes) {
+    for (auto&& e : envelopes) {
+        co_await this->async_send_one(e);
     }
     co_return;
 }
 
-Awaitable<void> Flow::async_send_one(Envelope&& e) {
+Awaitable<void> Flow::async_send_one(Envelope e) {
 
     this->on_send_event()(this, &e);
 
     if (e.source_node->descriptor()->kind() == NodeKind::SOURCE) {
         auto exec = co_await this_coro::executor;
         // 根据出度把消息复制，这里是异步非阻塞的
-        boost::asio::co_spawn(exec, this->async_send_one_internal(std::move(e)), boost::asio::detached);
+        boost::asio::co_spawn(exec, this->async_send_one_internal(e), boost::asio::detached);
     } else {
-        co_await this->async_send_one_internal(std::move(e));
+        co_await this->async_send_one_internal(e);
     }
     co_return;
 }
 
-Awaitable<void> Flow::async_send_one_internal(Envelope&& envelope) {
+Awaitable<void> Flow::async_send_one_internal(Envelope envelope) {
 
     this->on_pre_route_event()(this, &envelope);
 
@@ -95,7 +95,15 @@ Awaitable<void> Flow::async_send_one_internal(Envelope&& envelope) {
     }
 
     if (can_deliver) {
+
+        if (envelope.source_node->name() == "价值") {
+            _logger->warn("这是价值节点出来的：{}", envelope.msg->to_string());
+        }
+
         this->on_pre_deliver_event()(this, &envelope);
+        _logger->debug("传递消息：(id={}, name={}) >> (id={}, name={})", envelope.source_id,
+                       envelope.source_node->name(), envelope.destination_id,
+                       envelope.destination_node->name());
         co_await envelope.destination_node->receive_async(msg);
         this->on_post_deliver_event()(this, &envelope);
     }

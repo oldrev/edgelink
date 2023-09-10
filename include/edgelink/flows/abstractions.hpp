@@ -102,9 +102,9 @@ struct IFlow {
     virtual bool is_disabled() const = 0;
     virtual IEngine* engine() const = 0;
 
-    virtual Awaitable<void> async_send_one(Envelope&& envelope) = 0;
+    virtual Awaitable<void> async_send_one(Envelope envelope) = 0;
 
-    virtual Awaitable<void> async_send_many(std::vector<Envelope>&& envelopes) = 0;
+    virtual Awaitable<void> async_send_many(std::vector<Envelope> envelopes) = 0;
 
     virtual IFlowNode* get_node(const std::string_view id) const = 0;
 
@@ -151,6 +151,7 @@ struct IFlowFactory {
 class OutputPort {
   public:
     explicit OutputPort(const std::vector<IFlowNode*>&& wires) : _wires(std::move(wires)) {}
+    explicit OutputPort(const std::vector<IFlowNode*>& wires) : _wires(wires) {}
 
     const std::vector<IFlowNode*>& wires() const { return _wires; }
 

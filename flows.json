@@ -28,7 +28,7 @@
         "id": "2d418fb8d326e87e",
         "type": "inject",
         "z": "7c226c13f2e3b224",
-        "name": "",
+        "name": "时间戳节点",
         "props": [
             {
                 "p": "payload"
@@ -45,7 +45,7 @@
         "topic": "",
         "payload": "",
         "payloadType": "date",
-        "x": 140,
+        "x": 150,
         "y": 320,
         "wires": [
             [
@@ -57,14 +57,14 @@
         "id": "9abcf751aa95c9fc",
         "type": "function",
         "z": "7c226c13f2e3b224",
-        "name": "增加字段",
+        "name": "增加字段节点",
         "func": "var ts = msg.payload;\nmsg.payload = {\n    timestamp: ts.toString(),\n    say: \"We're so back!\"\n};\nreturn msg;",
         "outputs": 1,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 660,
+        "x": 680,
         "y": 320,
         "wires": [
             [
@@ -83,8 +83,8 @@
         "action": "scale",
         "round": true,
         "property": "payload",
-        "name": "",
-        "x": 470,
+        "name": "范围节点",
+        "x": 460,
         "y": 320,
         "wires": [
             [

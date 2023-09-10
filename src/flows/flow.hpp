@@ -29,9 +29,9 @@ class Flow : public IFlow {
     Awaitable<void> start_async() override;
     Awaitable<void> stop_async() override;
 
-    Awaitable<void> async_send_one(Envelope&& envelope) override;
+    Awaitable<void> async_send_one(Envelope envelope) override;
 
-    Awaitable<void> async_send_many(std::vector<Envelope>&& envelopes) override;
+    Awaitable<void> async_send_many(std::vector<Envelope> envelopes) override;
 
     inline IFlowNode* get_node(const std::string_view id) const override {
 
@@ -46,7 +46,7 @@ class Flow : public IFlow {
     inline void emplace_node(std::unique_ptr<IFlowNode>&& node) { _nodes.emplace_back(std::move(node)); }
 
   private:
-    Awaitable<void> async_send_one_internal(Envelope&& envelope);
+    Awaitable<void> async_send_one_internal(Envelope envelope);
 
   private:
     std::shared_ptr<spdlog::logger> _logger;

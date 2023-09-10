@@ -110,12 +110,13 @@ class FunctionNode : public FlowNode {
             co_await this->async_send_to_many_port(std::forward<std::vector<std::shared_ptr<Msg>>>(msgs));
         } else if (js_result.kind() == boost::json::kind::object) { // 单个端口消息的情况
             auto object_result = js_result.as_object();
-            auto evaled_msg = std::make_shared<Msg>(object_result);
+            auto evaled_msg = std::make_shared<Msg>(std::move(object_result));
             this->logger()->info("{} AFTER >>>>>>>> msg={}", this->name(), evaled_msg->to_string());
             co_await this->async_send_to_one_port(evaled_msg);
         } else { // 其他类型不支持
             this->logger()->error("不支持的消息格式：{0}", result_json);
         }
+        co_return;
     }
 
   private:

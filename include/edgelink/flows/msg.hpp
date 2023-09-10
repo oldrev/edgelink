@@ -19,13 +19,11 @@ using MsgObjectValue = std::map<std::string, MsgValue>;
 
 struct FlowNode;
 
-class Msg final {
+class Msg final : private boost::noncopyable {
   public:
     Msg() : Msg(Msg::generate_msg_id()) {}
 
     Msg(MsgID id) : _data(std::move(boost::json::object({{"_msgid", id}, {"payload", nullptr}}))) {}
-
-    Msg(Msg const& other) : _data(other._data) {}
 
     Msg(Msg&& other) : _data(std::move(other._data)) {}
 
@@ -64,6 +62,7 @@ class Msg final {
     }
 
     static MsgID generate_msg_id();
+
 
   private:
     boost::json::object _data;
