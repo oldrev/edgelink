@@ -23,6 +23,7 @@ class App {
         co_await _engine->async_start();
 
         // co_await this->idle_loop();
+        co_return;
     }
 
     Awaitable<void> idle_loop() {
@@ -60,7 +61,7 @@ int main(int argc, char* argv[]) {
     // 初始化日志系统
     init_logging();
 
-    spdlog::info("日志子系统已初始化");
+    SPDLOG_INFO("日志子系统已初始化");
 
     std::shared_ptr<boost::json::object> json_config = nullptr;
     try {
@@ -69,10 +70,10 @@ int main(int argc, char* argv[]) {
             boost::json::parse(config_file, {}, {.allow_comments = true, .allow_trailing_commas = true}).as_object();
         json_config = std::make_shared<boost::json::object>(std::move(parsed));
     } catch (std::exception& ex) {
-        spdlog::critical("读取配置文件错误：{0}", ex.what());
+        SPDLOG_CRITICAL("读取配置文件错误：{0}", ex.what());
         return -1;
     } catch (...) {
-        spdlog::critical("未知错误");
+        SPDLOG_CRITICAL("未知错误");
         return -1;
     }
 
