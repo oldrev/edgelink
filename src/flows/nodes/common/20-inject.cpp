@@ -4,6 +4,7 @@
 #include "edgelink/edgelink.hpp"
 
 namespace this_coro = boost::asio::this_coro;
+namespace asio = boost::asio;
 
 namespace edgelink {
 
@@ -43,9 +44,26 @@ namespace edgelink {
 */
 
 struct PropertyEntry {
-    std::string property;
-    std::optional<std::string> value_type;
-    std::optional<boost::json::value> value;
+    std::string p;
+    std::optional<std::string> vt;
+    std::optional<boost::json::value> v;
+
+    PropertyEntry(const std::string_view p, const std::string_view vt, const boost::json::value& v)
+        : p(p), vt(vt), v(v) {
+        //
+    }
+
+    explicit PropertyEntry(const boost::json::object& obj) {
+        this->p = std::string(obj.at("p").as_string());
+
+        if (auto jvt = obj.if_contains("vt")) {
+            this->vt = std::string(jvt->as_string());
+        }
+
+        if (auto jv = obj.if_contains("v")) {
+            this->v = *jv;
+        }
+    }
 };
 
 class InjectNode : public SourceNode {
@@ -53,6 +71,33 @@ class InjectNode : public SourceNode {
     InjectNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc,
                const std::vector<OutputPort>&& output_ports, IFlow* flow)
         : SourceNode(id, desc, move(output_ports), flow, config), _once(config.at("once").as_bool()) {
+
+        if (auto props_value = config.if_contains("props")) {
+            for (auto const& prop : props_value->as_array()) {
+                auto const& entry = prop.as_object();
+                PropertyEntry pe(entry);
+                _props.emplace_back(std::move(pe));
+            }
+        }
+
+        /* Handle legacy */
+        if (auto props_value = config.if_contains("props")) {
+            for (size_t i = 0, l = _props.size(); i < l; i++) {
+                if (_props.at(i).p == "payload" && !_props[i].v) {
+                    _props[i].v = config.at("payload");
+                    _props[i].vt = std::string(config.at("payloadType").as_string());
+                } else if (_props.at(i).p == "topic" && _props.at(i).vt == "str" && !_props.at(i).v) {
+                    _props[i].v = config.at("topic");
+                }
+            }
+        } else {
+            _props.emplace_back(
+                PropertyEntry("payload", std::string(config.at("payloadType").as_string()), config.at("payload")));
+
+            if (auto topic_value = config.if_contains("topic")) {
+                _props.emplace_back(PropertyEntry("topic", "str", *topic_value));
+            }
+        }
 
         if (auto repeat_value = config.if_contains("repeat")) {
             const std::string_view repeat_str = repeat_value->as_string();
@@ -110,24 +155,33 @@ class InjectNode : public SourceNode {
         // 获取毫秒时间戳
         int64_t milliseconds = millis.count();
 
-        msg->set_property_value("payload", milliseconds);
+        for (auto const& prop : _props) {
+            if (prop.p == "payload") {
+                msg->set_property_value(prop.p, milliseconds);
+            } else {
+                if(prop.v) {
+                    msg->set_property_value(prop.p, *prop.v);
+                }
+            }
+        }
+
         return std::move(msg);
     }
 
-    Awaitable<void> async_once_task(boost::asio::any_io_executor executor) {
+    Awaitable<void> async_once_task(asio::any_io_executor executor) {
         auto msg = this->create_msg();
         co_await this->async_send_to_one_port(std::move(msg));
         co_return;
     }
 
-    Awaitable<void> async_cron_task(boost::asio::any_io_executor executor) {
+    Awaitable<void> async_cron_task(asio::any_io_executor executor) {
         while (true) { // TODO  改成等待 stop_token
             std::time_t now = std::time(0);
             std::time_t next = ::cron::cron_next(*_cron, now);
             auto sleep_time = (next - now);
 
-            boost::asio::steady_timer timer(executor, std::chrono::milliseconds(sleep_time));
-            co_await timer.async_wait(boost::asio::use_awaitable);
+            asio::steady_timer timer(executor, std::chrono::milliseconds(sleep_time));
+            co_await timer.async_wait(asio::use_awaitable);
 
             auto msg = this->create_msg();
             co_await this->async_send_to_one_port(std::move(msg));
@@ -135,11 +189,11 @@ class InjectNode : public SourceNode {
         co_return;
     }
 
-    Awaitable<void> async_repeat_task(boost::asio::any_io_executor executor) {
+    Awaitable<void> async_repeat_task(asio::any_io_executor executor) {
 
         while (true) { // TODO  改成等待 stop_token
-            boost::asio::steady_timer timer(executor, std::chrono::milliseconds(*_repeat));
-            co_await timer.async_wait(boost::asio::use_awaitable);
+            asio::steady_timer timer(executor, std::chrono::milliseconds(*_repeat));
+            co_await timer.async_wait(asio::use_awaitable);
 
             auto msg = this->create_msg();
             co_await this->async_send_to_one_port(std::move(msg));
@@ -153,7 +207,7 @@ class InjectNode : public SourceNode {
     std::optional<cron::cronexpr> _cron;
     bool _once;
     std::optional<uint64_t> _once_delay;
-    const std::vector<PropertyEntry> _props;
+    std::vector<PropertyEntry> _props;
 };
 
 RTTR_REGISTRATION {
