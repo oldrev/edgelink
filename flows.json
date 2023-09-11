@@ -81,7 +81,7 @@
         "z": "73e0fcd142fc5256",
         "name": "",
         "topic": "/yncic-dangerous/data/test1",
-        "qos": "0",
+        "qos": "1",
         "retain": "false",
         "respTopic": "",
         "contentType": "",

@@ -58,7 +58,12 @@ class MqttBrokerNode : public EndpointNode,
         }
 
         co_await _lock->async_lock();
-        co_await this->async_connect();
+        try {
+            co_await this->async_connect();
+        } catch (...) {
+            _lock->unlock();
+            throw;
+        }
         _lock->unlock();
 
         co_return;
@@ -78,29 +83,35 @@ class MqttBrokerNode : public EndpointNode,
     Awaitable<void> async_publish(const std::string_view topic, const async_mqtt::buffer& payload_buffer,
                                   async_mqtt::qos qos) override {
         co_await _lock->async_lock();
+        try {
 
-        this->logger()->debug("MQTT OUT > 发布主题：{0}", topic);
-        auto topic_buffer = am::allocate_buffer(topic);
-        auto pid = co_await _endpoint->acquire_unique_packet_id(asio::use_awaitable);
-        // Send MQTT PUBLISH
-        auto se = co_await _endpoint->send(am::v3_1_1::publish_packet{*pid, topic_buffer, payload_buffer, qos},
-                                           asio::use_awaitable);
-        if (se) {
-            this->logger()->error("MQTT PUBLISH send error: {0}", se.what());
+            auto topic_buffer = am::allocate_buffer(topic);
+            auto pid = co_await _endpoint->acquire_unique_packet_id(asio::use_awaitable);
+            // Send MQTT PUBLISH
+            auto se = co_await _endpoint->send(am::v3_1_1::publish_packet{*pid, topic_buffer, payload_buffer, qos},
+                                               asio::use_awaitable);
+            if (se) {
+                auto error_msg = fmt::format("MQTT PUBLISH send error: {0}", se.what());
+                this->logger()->error(error_msg);
+                throw IOException(error_msg);
+            }
+            // Recv MQTT PUBLISH and PUBACK (order depends on broker)
+            am::packet_variant pv = co_await _endpoint->recv(asio::use_awaitable);
+            if (pv) {
+                pv.visit(am::overload{[&](am::v3_1_1::puback_packet const& p) {
+                                          //
+                                          // spdlog::info("MQTT PUBACK recv pid: {0}", p.packet_id());
+                                          return;
+                                      },
+                                      [](auto const&) {}});
+            } else {
+                auto error_msg = ("MQTT recv error: {0}", pv.get<am::system_error>().what());
+                this->logger()->error(error_msg);
+                throw IOException(error_msg);
+            }
+        } catch (...) {
             _lock->unlock();
-            co_return;
-        }
-        // Recv MQTT PUBLISH and PUBACK (order depends on broker)
-        am::packet_variant pv = co_await _endpoint->recv(asio::use_awaitable);
-        if (pv) {
-            pv.visit(am::overload{[&](am::v3_1_1::puback_packet const& p) {
-                                      //
-                                      // spdlog::info("MQTT PUBACK recv pid: {0}", p.packet_id());
-                                      return;
-                                  },
-                                  [](auto const&) {}});
-        } else {
-            this->logger()->error("MQTT recv error: {0}", pv.get<am::system_error>().what());
+            throw;
         }
         _lock->unlock();
         co_return;
