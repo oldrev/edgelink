@@ -24,8 +24,13 @@ std::vector<std::unique_ptr<IFlow>> FlowFactory::create_flows(const boost::json:
         const auto& json_node = json_node_value.as_object();
         const std::string type(json_node.at("type").as_string());
         if (type == "tab" || type == "flow") {
-            auto flow = this->create_flow(flows_config, json_node, engine);
-            flows.emplace_back(std::move(flow));
+            try {
+                auto flow = this->create_flow(flows_config, json_node, engine);
+                flows.emplace_back(std::move(flow));
+            } catch (std::exception& ex) {
+                _logger->error("创建流时发生错误：{}",  ex.what());
+                throw;
+            }
         }
     }
     return flows;

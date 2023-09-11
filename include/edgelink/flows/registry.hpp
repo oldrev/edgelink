@@ -15,15 +15,10 @@ class Registry : public IRegistry {
     Registry(const boost::json::object& json_config);
     virtual ~Registry();
 
-    inline const std::unique_ptr<IFlowNodeProvider>&
-    get_flow_node_provider(const std::string_view& name) const override {
-        return _flow_node_providers.at(name);
-    }
+    const std::unique_ptr<IFlowNodeProvider>& get_flow_node_provider(const std::string_view& type_name) const override;
 
-    inline const std::unique_ptr<IStandaloneNodeProvider>&
-    get_standalone_node_provider(const std::string_view& name) const override {
-        return _standalone_node_providers.at(name);
-    }
+    const std::unique_ptr<IStandaloneNodeProvider>&
+    get_standalone_node_provider(const std::string_view& type_name) const override;
 
   private:
     void register_node_provider(const rttr::type& provider_type);

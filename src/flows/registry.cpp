@@ -36,11 +36,13 @@ Registry::Registry(const boost::json::object& json_config) : _logger(spdlog::def
         auto lib = make_unique<rttr::library>(lib_path);
         auto is_loaded = lib->load();
         if (!is_loaded) {
-            throw std::runtime_error(fmt::format("无法加载插件 '{}'：{}", lib_path, std::string(lib->get_error_string())));
+            throw std::runtime_error(
+                fmt::format("无法加载插件 '{}'：{}", lib_path, std::string(lib->get_error_string())));
         }
 
         for (auto type : lib->get_types()) {
             if (is_valid_provider_type(type)) {
+                _logger->debug("发现插件节点类型：{}", std::string(type.get_name()));
                 this->register_node_provider(type);
             }
         }
@@ -54,6 +56,21 @@ Registry::~Registry() {
         _logger->info("开始卸载插件动态库：{}", std::string(lib->get_file_name()));
         lib->unload();
     }
+}
+
+const std::unique_ptr<IFlowNodeProvider>& Registry::get_flow_node_provider(const std::string_view& type_name) const {
+    if (!_flow_node_providers.contains(type_name)) {
+        _logger->error("找不到流程节点类型提供器：type={}", type_name);
+    }
+    return _flow_node_providers.at(type_name);
+}
+
+const std::unique_ptr<IStandaloneNodeProvider>&
+Registry::get_standalone_node_provider(const std::string_view& type_name) const {
+    if (!_standalone_node_providers.contains(type_name)) {
+        _logger->error("找不到独立节点类型提供器：type={}", type_name);
+    }
+    return _standalone_node_providers.at(type_name);
 }
 
 void Registry::register_node_provider(const rttr::type& provider_type) {
