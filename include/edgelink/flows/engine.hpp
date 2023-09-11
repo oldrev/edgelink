@@ -15,8 +15,8 @@ class Engine : public IEngine {
 
     bool is_disabled() const override { return _disabled; }
 
-    Awaitable<void> start_async() override;
-    Awaitable<void> stop_async() override;
+    Awaitable<void> async_start() override;
+    Awaitable<void> async_stop() override;
 
     inline IFlow* get_flow(const std::string_view flow_id) const override {
         for (auto& flow : _flows) {

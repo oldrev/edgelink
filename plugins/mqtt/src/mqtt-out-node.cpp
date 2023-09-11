@@ -71,13 +71,13 @@ class MqttOutNode : public SinkNode, public std::enable_shared_from_this<MqttOut
         }
     }
 
-    Awaitable<void> start_async() override {
+    Awaitable<void> async_start() override {
 
         this->logger()->info("MQTT OUT > 启动");
         co_return;
     }
 
-    Awaitable<void> stop_async() override { co_return; }
+    Awaitable<void> async_stop() override { co_return; }
 
     Awaitable<void> receive_async(std::shared_ptr<Msg> msg) override {
 

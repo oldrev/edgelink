@@ -51,7 +51,7 @@ class MqttBrokerNode : public EndpointNode,
         //
     }
 
-    Awaitable<void> start_async() override {
+    Awaitable<void> async_start() override {
         auto exe = co_await this_coro::executor;
         if (!_lock) { // 因 MQTT 库的限制，此类不运行并发操作
             _lock = std::make_unique<async::AsyncLock<boost::asio::any_io_executor>>(exe);
@@ -64,7 +64,7 @@ class MqttBrokerNode : public EndpointNode,
         co_return;
     }
 
-    Awaitable<void> stop_async() override {
+    Awaitable<void> async_stop() override {
 
         co_await _lock->async_lock();
         co_await this->async_close();

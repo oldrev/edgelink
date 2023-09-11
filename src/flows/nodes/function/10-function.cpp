@@ -109,9 +109,9 @@ class FunctionNode : public FlowNode {
         _ctx.evalStringNoRes(JS_PRELUDE);
     }
 
-    Awaitable<void> start_async() override { co_return; }
+    Awaitable<void> async_start() override { co_return; }
 
-    Awaitable<void> stop_async() override { co_return; }
+    Awaitable<void> async_stop() override { co_return; }
 
     Awaitable<void> receive_async(std::shared_ptr<Msg> msg) override {
 

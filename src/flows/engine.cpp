@@ -21,13 +21,13 @@ Engine::~Engine() {
     _logger->info("流程引擎清理中...");
 
     asio::io_context io_context(1);
-    asio::co_spawn(io_context, this->stop_async(), asio::detached);
+    asio::co_spawn(io_context, this->async_stop(), asio::detached);
     io_context.run();
 
     _logger->info("流程引擎已关闭");
 }
 
-Awaitable<void> Engine::start_async() {
+Awaitable<void> Engine::async_start() {
 
     auto executor = co_await boost::asio::this_coro::executor;
     // TODO 检查是否在运行
@@ -60,30 +60,30 @@ Awaitable<void> Engine::start_async() {
 
     for (auto& node : _global_nodes) {
         _logger->debug("正在启动全局节点：{0}", node->id());
-        boost::asio::co_spawn(executor, node->start_async(), boost::asio::detached);
+        boost::asio::co_spawn(executor, node->async_start(), boost::asio::detached);
     }
 
     for (auto& flow : _flows) {
         _logger->debug("正在启动流程：{0}", flow->id());
-        boost::asio::co_spawn(executor, flow->start_async(), boost::asio::detached);
+        boost::asio::co_spawn(executor, flow->async_start(), boost::asio::detached);
     }
     _logger->info("流程引擎已启动");
 }
 
-Awaitable<void> Engine::stop_async() {
+Awaitable<void> Engine::async_stop() {
     // 给出线程池停止信号
     _logger->info("开始请求流程引擎停止...");
     _stop_source->request_stop();
 
     for (auto it = _flows.rbegin(); it != _flows.rend(); ++it) {
         auto ref = std::reference_wrapper<IFlow>(**it); // 使用 std::reference_wrapper
-        co_await ref.get().stop_async();
+        co_await ref.get().async_stop();
     }
 
     for (auto it = _global_nodes.rbegin(); it != _global_nodes.rend(); ++it) {
         auto ref = std::reference_wrapper<IStandaloneNode>(**it); // 使用 std::reference_wrapper
         _logger->debug("正在停止全局节点：[id={0}, type={1}]", ref.get().id(), ref.get().descriptor()->type_name());
-        co_await ref.get().stop_async();
+        co_await ref.get().async_stop();
         _logger->debug("全局节点已停止");
     }
 

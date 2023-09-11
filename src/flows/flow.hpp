@@ -26,8 +26,8 @@ class Flow : public IFlow {
     bool is_disabled() const override { return _disabled; }
     IEngine* engine() const override { return _engine; }
 
-    Awaitable<void> start_async() override;
-    Awaitable<void> stop_async() override;
+    Awaitable<void> async_start() override;
+    Awaitable<void> async_stop() override;
 
     Awaitable<void> async_send_many(std::vector<std::unique_ptr<Envelope>>&& envelopes) override;
 

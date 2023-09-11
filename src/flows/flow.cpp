@@ -21,19 +21,19 @@ Flow::~Flow() {
     //
 }
 
-Awaitable<void> Flow::start_async() {
+Awaitable<void> Flow::async_start() {
     //
     auto executor = co_await boost::asio::this_coro::executor;
     _stop_source = std::make_unique<std::stop_source>();
 
     for (auto const& node : _nodes) {
         _logger->debug("正在启动流程节点：[id={0}, type={1}]", node->id(), node->descriptor()->type_name());
-        boost::asio::co_spawn(executor, node->start_async(), boost::asio::detached);
+        boost::asio::co_spawn(executor, node->async_start(), boost::asio::detached);
         _logger->debug("流程节点已启动");
     }
 }
 
-Awaitable<void> Flow::stop_async() {
+Awaitable<void> Flow::async_stop() {
     // 给出线程池停止信号
     _logger->debug("开始请求流程 '{0}' 停止...", this->id());
     _stop_source->request_stop();
@@ -41,7 +41,7 @@ Awaitable<void> Flow::stop_async() {
     for (auto it = _nodes.rbegin(); it != _nodes.rend(); ++it) {
         auto ref = std::reference_wrapper<IFlowNode>(**it); // 使用 std::reference_wrapper
         _logger->info("正在停止流程节点：[id={0}, type={1}]", ref.get().id(), ref.get().descriptor()->type_name());
-        co_await ref.get().stop_async();
+        co_await ref.get().async_stop();
         _logger->info("流程节点已停止");
     }
 

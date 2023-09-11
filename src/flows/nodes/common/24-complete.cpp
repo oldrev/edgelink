@@ -15,9 +15,9 @@ class CompleteNode : public FlowNode {
         // TODO 断开连接
     }
 
-    Awaitable<void> start_async() override { co_return; }
+    Awaitable<void> async_start() override { co_return; }
 
-    Awaitable<void> stop_async() override { co_return; }
+    Awaitable<void> async_stop() override { co_return; }
 
     Awaitable<void> receive_async(std::shared_ptr<Msg> msg) override {
         throw NotSupportedException("'complete' 节点不支持作为目的节点");

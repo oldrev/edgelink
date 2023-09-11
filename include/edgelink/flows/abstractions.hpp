@@ -87,11 +87,11 @@ struct IFlow {
 
     /// @brief 启动流
     /// @return
-    virtual Awaitable<void> start_async() = 0;
+    virtual Awaitable<void> async_start() = 0;
 
     /// @brief 停止流
     /// @return
-    virtual Awaitable<void> stop_async() = 0;
+    virtual Awaitable<void> async_stop() = 0;
 
     // onSend - passed an array of SendEvent objects. The messages inside these objects are exactly what the node has
     // passed to node.send - meaning there could be duplicate references to the same message object.
@@ -105,8 +105,8 @@ struct IFlow {
 
 /// @brief 数据处理引擎接口
 struct IEngine {
-    virtual Awaitable<void> start_async() = 0;
-    virtual Awaitable<void> stop_async() = 0;
+    virtual Awaitable<void> async_start() = 0;
+    virtual Awaitable<void> async_stop() = 0;
     virtual IFlow* get_flow(const std::string_view flow_id) const = 0;
     virtual IStandaloneNode* get_global_node(const std::string_view node_id) const = 0;
     virtual bool is_disabled() const = 0;
@@ -138,8 +138,8 @@ class OutputPort {
 struct IFlowElement {
     virtual const std::string_view id() const = 0;
     virtual const bool is_disabled() const = 0;
-    virtual Awaitable<void> start_async() = 0;
-    virtual Awaitable<void> stop_async() = 0;
+    virtual Awaitable<void> async_start() = 0;
+    virtual Awaitable<void> async_stop() = 0;
 };
 
 enum class NodeKind {
@@ -189,8 +189,8 @@ class StandaloneNode : public IStandaloneNode {
     IEngine* const _engine;
 
   public:
-    virtual Awaitable<void> start_async() = 0;
-    virtual Awaitable<void> stop_async() = 0;
+    virtual Awaitable<void> async_start() = 0;
+    virtual Awaitable<void> async_stop() = 0;
 };
 
 /// @brief 流程节点抽象类
@@ -241,8 +241,8 @@ class FlowNode : public IFlowNode {
     const std::vector<OutputPort> _output_ports;
 
   public:
-    virtual Awaitable<void> start_async() = 0;
-    virtual Awaitable<void> stop_async() = 0;
+    virtual Awaitable<void> async_start() = 0;
+    virtual Awaitable<void> async_stop() = 0;
 };
 
 /// @brief 抽象数据源
@@ -253,7 +253,7 @@ class SourceNode : public FlowNode {
         : FlowNode(id, desc, std::move(output_ports), flow, config) {}
 
   public:
-    Awaitable<void> start_async() override {
+    Awaitable<void> async_start() override {
         // 线程函数
         auto executor = co_await boost::asio::this_coro::executor;
 
@@ -262,7 +262,7 @@ class SourceNode : public FlowNode {
         co_return;
     }
 
-    Awaitable<void> stop_async() { co_return; }
+    Awaitable<void> async_stop() { co_return; }
 
     Awaitable<void> receive_async(std::shared_ptr<Msg> msg) override {
         //
