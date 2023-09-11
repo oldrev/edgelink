@@ -1,34 +1,17 @@
 [
     {
-        "id": "7c226c13f2e3b224",
+        "id": "73e0fcd142fc5256",
         "type": "tab",
         "label": "流程 1",
-        "disabled": false,
+        "disabled": true,
         "info": "",
         "env": []
     },
     {
-        "id": "916fe0d41c3b82c9",
-        "type": "debug",
-        "z": "7c226c13f2e3b224",
-        "name": "debug 1",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 840,
-        "y": 320,
-        "wires": []
-    },
-    {
-        "id": "2d418fb8d326e87e",
+        "id": "e978982598e42d37",
         "type": "inject",
-        "z": "7c226c13f2e3b224",
-        "name": "时间戳节点",
+        "z": "73e0fcd142fc5256",
+        "name": "",
         "props": [
             {
                 "p": "payload"
@@ -40,149 +23,101 @@
         ],
         "repeat": "1",
         "crontab": "",
-        "once": true,
-        "onceDelay": "",
+        "once": false,
+        "onceDelay": 0.1,
         "topic": "",
         "payload": "",
         "payloadType": "date",
-        "x": 150,
-        "y": 320,
+        "x": 500,
+        "y": 280,
         "wires": [
             [
-                "588889e4e95dd46c"
+                "6301403be614681a"
             ]
         ]
     },
     {
-        "id": "9abcf751aa95c9fc",
+        "id": "6301403be614681a",
         "type": "function",
-        "z": "7c226c13f2e3b224",
-        "name": "增加字段节点",
-        "func": "var ts = msg.payload;\nmsg.payload = {\n    timestamp: ts.toString(),\n    say: \"We're so back!\"\n};\nreturn msg;",
-        "outputs": 1,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 680,
-        "y": 320,
-        "wires": [
-            [
-                "916fe0d41c3b82c9"
-            ]
-        ]
-    },
-    {
-        "id": "b1c267019d45655a",
-        "type": "range",
-        "z": "7c226c13f2e3b224",
-        "minin": "0",
-        "maxin": "100",
-        "minout": "1000",
-        "maxout": "2000",
-        "action": "scale",
-        "round": true,
-        "property": "employee.age",
-        "name": "范围节点",
-        "x": 460,
-        "y": 320,
-        "wires": [
-            [
-                "9abcf751aa95c9fc",
-                "5c681e17d918ccc1"
-            ]
-        ]
-    },
-    {
-        "id": "588889e4e95dd46c",
-        "type": "function",
-        "z": "7c226c13f2e3b224",
-        "name": "价值",
-        "func": "msg.payload = msg.payload % 100;\nmsg.employee = {\n    name: \"John Doe\",\n    age: msg.payload,\n};\nreturn msg;",
-        "outputs": 1,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 290,
-        "y": 320,
-        "wires": [
-            [
-                "b1c267019d45655a",
-                "3596fa8fefd657e4"
-            ]
-        ]
-    },
-    {
-        "id": "5d8ccc1b11c44a04",
-        "type": "debug",
-        "z": "7c226c13f2e3b224",
-        "name": "debug 2",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 840,
-        "y": 260,
-        "wires": []
-    },
-    {
-        "id": "61f741d54ca827ea",
-        "type": "debug",
-        "z": "7c226c13f2e3b224",
-        "name": "debug 3",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 660,
-        "y": 200,
-        "wires": []
-    },
-    {
-        "id": "5c681e17d918ccc1",
-        "type": "function",
-        "z": "7c226c13f2e3b224",
+        "z": "73e0fcd142fc5256",
         "name": "function 1",
-        "func": "msg.payload = JSON.stringify(msg.payload);\nmsg.step = \"after_range\";\nreturn msg;",
-        "outputs": 1,
+        "func": "var timestamp = msg.payload;\nmsg.payload = {\n    say: \"hello world\",\n    time: String(timestamp),\n};\nreturn [msg, msg];",
+        "outputs": 2,
+        "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 660,
-        "y": 260,
+        "x": 720,
+        "y": 280,
         "wires": [
             [
-                "5d8ccc1b11c44a04"
+                "6b435f6fae0bd992"
+            ],
+            [
+                "29487235f536cc7c"
             ]
         ]
     },
     {
-        "id": "3596fa8fefd657e4",
-        "type": "function",
-        "z": "7c226c13f2e3b224",
-        "name": "function 2",
-        "func": "msg.payload = JSON.stringify(msg.payload);\nmsg.step = \"after_func\";\nreturn msg;",
-        "outputs": 1,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 460,
-        "y": 260,
-        "wires": [
-            [
-                "61f741d54ca827ea"
-            ]
-        ]
+        "id": "6b435f6fae0bd992",
+        "type": "debug",
+        "z": "73e0fcd142fc5256",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 960,
+        "y": 280,
+        "wires": []
+    },
+    {
+        "id": "29487235f536cc7c",
+        "type": "mqtt out",
+        "z": "73e0fcd142fc5256",
+        "name": "",
+        "topic": "/yncic-dangerous/data/test1",
+        "qos": "0",
+        "retain": "false",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "3c39cf63714c26a4",
+        "x": 1020,
+        "y": 420,
+        "wires": []
+    },
+    {
+        "id": "3c39cf63714c26a4",
+        "type": "mqtt-broker",
+        "name": "",
+        "broker": "test.mosquitto.org",
+        "port": "1883",
+        "clientid": "1883",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": "4",
+        "keepalive": "60",
+        "cleansession": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
     }
 ]
