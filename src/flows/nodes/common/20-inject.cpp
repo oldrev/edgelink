@@ -115,7 +115,7 @@ class InjectNode : public SourceNode {
 
         if (auto once_delay_value = config.if_contains("onceDelay")) {
             auto once_delay =
-                *once_delay_value == "" ? 0.1 : boost::lexical_cast<double>(once_delay_value->as_string().c_str());
+                *once_delay_value == "" ? 0.1 : once_delay_value->to_number<double>();
             if (once_delay != NAN && once_delay > 0) {
                 _once_delay = (uint64_t)std::floor(once_delay * 1000);
             }
