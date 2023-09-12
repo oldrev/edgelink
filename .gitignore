@@ -23,5 +23,5 @@ Makefile.in
 *.stamp
 /build/
 
-./logs
-./logs/
+logs/
+logs/*
