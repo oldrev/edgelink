@@ -26,14 +26,6 @@ set(CMAKE_DEBUG_POSTFIX d)
 project(EdgeLinkApp)
 
 FetchContent_Declare(
-    rva
-    GIT_REPOSITORY https://github.com/edge-link/recursive-variant.git
-    GIT_TAG        44549c3c2cddc7fefac3a29d1909f4f79c457452
-)
-FetchContent_MakeAvailable(rva)
-include_directories(${rva_SOURCE_DIR}/include)
-
-FetchContent_Declare(
     croncpp
     GIT_REPOSITORY git@github.com:mariusbancila/croncpp.git
     GIT_TAG        v2023.03.30
@@ -67,6 +59,7 @@ include_directories(
     "${CMAKE_CURRENT_SOURCE_DIR}/libs/mustache/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/libs/async_mqtt/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/libs/duktape-cpp/src"
+    "${CMAKE_CURRENT_SOURCE_DIR}/libs/rva/include"
 )
 
 file(GLOB_RECURSE EL_SOURCES 
@@ -93,7 +86,6 @@ set(EL_DEP_LIBS
     PRIVATE ${LIBFMT}
     PRIVATE ${LIBRTTR_CORE}
     PRIVATE ${LIBDUKTAPE}
-    PRIVATE ${duktape_cpp_LIBRARIES}
     PRIVATE "edgelink-abstractions"
 )
 

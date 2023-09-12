@@ -4,3 +4,6 @@
 [submodule "libs/async_mqtt"]
 	path = libs/async_mqtt
 	url = git@github.com:redboltz/async_mqtt.git
+[submodule "libs/rva"]
+	path = libs/rva
+	url = git@github.com:edge-link/recursive-variant.git
