@@ -1,5 +1,4 @@
 #include <rva/variant.hpp>
-/*
 
 using json_value = rva::variant<        //
     std::nullptr_t,                     // json null
@@ -7,9 +6,8 @@ using json_value = rva::variant<        //
     double,                             // json number
     std::string,                        // json string
     std::map<std::string, rva::self_t>, // json object, type is std::map<std::string, json_value>
-    std::vector<rva::self_t>,           // json array, type is std::vector<json_value>
+    std::vector<rva::self_t>            // json array, type is std::vector<json_value>
     >;
-    */
 
 /*
 TEST_CASE("Factorials are computed", "[factorial]") {

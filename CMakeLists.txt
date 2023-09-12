@@ -27,7 +27,7 @@ project(EdgeLinkApp)
 
 FetchContent_Declare(
     rva
-    GIT_REPOSITORY git@github.com:edge-link/recursive-variant.git
+    GIT_REPOSITORY https://github.com/edge-link/recursive-variant.git
     GIT_TAG        44549c3c2cddc7fefac3a29d1909f4f79c457452
 )
 FetchContent_MakeAvailable(rva)
