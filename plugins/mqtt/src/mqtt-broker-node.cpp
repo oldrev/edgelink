@@ -61,13 +61,15 @@ class MqttBrokerNode : public EndpointNode,
             _lock = std::make_unique<channel<void()>>(exe, 1);
         }
         else {
-            throw std::logic_error("MqttBrokerNode 已启动，不能再次启动"); 
+            throw std::logic_error("MqttBrokerNode 已启动，不能再次启动");
         }
 
         co_await this->async_lock();
         try {
             co_await this->async_connect();
-        } catch (...) {
+        } catch (std::exception& ex) {
+            auto error_msg = fmt::format("MQTT 连接失败：{0}", ex.what());
+            this->logger()->error(error_msg);
             this->unlock();
             throw;
         }
