@@ -8,7 +8,7 @@ struct IRegistry;
 struct IEngine;
 }; // namespace edgelink
 
-namespace edgelink::flow::details {
+namespace edgelink::flows {
 
 class Flow : public IFlow {
 
@@ -63,6 +63,9 @@ class Flow : public IFlow {
     FlowPreRouteEvent _on_pre_route_event;
     FlowPreDeliverEvent _on_pre_deliver_event;
     FlowPostDeliverEvent _on_post_deliver_event;
+
+  private:
+    RTTR_ENABLE(IFlow)
 };
 
-}; // namespace edgelink::flow::details
+}; // namespace edgelink::flows

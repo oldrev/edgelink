@@ -8,7 +8,7 @@ struct IFlowNode;
 
 }; // namespace edgelink
 
-namespace edgelink::flow::details {
+namespace edgelink::flows {
 
 class FlowFactory : public edgelink::IFlowFactory {
   public:
@@ -26,6 +26,9 @@ class FlowFactory : public edgelink::IFlowFactory {
   private:
     std::shared_ptr<spdlog::logger> _logger;
     const IRegistry& _registry;
+
+private:
+    RTTR_ENABLE(IFlowFactory)
 };
 
-}; // namespace edgelink::flow::details
+}; // namespace edgelink::flows

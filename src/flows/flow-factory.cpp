@@ -7,7 +7,7 @@ using namespace edgelink;
 using namespace boost;
 using namespace edgelink;
 
-namespace edgelink::flow::details {
+namespace edgelink::flows {
 
 FlowFactory::FlowFactory(const IRegistry& registry)
     : _logger(spdlog::default_logger()->clone("Flow")), _registry(registry) {
@@ -28,7 +28,7 @@ std::vector<std::unique_ptr<IFlow>> FlowFactory::create_flows(const boost::json:
                 auto flow = this->create_flow(flows_config, json_node, engine);
                 flows.emplace_back(std::move(flow));
             } catch (std::exception& ex) {
-                _logger->error("创建流时发生错误：{}",  ex.what());
+                _logger->error("创建流时发生错误：{}", ex.what());
                 throw;
             }
         }
@@ -77,7 +77,7 @@ std::unique_ptr<IFlow> FlowFactory::create_flow(const boost::json::array& flows_
         const auto& elem_type = elem.at("type").as_string();
 
         // 跳过全局节点和注释
-        if (!elem.contains("z") || elem_type == "comment") { 
+        if (!elem.contains("z") || elem_type == "comment") {
             continue;
         }
         const auto& z = elem.at("z").as_string();
@@ -132,4 +132,9 @@ std::unique_ptr<IFlow> FlowFactory::create_flow(const boost::json::array& flows_
     return ret;
 }
 
-}; // namespace edgelink::flow::details
+RTTR_REGISTRATION {
+    rttr::registration::class_<edgelink::IFlowFactory>("edgelink::flow::IFlowFactory");
+    rttr::registration::class_<edgelink::flows::FlowFactory>("edgelink::flows::FlowFactory");
+}
+
+}; // namespace edgelink::flows

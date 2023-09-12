@@ -8,7 +8,7 @@ namespace this_coro = boost::asio::this_coro;
 
 //using CloneMsgStaticVector = boost::container::static_vector<std::shared_ptr<edgelink::Msg>, 32>;
 
-namespace edgelink::flow::details {
+namespace edgelink::flows {
 
 Flow::Flow(const boost::json::object& json_config, IEngine* engine)
     : _logger(spdlog::default_logger()->clone("Flow")), _engine(engine), _id(json_config.at("id").as_string()),
@@ -97,4 +97,9 @@ Awaitable<void> Flow::async_send_one_internal(std::unique_ptr<Envelope> envelope
     }
 }
 
-}; // namespace edgelink::flow::details
+RTTR_REGISTRATION {
+    rttr::registration::class_<edgelink::IFlow>("edgelink::IFlow");
+    rttr::registration::class_<edgelink::flows::Flow>("edgelink::flows::Flow");
+}
+
+}; // namespace edgelink::flows

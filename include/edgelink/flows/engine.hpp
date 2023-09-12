@@ -49,6 +49,9 @@ class Engine : public IEngine, private std::enable_shared_from_this<Engine> {
     const std::string _name;
     bool _disabled;
     std::vector<std::unique_ptr<IFlow>> _flows;
+
+  private:
+    RTTR_ENABLE(IEngine)
 };
 
 }; // namespace edgelink

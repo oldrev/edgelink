@@ -97,4 +97,9 @@ void Registry::register_node_provider(const rttr::type& provider_type) {
     }
 }
 
+RTTR_REGISTRATION {
+    rttr::registration::class_<edgelink::IRegistry>("edgelink::IRegistry");
+    rttr::registration::class_<edgelink::Registry>("edgelink::Registry");
+}
+
 }; // namespace edgelink

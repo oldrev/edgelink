@@ -101,6 +101,8 @@ struct IFlow {
     // delivery flag is set, in which case it would be continue as synchronous delivery) onReceive - a node is about to
     // receive a message postReceive - the message has been passed to the node's input handler onDone, onError - the
     // node has completed with a message or logged an error
+  private:
+    RTTR_ENABLE()
 };
 
 /// @brief 数据处理引擎接口
@@ -110,6 +112,9 @@ struct IEngine {
     virtual IFlow* get_flow(const std::string_view flow_id) const = 0;
     virtual IStandaloneNode* get_global_node(const std::string_view node_id) const = 0;
     virtual bool is_disabled() const = 0;
+
+  private:
+    RTTR_ENABLE()
 };
 
 /// @brief 流工厂
@@ -120,7 +125,11 @@ struct IFlowFactory {
 
     virtual std::vector<std::unique_ptr<IStandaloneNode>> create_global_nodes(const boost::json::array& flows_config,
                                                                               IEngine* engine) const = 0;
+
+private:
+    RTTR_ENABLE()
 };
+
 
 /// @brief 节点的发出连接端口
 class OutputPort {

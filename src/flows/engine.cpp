@@ -91,4 +91,9 @@ Awaitable<void> Engine::async_stop() {
     co_return;
 }
 
+RTTR_REGISTRATION {
+    rttr::registration::class_<edgelink::IEngine>("edgelink::IEngine");
+    rttr::registration::class_<edgelink::Engine>("edgelink::Engine");
+}
+
 }; // namespace edgelink

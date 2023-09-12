@@ -89,7 +89,7 @@ int main(int argc, char* argv[]) {
         di::bind<App>().in(di::singleton),                                                    // App
         di::bind<IEngine>().to<Engine>().in(di::singleton),                                   // Engine
         di::bind<IRegistry>().to<Registry>().in(di::singleton),                               // Registry
-        di::bind<IFlowFactory>().to<edgelink::flow::details::FlowFactory>().in(di::singleton) // Engine
+        di::bind<IFlowFactory>().to<edgelink::flows::FlowFactory>().in(di::singleton) // Engine
     );
 
     auto app = injector.create<App>();
