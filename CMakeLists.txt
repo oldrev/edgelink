@@ -72,8 +72,31 @@ target_link_libraries(
 )
 add_definitions(-DBOOST_LOG_DYN_LINK)
 
-
 target_precompile_headers(${PROJECT_NAME} PRIVATE src/pch.hpp)
+
+# 测试的东西
+
+# 启用测试
+enable_testing()
+
+# 指定测试可执行文件的名称
+add_executable("edgelink.tests"
+    ${CMAKE_CURRENT_SOURCE_DIR}/libs/catch2/src/catch_amalgamated.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/my-test1.cpp
+)
+
+target_include_directories("edgelink.tests" PRIVATE 
+    ${CMAKE_CURRENT_SOURCE_DIR}/libs/catch2/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+# 链接cache2和其他项目依赖项
+target_link_libraries("edgelink.tests" PRIVATE "edgelink-abstractions")
+
+# 添加测试
+add_test(NAME "edgelink.tests" COMMAND "edgelink.tests")
+
+
 
 # 添加复制操作，将配置文件复制到输出目录
 configure_file("./bin/edgelink" ${EXECUTABLE_OUTPUT_PATH}/edgelink COPYONLY)
