@@ -1,5 +1,5 @@
 
-#include <croncpp/croncpp.h>
+#include <croncpp.h>
 
 #include "edgelink/edgelink.hpp"
 

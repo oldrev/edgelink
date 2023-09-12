@@ -14,6 +14,7 @@
 #include <vector>
 #include <filesystem>
 
+#include <rva/variant.hpp>
 #include <boost/asio.hpp>
 #include <boost/container/static_vector.hpp>
 #include <boost/di.hpp>

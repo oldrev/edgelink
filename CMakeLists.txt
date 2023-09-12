@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.22)
-project(EdgeLinkApp)
+
+include(FetchContent)
+
 
 set(CMAKE_GENERATOR "Ninja")
 
@@ -21,6 +23,33 @@ endif()
 
 set(CMAKE_DEBUG_POSTFIX d)
 
+project(EdgeLinkApp)
+
+FetchContent_Declare(
+    rva
+    GIT_REPOSITORY git@github.com:edge-link/recursive-variant.git
+    GIT_TAG        44549c3c2cddc7fefac3a29d1909f4f79c457452
+)
+FetchContent_MakeAvailable(rva)
+include_directories(${rva_SOURCE_DIR}/include)
+
+FetchContent_Declare(
+    croncpp
+    GIT_REPOSITORY git@github.com:mariusbancila/croncpp.git
+    GIT_TAG        v2023.03.30
+)
+FetchContent_MakeAvailable(croncpp)
+include_directories(${croncpp_SOURCE_DIR}/include)
+
+FetchContent_Declare(
+    Boost.DI
+    GIT_REPOSITORY git@github.com:boost-ext/di.git
+    GIT_TAG        v1.3.0
+)
+FetchContent_MakeAvailable(Boost.DI)
+include_directories(${Boost.DI_SOURCE_DIR}/include)
+MESSAGE(STATUS "------------- ${Boost.DI_SOURCE_DIR}")
+
 # 查找Boost库
 find_package(Boost REQUIRED COMPONENTS system url json)
 set(Boost_MINIMUM_REQUIRED 1.81.0)
@@ -35,13 +64,14 @@ find_library(LIBDUKTAPE NAMES duktape REQUIRED)
 
 include_directories(
     ./include
-    ./libs/duktape-cpp/src
     "${CMAKE_CURRENT_SOURCE_DIR}/libs/mustache/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/libs/async_mqtt/include"
+    "${CMAKE_CURRENT_SOURCE_DIR}/libs/duktape-cpp/src"
 )
 
 file(GLOB_RECURSE EL_SOURCES 
-    "src/*.c" 
+    "${CMAKE_CURRENT_SOURCE_DIR}/libs/duktape-cpp/src/DuktapeCpp.cpp"
+    "src/*.c"
     "src/*.cpp"
     "./libs/mustache/src/renderer.cpp"
 )
@@ -57,12 +87,13 @@ add_dependencies(${PROJECT_NAME} "edgelink-abstractions")
 
 # target_compile_options(${PROJECT_NAME} PRIVATE -fno-rtti), 不要关掉 RTTI
 
-set(EL_DEP_LIBS 
+set(EL_DEP_LIBS
     PRIVATE ${Boost_LIBRARIES}
     PRIVATE ${LIBSPDLOG}
     PRIVATE ${LIBFMT}
     PRIVATE ${LIBRTTR_CORE}
     PRIVATE ${LIBDUKTAPE}
+    PRIVATE ${duktape_cpp_LIBRARIES}
     PRIVATE "edgelink-abstractions"
 )
 
@@ -78,38 +109,53 @@ target_precompile_headers(${PROJECT_NAME} PRIVATE src/pch.hpp)
 # 测试 ---------------------------------------------------------------------------
 
 # 启用测试
-enable_testing()
+include(CTest)
+if(BUILD_TESTING)
+    enable_testing()
 
-set(TESTS_EL_SOURCES ${EL_SOURCES})
-list(REMOVE_ITEM TESTS_EL_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp")
+    FetchContent_Declare(
+        Catch2
+        GIT_REPOSITORY git@github.com:catchorg/Catch2.git
+        GIT_TAG        v3.4.0
+    )
+    FetchContent_MakeAvailable(Catch2)
 
-file(GLOB_RECURSE TESTS_SOURCES 
-    "tests/*.c" 
-    "tests/*.cpp"
-)
+    set(TESTS_EL_SOURCES ${EL_SOURCES})
+    list(REMOVE_ITEM TESTS_EL_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp")
 
-# 指定测试可执行文件的名称
-add_executable("edgelink.tests"
-    ${CMAKE_CURRENT_SOURCE_DIR}/libs/catch2/src/catch_amalgamated.cpp
-    ${TESTS_EL_SOURCES}
-    ${TESTS_SOURCES}
-)
+    file(GLOB_RECURSE TESTS_SOURCES 
+        "tests/*.c"
+        "tests/*.cpp"
+    )
 
-target_precompile_headers("edgelink.tests" PRIVATE tests/pch.hpp)
+    # 指定测试可执行文件的名称
+    add_executable("edgelink.tests"
+        ${TESTS_EL_SOURCES}
+        ${TESTS_SOURCES}
+    )
 
-target_include_directories("edgelink.tests" PRIVATE 
-    ${CMAKE_CURRENT_SOURCE_DIR}/libs/catch2/include
-)
+    target_precompile_headers("edgelink.tests" PRIVATE tests/pch.hpp)
 
-# 链接cache2和其他项目依赖项
-target_link_libraries("edgelink.tests" PRIVATE
-    ${EL_DEP_LIBS}
- )
+    # 链接cache2和其他项目依赖项
+    target_link_libraries("edgelink.tests" PRIVATE
+        ${EL_DEP_LIBS}
+        Catch2
+        Catch2WithMain
+    )
 
-# 添加测试
-add_test(NAME "edgelink.tests" COMMAND "edgelink.tests")
-add_dependencies("edgelink.tests" "edgelink-abstractions")
+    # 添加测试
+    add_test(NAME "edgelink.tests" COMMAND "edgelink.tests")
+    add_dependencies("edgelink.tests" "edgelink-abstractions")
 
+    list(APPEND CMAKE_MODULE_PATH ${CMAKE_INSTALL_PREFIX}/lib/cmake/Catch2)
+    list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
+    include(CTest)
+    include(Catch)
+    catch_discover_tests("edgelink.tests")
+
+endif()
+
+# 配置文件 ---------------------------------------------------------
 
 
 # 添加复制操作，将配置文件复制到输出目录
