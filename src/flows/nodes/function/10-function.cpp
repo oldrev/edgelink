@@ -168,7 +168,7 @@ class FunctionNode : public FlowNode {
 };
 
 RTTR_REGISTRATION {
-    rttr::registration::class_<FlowNodeProvider<FunctionNode, "function", NodeKind::FILTER>>(
+    rttr::registration::class_<FlowNodeProvider<FunctionNode, "function", NodeKind::PIPE>>(
         "edgelink::FunctionNodeProvider")
         .constructor()(rttr::policy::ctor::as_raw_ptr);
 };

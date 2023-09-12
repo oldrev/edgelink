@@ -47,7 +47,7 @@ class TemplateNode : public FlowNode {
 };
 
 RTTR_REGISTRATION {
-    rttr::registration::class_<FlowNodeProvider<TemplateNode, "template", NodeKind::FILTER>>(
+    rttr::registration::class_<FlowNodeProvider<TemplateNode, "template", NodeKind::PIPE>>(
         "edgelink::TemplateNodeProvider")
         .constructor()(rttr::policy::ctor::as_raw_ptr);
 };

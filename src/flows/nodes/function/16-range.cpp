@@ -93,7 +93,7 @@ class RangeNode : public FlowNode {
 };
 
 RTTR_REGISTRATION {
-    rttr::registration::class_<FlowNodeProvider<RangeNode, "range", NodeKind::FILTER>>("edgelink::RangeNodeProvider")
+    rttr::registration::class_<FlowNodeProvider<RangeNode, "range", NodeKind::PIPE>>("edgelink::RangeNodeProvider")
         .constructor()(rttr::policy::ctor::as_raw_ptr);
 };
 

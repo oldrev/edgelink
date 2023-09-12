@@ -37,6 +37,18 @@ class DebugNode : public SinkNode {
         std::cout << fmt::format("node {}\n{}", this->name(), msg->to_string()) << std::endl;
         co_return;
     }
+
+    /*
+  private:
+    const bool _active;
+    const bool _tosidebar;
+    const bool _console;
+    const bool _tostatus;
+    const bool _complete;
+    const std::string target_type;
+    const std::string _status_val;
+    const std::string _status_type;
+*/
 };
 
 RTTR_REGISTRATION {

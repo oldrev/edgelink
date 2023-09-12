@@ -56,8 +56,7 @@ add_dependencies(${PROJECT_NAME} "edgelink-abstractions")
 
 # target_compile_options(${PROJECT_NAME} PRIVATE -fno-rtti), 不要关掉 RTTI
 
-target_link_libraries(
-    ${PROJECT_NAME}
+set(EL_DEP_LIBS 
     PRIVATE ${Boost_LIBRARIES}
     PRIVATE ${LIBSPDLOG}
     PRIVATE ${LIBFMT}
@@ -65,6 +64,12 @@ target_link_libraries(
     PRIVATE ${LIBDUKTAPE}
     PRIVATE "edgelink-abstractions"
 )
+
+target_link_libraries(
+    ${PROJECT_NAME}
+    ${EL_DEP_LIBS}
+)
+
 add_definitions(-DBOOST_LOG_DYN_LINK)
 
 target_precompile_headers(${PROJECT_NAME} PRIVATE src/pch.hpp)
@@ -74,22 +79,35 @@ target_precompile_headers(${PROJECT_NAME} PRIVATE src/pch.hpp)
 # 启用测试
 enable_testing()
 
+set(TESTS_EL_SOURCES ${EL_SOURCES})
+list(REMOVE_ITEM TESTS_EL_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp")
+
+file(GLOB_RECURSE TESTS_SOURCES 
+    "tests/*.c" 
+    "tests/*.cpp"
+)
+
 # 指定测试可执行文件的名称
 add_executable("edgelink.tests"
     ${CMAKE_CURRENT_SOURCE_DIR}/libs/catch2/src/catch_amalgamated.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/tests/my-test1.cpp
+    ${TESTS_EL_SOURCES}
+    ${TESTS_SOURCES}
 )
+
+target_precompile_headers("edgelink.tests" PRIVATE tests/pch.hpp)
 
 target_include_directories("edgelink.tests" PRIVATE 
     ${CMAKE_CURRENT_SOURCE_DIR}/libs/catch2/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
 # 链接cache2和其他项目依赖项
-target_link_libraries("edgelink.tests" PRIVATE "edgelink-abstractions")
+target_link_libraries("edgelink.tests" PRIVATE
+    ${EL_DEP_LIBS}
+ )
 
 # 添加测试
 add_test(NAME "edgelink.tests" COMMAND "edgelink.tests")
+add_dependencies("edgelink.tests" "edgelink-abstractions")
 
 
 
@@ -98,7 +116,7 @@ configure_file(./edgelink-conf.json ${EXECUTABLE_OUTPUT_PATH}/edgelink-conf.json
 configure_file(./flows.json ${EXECUTABLE_OUTPUT_PATH}/flows.json COPYONLY)
 
 
-# 测试 ---------------------------------------------------------------------------
+# 插件 ---------------------------------------------------------------------------
 
 # 包含插件子项目
 

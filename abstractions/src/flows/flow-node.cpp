@@ -3,6 +3,11 @@
 
 namespace edgelink {
 
+Awaitable<void> FlowNode::receive_async(std::shared_ptr<Msg> msg) {
+    // 默认就是什么都不干
+    co_return;
+}
+
 Awaitable<void> FlowNode::async_send_to_one_port(std::shared_ptr<Msg> msg) {
     if (this->output_ports().size() != 1) {
         this->logger()->warn("节点 (id={}, name={}) 必须只有一个端口才能调用本方法", this->id(), this->name());

@@ -82,7 +82,7 @@ Awaitable<void> Engine::async_stop() {
 
     for (auto it = _global_nodes.rbegin(); it != _global_nodes.rend(); ++it) {
         auto ref = std::reference_wrapper<IStandaloneNode>(**it); // 使用 std::reference_wrapper
-        _logger->debug("正在停止全局节点：[id={0}, type={1}]", ref.get().id(), ref.get().descriptor()->type_name());
+        _logger->debug("正在停止全局节点：[id={0}, type={1}]", ref.get().id(), ref.get().type());
         co_await ref.get().async_stop();
         _logger->debug("全局节点已停止");
     }

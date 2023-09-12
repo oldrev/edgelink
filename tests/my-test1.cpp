@@ -1,4 +1,3 @@
-#include <catch_amalgamated.hpp>
 
 unsigned int Factorial(unsigned int number) {
     //

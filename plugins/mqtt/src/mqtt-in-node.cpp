@@ -33,38 +33,16 @@ class MqttInNode : public SourceNode, public std::enable_shared_from_this<MqttIn
   public:
     MqttInNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc,
                const std::vector<OutputPort>&& output_ports, IFlow* flow)
-        : SourceNode(id, desc, move(output_ports), flow, config), _mqtt_broker_node_id(config.at("broker").as_string()) {
-        try {
-            //
-            if (auto topic_value = config.if_contains("topic")) {
-                const std::string_view topic_str = topic_value->as_string();
-                if (!topic_str.empty()) {
-                    _node_topic = std::string(topic_str);
-                } else {
-                    // 保持为空
-                }
-            }
-
-            if (auto qos_value = config.if_contains("qos")) {
-                const std::string_view qos_str = qos_value->as_string();
-                if (qos_str == "0") {
-                    _node_qos = async_mqtt::qos::at_most_once;
-                } else if (qos_str == "1") {
-                    _node_qos = async_mqtt::qos::at_least_once;
-                } else if (qos_str == "2") {
-                    _node_qos = async_mqtt::qos::exactly_once;
-                } else {
-                    // 不动
-                }
-            }
-
-        } catch (std::exception& ex) {
-            spdlog::error("加载 MQTT In 节点配置发生错误：{0}", ex.what());
-            throw;
-        }
+        : SourceNode(id, desc, move(output_ports), flow, config), _mqtt_broker_node_id(config.at("broker").as_string()),
+          _topic(config.at("topic").as_string()),
+          _qos(boost::lexical_cast<uint8_t>(config.at("qos").as_string().c_str())),
+          _data_type(config.at("datatype").as_string()), _nl(config.at("nl").as_bool()),
+          _rap(config.at("rap").as_bool()), _rh(config.at("rh").to_number<int>()),
+          _inputs(config.at("input").to_number<size_t>()) {
+        //
     }
 
-protected:
+  protected:
     Awaitable<void> on_async_run() override {
         //
         co_return;
@@ -72,8 +50,13 @@ protected:
 
   private:
     std::string _mqtt_broker_node_id;
-    std::optional<std::string> _node_topic;
-    std::optional<async_mqtt::qos> _node_qos;
+    const std::string _topic;
+    const uint8_t _qos;
+    const std::string _data_type;
+    const bool _nl;
+    const bool _rap;
+    const int _rh;
+    const size_t _inputs;
 };
 
 RTTR_PLUGIN_REGISTRATION {
@@ -81,7 +64,5 @@ RTTR_PLUGIN_REGISTRATION {
         "edgelink::plugins::mqtt::MqttInNodeProvider")
         .constructor()(rttr::policy::ctor::as_raw_ptr);
 };
-
-
 
 }; // namespace edgelink::plugins::mqtt

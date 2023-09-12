@@ -27,9 +27,13 @@ Registry::Registry(const boost::json::object& json_config) : _logger(spdlog::def
     std::string path = "./plugins";
 
     using std::filesystem::directory_iterator;
+    namespace fs = std::filesystem;
 
-    for (const auto& file : directory_iterator(path)) {
-        auto path = std::filesystem::path(file.path());
+    for (const auto& file : fs::directory_iterator(path)) {
+        auto path = fs::path(file.path());
+        if (!fs::is_regular_file(file)) {
+            continue;
+        }
         std::string lib_path = path; // path.replace_extension("");
         _logger->info("找到插件：{}", lib_path);
 

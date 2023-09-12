@@ -147,11 +147,12 @@ enum class NodeKind {
     STANDALONE = 1, ///< 独立节点
     SOURCE = 2,     ///< 数据源
     SINK = 3,       ///< 数据收集器
-    FILTER = 4      ///< 过滤器
+    PIPE = 4      ///< 过滤器
 };
 
 struct INode : public IFlowElement {
     virtual const std::string_view name() const = 0;
+    virtual const std::string_view type() const = 0;
     virtual const INodeDescriptor* descriptor() const = 0;
 };
 
@@ -165,13 +166,14 @@ class StandaloneNode : public IStandaloneNode {
     StandaloneNode(const std::string_view id, const INodeDescriptor* desc, const boost::json::object& config,
                    IEngine* engine)
         : _logger(spdlog::default_logger()->clone(fmt::format("NODE({}:{})", config.at("type").as_string(), id))),
-          _id(id), _name(config.at("name").as_string()), _disabled(edgelink::json::value_or(config, "d", false)),
-          _descriptor(desc), _engine(engine) {
+          _id(id), _type(config.at("type").as_string()), _name(config.at("name").as_string()),
+          _disabled(edgelink::json::value_or(config, "d", false)), _descriptor(desc), _engine(engine) {
         // constructor
     }
 
   public:
     const std::string_view id() const override { return _id; }
+    const std::string_view type() const override { return _type; }
     const std::string_view name() const override { return _name; }
     const bool is_disabled() const override { return _disabled; }
     const INodeDescriptor* descriptor() const override { return _descriptor; }
@@ -183,6 +185,7 @@ class StandaloneNode : public IStandaloneNode {
   private:
     std::shared_ptr<spdlog::logger> _logger;
     const std::string _id;
+    const std::string _type;
     const std::string _name;
     bool _disabled;
     const INodeDescriptor* _descriptor;
@@ -204,25 +207,29 @@ struct IFlowNode : public INode {
     virtual Awaitable<void> async_send_to_many_port(std::vector<std::shared_ptr<Msg>>&& msgs) = 0;
 };
 
-/// @brief 流程节点抽象类
+/// @brief 流程节点基类
 class FlowNode : public IFlowNode {
   protected:
     FlowNode(const std::string_view id, const INodeDescriptor* desc, const std::vector<OutputPort>&& output_ports,
              IFlow* flow, const boost::json::object& config)
         : _logger(spdlog::default_logger()->clone(fmt::format("NODE({}:{})", config.at("type").as_string(), id))),
-          _id(id), _name(config.at("name").as_string()), _disabled(edgelink::json::value_or(config, "d", false)),
-          _descriptor(desc), _output_ports(std::move(output_ports)), _flow(flow) {
+          _id(id), _type(config.at("type").as_string()), _name(config.at("name").as_string()),
+          _disabled(edgelink::json::value_or(config, "d", false)), _descriptor(desc),
+          _output_ports(std::move(output_ports)), _flow(flow) {
         // constructor
     }
 
   public:
     const std::string_view id() const override { return _id; }
+    const std::string_view type() const override { return _type; }
     const std::string_view name() const override { return _name; }
     const bool is_disabled() const override { return _disabled; }
     const std::vector<OutputPort>& output_ports() const override { return _output_ports; }
     const size_t output_count() const override { return _output_ports.size(); }
     const INodeDescriptor* descriptor() const override { return _descriptor; }
     IFlow* flow() const override { return _flow; }
+
+    Awaitable<void> receive_async(std::shared_ptr<Msg> msg) override;
 
     Awaitable<void> async_send_to_one_port(std::shared_ptr<Msg> msg) override;
 
@@ -234,6 +241,7 @@ class FlowNode : public IFlowNode {
   private:
     std::shared_ptr<spdlog::logger> _logger;
     const std::string _id;
+    const std::string _type;
     const std::string _name;
     bool _disabled;
     IFlow* _flow;
@@ -306,9 +314,9 @@ class EndpointNode : public StandaloneNode {
 };
 
 /// @brief 抽象数据过滤器
-class FilterNode : public FlowNode {
+class PipeNode : public FlowNode {
   protected:
-    FilterNode(const std::string_view id, const INodeDescriptor* desc, const std::vector<OutputPort>&& output_ports,
+    PipeNode(const std::string_view id, const INodeDescriptor* desc, const std::vector<OutputPort>&& output_ports,
                IFlow* flow, const boost::json::object& config)
         : FlowNode(id, desc, std::move(output_ports), flow, config) {}
 };
