@@ -10,7 +10,6 @@
 #include <span>
 #include <stdexcept>
 #include <string>
-#include <thread>
 #include <type_traits>
 #include <vector>
 #include <filesystem>

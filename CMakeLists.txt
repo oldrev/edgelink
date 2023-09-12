@@ -19,6 +19,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -s")
 endif()
 
+set(CMAKE_DEBUG_POSTFIX d)
 
 # 查找Boost库
 find_package(Boost REQUIRED COMPONENTS system url json)
@@ -38,23 +39,17 @@ include_directories(
     "${CMAKE_CURRENT_SOURCE_DIR}/libs/mustache/include"
 )
 
-file(GLOB_RECURSE SOURCES 
+file(GLOB_RECURSE EL_SOURCES 
     "src/*.c" 
     "src/*.cpp"
     "./libs/mustache/src/renderer.cpp"
 )
 
-
-
-#include(FetchContent) # 引入该CMake模块
-
-set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
-
-
+set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 
 # 添加可执行文件
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-add_executable(${PROJECT_NAME} ${SOURCES})
+add_executable(${PROJECT_NAME} ${EL_SOURCES})
 
 add_subdirectory(./abstractions)
 add_dependencies(${PROJECT_NAME} "edgelink-abstractions")
@@ -74,7 +69,7 @@ add_definitions(-DBOOST_LOG_DYN_LINK)
 
 target_precompile_headers(${PROJECT_NAME} PRIVATE src/pch.hpp)
 
-# 测试的东西
+# 测试 ---------------------------------------------------------------------------
 
 # 启用测试
 enable_testing()
@@ -99,10 +94,11 @@ add_test(NAME "edgelink.tests" COMMAND "edgelink.tests")
 
 
 # 添加复制操作，将配置文件复制到输出目录
-configure_file("./bin/edgelink" ${EXECUTABLE_OUTPUT_PATH}/edgelink COPYONLY)
 configure_file(./edgelink-conf.json ${EXECUTABLE_OUTPUT_PATH}/edgelink-conf.json COPYONLY)
 configure_file(./flows.json ${EXECUTABLE_OUTPUT_PATH}/flows.json COPYONLY)
 
+
+# 测试 ---------------------------------------------------------------------------
 
 # 包含插件子项目
 
