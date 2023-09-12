@@ -8,7 +8,7 @@ using MsgRoutingPath = boost::container::static_vector<const IFlowNode*, 32>;
 
 struct EdgeLinkConfig;
 
-class Engine : public IEngine {
+class Engine : public IEngine, private std::enable_shared_from_this<Engine> {
   public:
     Engine(const EdgeLinkConfig& el_config, const IFlowFactory& flow_factory);
     virtual ~Engine();

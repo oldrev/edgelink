@@ -11,7 +11,7 @@ namespace this_coro = boost::asio::this_coro;
 
 namespace edgelink {
 
-class App {
+class App : public std::enable_shared_from_this<App> {
   public:
     App(std::shared_ptr<boost::json::object>& json_config, std::shared_ptr<IEngine> engine) : _engine(engine) {}
 
@@ -21,6 +21,8 @@ class App {
         // auto self = shared_from_this();
 
         co_await _engine->async_start();
+        asio::co_spawn(
+            executor, [self = this->shared_from_this()] { return self->idle_loop(); }, asio::detached);
 
         // co_await this->idle_loop();
         co_return;
@@ -103,6 +105,7 @@ int main(int argc, char* argv[]) {
             io_context.stop();
             // std::terminate();
         });
+
         asio::co_spawn(io_context, app.run_async(), asio::detached);
 
         io_context.run();

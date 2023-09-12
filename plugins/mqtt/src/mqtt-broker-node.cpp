@@ -1,3 +1,5 @@
+#include <boost/asio/experimental/channel.hpp>
+
 #include <edgelink/plugin.hpp>
 #include <edgelink/async/async-lock.hpp>
 #include "mqtt.hpp"
@@ -6,6 +8,8 @@ using namespace edgelink;
 
 namespace edgelink::plugins::mqtt {
 
+using boost::asio::deferred;
+using boost::asio::experimental::channel;
 using namespace boost;
 namespace asio = boost::asio;
 namespace am = async_mqtt;
@@ -54,26 +58,29 @@ class MqttBrokerNode : public EndpointNode,
     Awaitable<void> async_start() override {
         auto exe = co_await this_coro::executor;
         if (!_lock) { // 因 MQTT 库的限制，此类不运行并发操作
-            _lock = std::make_unique<async::AsyncLock<boost::asio::any_io_executor>>(exe);
+            _lock = std::make_unique<channel<void()>>(exe, 1);
+        }
+        else {
+            throw std::logic_error("MqttBrokerNode 已启动，不能再次启动"); 
         }
 
-        co_await _lock->async_lock();
+        co_await this->async_lock();
         try {
             co_await this->async_connect();
         } catch (...) {
-            _lock->unlock();
+            this->unlock();
             throw;
         }
-        _lock->unlock();
+        this->unlock();
 
         co_return;
     }
 
     Awaitable<void> async_stop() override {
 
-        co_await _lock->async_lock();
         co_await this->async_close();
-        _lock->unlock();
+        _lock->cancel();
+        _lock.reset();
 
         co_return;
     }
@@ -82,7 +89,7 @@ class MqttBrokerNode : public EndpointNode,
 
     Awaitable<void> async_publish(const std::string_view topic, const async_mqtt::buffer& payload_buffer,
                                   async_mqtt::qos qos) override {
-        co_await _lock->async_lock();
+        co_await this->async_lock();
         try {
 
             auto topic_buffer = am::allocate_buffer(topic);
@@ -93,6 +100,7 @@ class MqttBrokerNode : public EndpointNode,
             if (se) {
                 auto error_msg = fmt::format("MQTT PUBLISH send error: {0}", se.what());
                 this->logger()->error(error_msg);
+        this->unlock();
                 throw IOException(error_msg);
             }
             // Recv MQTT PUBLISH and PUBACK (order depends on broker)
@@ -107,13 +115,14 @@ class MqttBrokerNode : public EndpointNode,
             } else {
                 auto error_msg = ("MQTT recv error: {0}", pv.get<am::system_error>().what());
                 this->logger()->error(error_msg);
+        this->unlock();
                 throw IOException(error_msg);
             }
         } catch (...) {
-            _lock->unlock();
+        this->unlock();
             throw;
         }
-        _lock->unlock();
+        this->unlock();
         co_return;
     }
 
@@ -126,6 +135,16 @@ class MqttBrokerNode : public EndpointNode,
     }
 
   private:
+
+    Awaitable<void> async_lock() {
+        co_await _lock->async_send(deferred);
+        co_return;
+    }
+
+    void unlock() {
+        _lock->try_receive([](auto...) {});
+    }
+
     Awaitable<void> async_connect() {
         BOOST_ASSERT(_lock);
         this->logger()->info("开始连接 MQTT：{}:{}", this->host(), this->port());
@@ -189,10 +208,13 @@ class MqttBrokerNode : public EndpointNode,
         co_await _endpoint->close(asio::use_awaitable);
         this->logger()->info("MQTT 连接已断开，主机：{0}:{1}", this->host(), this->port());
     }
+     
 
   private:
     std::unique_ptr<Endpoint> _endpoint;
-    std::unique_ptr<async::AsyncLock<boost::asio::any_io_executor>> _lock;
+
+    std::unique_ptr<channel<void()>> _lock; //{socket_.get_executor(), 1};
+    //std::unique_ptr<async::AsyncLock<boost::asio::any_io_executor>> _lock;
 };
 
 RTTR_PLUGIN_REGISTRATION {
