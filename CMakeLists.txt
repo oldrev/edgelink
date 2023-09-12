@@ -25,23 +25,6 @@ set(CMAKE_DEBUG_POSTFIX d)
 
 project(EdgeLinkApp)
 
-FetchContent_Declare(
-    croncpp
-    GIT_REPOSITORY git@github.com:mariusbancila/croncpp.git
-    GIT_TAG        v2023.03.30
-)
-FetchContent_MakeAvailable(croncpp)
-include_directories(${croncpp_SOURCE_DIR}/include)
-
-FetchContent_Declare(
-    Boost.DI
-    GIT_REPOSITORY git@github.com:boost-ext/di.git
-    GIT_TAG        v1.3.0
-)
-FetchContent_MakeAvailable(Boost.DI)
-include_directories(${Boost.DI_SOURCE_DIR}/include)
-MESSAGE(STATUS "------------- ${Boost.DI_SOURCE_DIR}")
-
 # 查找Boost库
 find_package(Boost REQUIRED COMPONENTS system url json)
 set(Boost_MINIMUM_REQUIRED 1.81.0)
@@ -60,6 +43,8 @@ include_directories(
     "${CMAKE_CURRENT_SOURCE_DIR}/libs/async_mqtt/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/libs/duktape-cpp/src"
     "${CMAKE_CURRENT_SOURCE_DIR}/libs/rva/include"
+    "${CMAKE_CURRENT_SOURCE_DIR}/libs/boost-di/include"
+    "${CMAKE_CURRENT_SOURCE_DIR}/libs/croncpp/include"
 )
 
 file(GLOB_RECURSE EL_SOURCES 

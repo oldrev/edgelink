@@ -7,3 +7,9 @@
 [submodule "libs/rva"]
 	path = libs/rva
 	url = git@github.com:edge-link/recursive-variant.git
+[submodule "libs/boost-di"]
+	path = libs/boost-di
+	url = git@github.com:boost-ext/di.git
+[submodule "libs/croncpp"]
+	path = libs/croncpp
+	url = git@github.com:mariusbancila/croncpp.git
