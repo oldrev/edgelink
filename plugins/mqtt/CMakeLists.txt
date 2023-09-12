@@ -11,8 +11,6 @@ file(GLOB_RECURSE SOURCES "src/*.c" "src/*.cpp")
 
 get_filename_component(CURRENT_CMAKE_SOURCE_DIR "${CMAKE_CURRENT_LIST_FILE}" DIRECTORY)
 
-add_subdirectory(${CURRENT_CMAKE_SOURCE_DIR}/libs/async_mqtt)
-
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 add_library(${PLUGIN_MQTT} SHARED ${SOURCES})
 

@@ -37,6 +37,7 @@ include_directories(
     ./include
     ./libs/duktape-cpp/src
     "${CMAKE_CURRENT_SOURCE_DIR}/libs/mustache/include"
+    "${CMAKE_CURRENT_SOURCE_DIR}/libs/async_mqtt/include"
 )
 
 file(GLOB_RECURSE EL_SOURCES 
@@ -127,4 +128,5 @@ file(MAKE_DIRECTORY ${PLUGINS_OUTPUT_DIR})
 add_subdirectory(./plugins/modbus)
 
 # mqtt 插件
+add_subdirectory(./libs/async_mqtt)
 add_subdirectory(./plugins/mqtt)
