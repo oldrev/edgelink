@@ -31,15 +31,7 @@ class Flow : public IFlow {
 
     Awaitable<void> async_send_many(std::vector<std::unique_ptr<Envelope>>&& envelopes) override;
 
-    inline IFlowNode* get_node(const std::string_view id) const override {
-
-        for (auto&& n : _nodes) {
-            if (n->id() == id) {
-                return n.get();
-            }
-        }
-        return nullptr;
-    }
+    IFlowNode* get_node(const std::string_view id) const override;
 
     inline void emplace_node(std::unique_ptr<IFlowNode>&& node) { _nodes.emplace_back(std::move(node)); }
 
