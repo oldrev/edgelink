@@ -8,7 +8,7 @@
             "type": "lldb",
             "request": "launch",
             "name": "Debug",
-            "program": "${workspaceFolder}/build/EdgeLinkApp",
+            "program": "${workspaceFolder}/build/EdgeLink",
             "args": [],
             "cwd": "${workspaceFolder}/build"
         }

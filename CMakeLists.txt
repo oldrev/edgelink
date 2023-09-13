@@ -27,7 +27,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_COMPILER_LAUNCHER ccache)
 set(CMAKE_C_COMPILER_LAUNCHER ccache)
 
-project(EdgeLinkApp)
+project(EdgeLink)
 
 add_custom_target(git_versioning
   ${CMAKE_COMMAND} -D SRC=${CMAKE_SOURCE_DIR}/version-config.h.in
@@ -79,7 +79,7 @@ add_executable(${PROJECT_NAME} ${EL_SOURCES})
 
 add_dependencies(${PROJECT_NAME} git_versioning)
 
-add_dependencies(${PROJECT_NAME} "edgelink-abstractions")
+add_dependencies(${PROJECT_NAME} EdgeLinkAbstractions)
 
 # target_compile_options(${PROJECT_NAME} PRIVATE -fno-rtti), 不要关掉 RTTI
 
@@ -89,7 +89,7 @@ set(EL_DEP_LIBS
     PRIVATE ${LIBFMT}
     PRIVATE ${LIBRTTR_CORE}
     PRIVATE ${LIBDUKTAPE}
-    PRIVATE "edgelink-abstractions"
+    PRIVATE EdgeLinkAbstractions
 )
 
 target_link_libraries(
@@ -119,29 +119,29 @@ if(BUILD_TESTING)
     )
 
     # 指定测试可执行文件的名称
-    add_executable("edgelink.tests"
+    add_executable(EdgeLinkTests
         ${TESTS_EL_SOURCES}
         ${TESTS_SOURCES}
     )
 
-    target_precompile_headers("edgelink.tests" PRIVATE tests/pch.hpp)
+    target_precompile_headers(EdgeLinkTests PRIVATE tests/pch.hpp)
 
     # 链接cache2和其他项目依赖项
-    target_link_libraries("edgelink.tests" PRIVATE
+    target_link_libraries(EdgeLinkTests PRIVATE
         ${EL_DEP_LIBS}
         Catch2
         Catch2WithMain
     )
 
     # 添加测试
-    add_test(NAME "edgelink.tests" COMMAND "edgelink.tests")
-    add_dependencies("edgelink.tests" "edgelink-abstractions")
+    add_test(NAME EdgeLinkTests COMMAND EdgeLinkTests)
+    add_dependencies(EdgeLinkTests EdgeLinkAbstractions)
 
     list(APPEND CMAKE_MODULE_PATH ${CMAKE_INSTALL_PREFIX}/lib/cmake/Catch2)
     list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
     include(CTest)
     include(Catch)
-    catch_discover_tests("edgelink.tests")
+    catch_discover_tests(EdgeLinkTests)
 
 endif()
 
@@ -172,7 +172,7 @@ macro(edgelink_plugin PLUGIN_NAME)
     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
     add_library(${THIS_PLUGIN} SHARED ${SOURCES})
 
-    add_dependencies(${THIS_PLUGIN} "edgelink-abstractions")
+    add_dependencies(${THIS_PLUGIN} EdgeLinkAbstractions)
     add_dependencies(${THIS_PLUGIN} git_versioning)
 
     target_link_libraries(
@@ -181,7 +181,7 @@ macro(edgelink_plugin PLUGIN_NAME)
         PRIVATE ${LIBSPDLOG}
         PRIVATE ${LIBFMT}
         PRIVATE ${LIBRTTR_CORE}
-        PRIVATE "edgelink-abstractions"
+        PRIVATE EdgeLinkAbstractions
     )
 endmacro()
 
