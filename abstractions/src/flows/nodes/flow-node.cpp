@@ -36,7 +36,7 @@ Awaitable<void> FlowNode::async_send_to_many_port(std::vector<std::shared_ptr<Ms
 
             IFlowNode* dest_node = port->wires().at(iwire);
 
-            auto env = std::make_unique<Envelope>(msgs[iport], msg_sent, this->id(), this, port);
+            auto env = std::make_unique<Envelope>(msgs.at(iport), msg_sent, this->id(), this, port);
             env->destination_id = dest_node->id();
             env->destination_node = dest_node;
 
