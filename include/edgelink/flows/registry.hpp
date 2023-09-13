@@ -16,7 +16,7 @@ struct IRegistry {
 
 class Registry : public IRegistry {
   public:
-    Registry(const boost::json::object& json_config);
+    Registry();
     virtual ~Registry();
 
     const std::unique_ptr<IFlowNodeProvider>& get_flow_node_provider(const std::string_view& type_name) const override;

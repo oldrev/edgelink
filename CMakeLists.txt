@@ -23,6 +23,8 @@ endif()
 
 set(CMAKE_DEBUG_POSTFIX d)
 
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 project(EdgeLinkApp)
 
 # 查找Boost库
@@ -36,6 +38,9 @@ find_library(LIBSPDLOG NAMES spdlog REQUIRED)
 find_library(LIBFMT NAMES fmt REQUIRED)
 find_library(LIBRTTR_CORE NAMES rttr_core REQUIRED)
 find_library(LIBDUKTAPE NAMES duktape REQUIRED)
+
+# 通过 cmake 引入 ASYNC_MQTT 库
+add_subdirectory(./libs/async_mqtt)
 
 include_directories(
     ./include
@@ -142,9 +147,38 @@ configure_file(./flows.json ${EXECUTABLE_OUTPUT_PATH}/flows.json COPYONLY)
 set(PLUGINS_OUTPUT_DIR "${EXECUTABLE_OUTPUT_PATH}/plugins" CACHE INTERNAL "Plugins directory")
 file(MAKE_DIRECTORY ${PLUGINS_OUTPUT_DIR})
 
-# modbus 插件
-add_subdirectory(./plugins/modbus)
 
-# mqtt 插件
-add_subdirectory(./libs/async_mqtt)
-add_subdirectory(./plugins/mqtt)
+
+macro(edgelink_plugin PLUGIN_NAME)
+    set(THIS_PLUGIN "edgelink.plugins.${PLUGIN_NAME}")
+
+    file(GLOB_RECURSE SOURCES "src/*.c" "src/*.cpp")
+    get_filename_component(CURRENT_CMAKE_SOURCE_DIR "${CMAKE_CURRENT_LIST_FILE}" DIRECTORY)
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PLUGINS_OUTPUT_DIR})
+
+    add_library(${THIS_PLUGIN} SHARED ${SOURCES})
+
+    add_dependencies(${THIS_PLUGIN} "edgelink-abstractions")
+
+    target_link_libraries(
+        ${THIS_PLUGIN}
+        PRIVATE ${Boost_LIBRARIES}
+        PRIVATE ${LIBSPDLOG}
+        PRIVATE ${LIBFMT}
+        PRIVATE ${LIBRTTR_CORE}
+        PRIVATE "edgelink-abstractions"
+    )
+endmacro()
+
+
+# 获取所有子目录
+file(GLOB PLUGIN_SUBDIRS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/plugins/*/)
+
+# 遍历子目录并添加进来
+foreach(CHILD ${PLUGIN_SUBDIRS})
+    set(PLUGIN_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/${CHILD})
+    if(IS_DIRECTORY ${PLUGIN_SOURCE_DIR})
+        MESSAGE(STATUS "Plugin found: ${PLUGIN_SOURCE_DIR}")
+        add_subdirectory("${PLUGIN_SOURCE_DIR}")
+    endif()
+endforeach()

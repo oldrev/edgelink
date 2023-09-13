@@ -8,7 +8,7 @@ bool is_valid_provider_type(const rttr::type& type) {
            type.get_name() != "edgelink::IFlowNodeProvider";
 }
 
-Registry::Registry(const boost::json::object& json_config) : _logger(spdlog::default_logger()->clone("Flow")), _libs() {
+Registry::Registry() : _logger(spdlog::default_logger()->clone("Flow")), _libs() {
 
     auto node_provider_type = rttr::type::get<INodeProvider>();
 
