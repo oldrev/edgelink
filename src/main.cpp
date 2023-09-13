@@ -12,50 +12,6 @@ namespace this_coro = boost::asio::this_coro;
 
 // paho.mqtt.cpp 库客户端是线程安全的，可以多个线程同时访问，但是 set_xxx_callback() 设置的回调禁止阻塞
 
-namespace edgelink {
-
-class App : public std::enable_shared_from_this<App> {
-  public:
-    App(std::shared_ptr<boost::json::object>& json_config, std::shared_ptr<IEngine> engine) : _engine(engine) {}
-
-    Awaitable<void> run_async() {
-
-        auto executor = co_await this_coro::executor;
-        // auto self = shared_from_this();
-
-        co_await _engine->async_start();
-        asio::co_spawn(
-            executor, [self = this->shared_from_this()] { return self->idle_loop(); }, asio::detached);
-
-        // co_await this->idle_loop();
-        co_return;
-    }
-
-    Awaitable<void> idle_loop() {
-        auto executor = co_await this_coro::executor;
-        auto cs = co_await boost::asio::this_coro::cancellation_state;
-        // 引擎
-        spdlog::info("正在启动 IDLE 协程");
-        // 阻塞
-        for (;;) {
-            if (cs.cancelled() != boost::asio::cancellation_type::none) {
-                spdlog::info("IDLE 协程停止中...");
-                break;
-            }
-            // 协程 IDLE
-            asio::steady_timer timer(executor, std::chrono::milliseconds(1000));
-            co_await timer.async_wait(asio::use_awaitable);
-        }
-        spdlog::info("IDLE 协程已结束");
-        co_return;
-    }
-
-  private:
-    std::shared_ptr<IEngine> _engine;
-};
-
-}; // namespace edgelink
-
 using namespace edgelink;
 
 int main(int argc, char* argv[]) {
