@@ -5,8 +5,8 @@ namespace edgelink {
 class BlackholeNode : public SinkNode {
   public:
     BlackholeNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc,
-                  const std::vector<OutputPort>&& output_ports, IFlow* flow)
-        : SinkNode(id, desc, std::move(output_ports), flow, config) {}
+                  IFlow* flow)
+        : SinkNode(id, desc, flow, config) {}
 
     Awaitable<void> async_start() override { co_return; }
 

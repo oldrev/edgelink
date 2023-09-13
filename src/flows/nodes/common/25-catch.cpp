@@ -4,10 +4,8 @@ namespace edgelink {
 
 class CatchNode : public ScopedSourceNode {
   public:
-    CatchNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc,
-              const std::vector<OutputPort>&& output_ports, IFlow* flow)
-        : ScopedSourceNode(id, desc, std::move(output_ports), flow, config),
-          _uncaught(config.at("uncaught").as_bool()) {}
+    CatchNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc, IFlow* flow)
+        : ScopedSourceNode(id, desc, flow, config), _uncaught(config.at("uncaught").as_bool()) {}
 
     virtual ~CatchNode() {
         // TODO 断开连接

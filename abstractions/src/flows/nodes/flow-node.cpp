@@ -15,7 +15,6 @@ Awaitable<void> FlowNode::async_send_to_one_port(std::shared_ptr<Msg> msg) {
     }
 
     std::vector<std::shared_ptr<Msg>> envelopes;
-    
     envelopes.emplace_back(msg);
 
     co_await this->async_send_to_many_port(std::move(envelopes));
@@ -47,6 +46,20 @@ Awaitable<void> FlowNode::async_send_to_many_port(std::vector<std::shared_ptr<Ms
     }
     co_await this->flow()->async_send_many(std::move(envelopes));
     co_return;
+}
+
+const std::vector<OutputPort> FlowNode::setup_output_ports(const boost::json::object& config, IFlow* flow) {
+    auto ports = std::vector<OutputPort>();
+    for (const auto& port_config : config.at("wires").as_array()) {
+        auto output_wires = std::vector<IFlowNode*>();
+        for (const auto& endpoint : port_config.as_array()) {
+            auto out_node = flow->get_node(endpoint.as_string());
+            output_wires.push_back(out_node);
+        }
+        auto port = OutputPort(std::move(output_wires));
+        ports.emplace_back(std::move(port));
+    }
+    return std::move(ports);
 }
 
 }; // namespace edgelink

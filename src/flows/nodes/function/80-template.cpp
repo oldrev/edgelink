@@ -7,11 +7,9 @@ using namespace edgelink;
 class TemplateNode : public FlowNode {
 
   public:
-    TemplateNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc,
-                 const std::vector<OutputPort>&& output_ports, IFlow* flow)
-        : FlowNode(id, desc, std::move(output_ports), flow, config),
-          _field(config.at("field").as_string()),          // .field 属性
-          _field_type(config.at("fieldType").as_string()), // .fieldType 属性
+    TemplateNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc, IFlow* flow)
+        : FlowNode(id, desc, flow, config), _field(config.at("field").as_string()), // .field 属性
+          _field_type(config.at("fieldType").as_string()),                          // .fieldType 属性
           _template(config.at("template").as_string())
 
     {

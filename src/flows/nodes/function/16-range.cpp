@@ -34,16 +34,15 @@ static double parse_json_number(const boost::json::object& config, const std::st
 
 class RangeNode : public FlowNode {
   public:
-    RangeNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc,
-              const std::vector<OutputPort>&& output_ports, IFlow* flow)
-        : FlowNode(id, desc, std::move(output_ports), flow, config), //
-          _minin(parse_json_number(config, "minin")),                //
-          _maxin(parse_json_number(config, "maxin")),                //
-          _minout(parse_json_number(config, "minout")),              //
-          _maxout(parse_json_number(config, "maxout")),              //
-          _action(config.at("action").as_string()),                  //
-          _round(config.at("round").as_bool()),                      //
-          _property(config.at("property").as_string())               //
+    RangeNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc, IFlow* flow)
+        : FlowNode(id, desc, flow, config),             //
+          _minin(parse_json_number(config, "minin")),   //
+          _maxin(parse_json_number(config, "maxin")),   //
+          _minout(parse_json_number(config, "minout")), //
+          _maxout(parse_json_number(config, "maxout")), //
+          _action(config.at("action").as_string()),     //
+          _round(config.at("round").as_bool()),         //
+          _property(config.at("property").as_string())  //
     {
         //
     }

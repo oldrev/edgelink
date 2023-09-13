@@ -113,21 +113,10 @@ std::unique_ptr<IFlow> FlowFactory::create_flow(const boost::json::array& flows_
         const boost::json::object& elem = *json_nodes.at(elem_id);
         const auto& elem_type = elem.at("type").as_string();
 
-        auto ports = std::vector<OutputPort>();
-        for (const auto& port_config : elem.at("wires").as_array()) {
-            auto output_wires = std::vector<IFlowNode*>();
-            for (const auto& endpoint : port_config.as_array()) {
-                auto out_node = node_map.at(endpoint.as_string());
-                output_wires.push_back(out_node);
-            }
-            auto port = OutputPort(std::move(output_wires));
-            ports.emplace_back(std::move(port));
-        }
-
         _logger->info("开始创建流程节点：[type='{0}', json_id='{1}']", elem_type, elem_id);
         auto const& provider_iter = _registry.get_flow_node_provider(elem_type);
         try {
-            auto node = provider_iter->create(elem_id, elem, std::move(ports), flow.get());
+            auto node = provider_iter->create(elem_id, elem, flow.get());
             node_map[elem_id] = node.get();
             flow->emplace_node(std::move(node));
         } catch (std::exception& ex) {

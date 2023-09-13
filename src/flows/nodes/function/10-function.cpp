@@ -88,9 +88,8 @@ struct ModuleEntry {
 class FunctionNode : public FlowNode {
 
   public:
-    FunctionNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc,
-                 const std::vector<OutputPort>&& output_ports, IFlow* flow)
-        : FlowNode(id, desc, std::move(output_ports), flow, config), _func(config.at("func").as_string()),
+    FunctionNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc, IFlow* flow)
+        : FlowNode(id, desc, flow, config), _func(config.at("func").as_string()),
           _outputs(config.at("outputs").to_number<size_t>()), _initialize(config.at("initialize").as_string()),
           _finalize(config.at("finalize").as_string()) {
 

@@ -223,12 +223,11 @@ struct IFlowNode : public INode {
 /// @brief 流程节点基类
 class FlowNode : public IFlowNode {
   protected:
-    FlowNode(const std::string_view id, const INodeDescriptor* desc, const std::vector<OutputPort>&& output_ports,
-             IFlow* flow, const boost::json::object& config)
+    FlowNode(const std::string_view id, const INodeDescriptor* desc, IFlow* flow, const boost::json::object& config)
         : _logger(spdlog::default_logger()->clone(fmt::format("NODE({}:{})", config.at("type").as_string(), id))),
           _id(id), _type(config.at("type").as_string()), _name(config.at("name").as_string()),
           _disabled(edgelink::json::value_or(config, "d", false)), _descriptor(desc),
-          _output_ports(std::move(output_ports)), _flow(flow) {
+          _output_ports(std::move(FlowNode::setup_output_ports(config, flow))) {
         // constructor
     }
 
@@ -264,14 +263,16 @@ class FlowNode : public IFlowNode {
   public:
     virtual Awaitable<void> async_start() = 0;
     virtual Awaitable<void> async_stop() = 0;
+
+  private:
+    static const std::vector<OutputPort> setup_output_ports(const boost::json::object& config, IFlow* flow);
 };
 
 /// @brief 抽象数据源
 class SourceNode : public FlowNode {
   protected:
-    SourceNode(const std::string_view id, const INodeDescriptor* desc, const std::vector<OutputPort>&& output_ports,
-               IFlow* flow, const boost::json::object& config)
-        : FlowNode(id, desc, std::move(output_ports), flow, config) {}
+    SourceNode(const std::string_view id, const INodeDescriptor* desc, IFlow* flow, const boost::json::object& config)
+        : FlowNode(id, desc, flow, config) {}
 
   public:
     Awaitable<void> async_start() override {
@@ -296,10 +297,9 @@ class SourceNode : public FlowNode {
 
 class ScopedSourceNode : public SourceNode, public INodeWithScope {
   public:
-    ScopedSourceNode(const std::string_view id, const INodeDescriptor* desc,
-                     const std::vector<OutputPort>&& output_ports, IFlow* flow, const boost::json::object& config)
-        : SourceNode(id, desc, std::move(output_ports), flow, config),
-          _scope(std::move(ScopedSourceNode::setup_scope(config, flow))) {
+    ScopedSourceNode(const std::string_view id, const INodeDescriptor* desc, IFlow* flow,
+                     const boost::json::object& config)
+        : SourceNode(id, desc, flow, config), _scope(std::move(ScopedSourceNode::setup_scope(config, flow))) {
         //
     }
 
@@ -316,16 +316,15 @@ class ScopedSourceNode : public SourceNode, public INodeWithScope {
             auto node = flow->get_node(node_id);
             scope.push_back(node);
         }
-        return scope;
+        return std::move(scope);
     }
 };
 
 /// @brief 抽象数据接收器节点
 class SinkNode : public FlowNode {
   protected:
-    SinkNode(const std::string_view id, const INodeDescriptor* desc, const std::vector<OutputPort>&& output_ports,
-             IFlow* flow, const boost::json::object& config)
-        : FlowNode(id, desc, std::move(output_ports), flow, config) {}
+    SinkNode(const std::string_view id, const INodeDescriptor* desc, IFlow* flow, const boost::json::object& config)
+        : FlowNode(id, desc, flow, config) {}
 };
 
 /// @brief 全局配置节点
@@ -355,9 +354,8 @@ class EndpointNode : public StandaloneNode {
 /// @brief 抽象数据过滤器
 class PipeNode : public FlowNode {
   protected:
-    PipeNode(const std::string_view id, const INodeDescriptor* desc, const std::vector<OutputPort>&& output_ports,
-               IFlow* flow, const boost::json::object& config)
-        : FlowNode(id, desc, std::move(output_ports), flow, config) {}
+    PipeNode(const std::string_view id, const INodeDescriptor* desc, IFlow* flow, const boost::json::object& config)
+        : FlowNode(id, desc, flow, config) {}
 };
 
 struct INodeDescriptor {
@@ -377,7 +375,7 @@ struct INodeProvider {
 
 struct IFlowNodeProvider : public INodeProvider {
     virtual std::unique_ptr<IFlowNode> create(const std::string_view id, const boost::json::object& config,
-                                              const std::vector<OutputPort>&& output_ports, IFlow* flow) const = 0;
+                                              IFlow* flow) const = 0;
 
   private:
     RTTR_ENABLE(INodeProvider)
@@ -401,8 +399,8 @@ class FlowNodeProvider final : public IFlowNodeProvider, public INodeDescriptor 
     inline const NodeKind kind() const override { return TKind; }
 
     std::unique_ptr<IFlowNode> create(const std::string_view id, const boost::json::object& config,
-                                      const std::vector<OutputPort>&& output_ports, IFlow* flow) const override {
-        return std::make_unique<TNode>(id, config, this, std::move(output_ports), flow);
+                                      IFlow* flow) const override {
+        return std::make_unique<TNode>(id, config, this, flow);
     }
 
   private:

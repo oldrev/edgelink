@@ -28,9 +28,8 @@ namespace edgelink::plugins::mqtt {
 
 class MqttOutNode : public SinkNode, public std::enable_shared_from_this<MqttOutNode> {
   public:
-    MqttOutNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc,
-                const std::vector<OutputPort>&& output_ports, IFlow* flow)
-        : SinkNode(id, desc, move(output_ports), flow, config), _mqtt_broker_node_id(config.at("broker").as_string()) {
+    MqttOutNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc, IFlow* flow)
+        : SinkNode(id, desc, flow, config), _mqtt_broker_node_id(config.at("broker").as_string()) {
         try {
             //
             if (auto topic_value = config.if_contains("topic")) {

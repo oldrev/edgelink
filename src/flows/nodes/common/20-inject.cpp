@@ -68,9 +68,8 @@ struct PropertyEntry {
 
 class InjectNode : public SourceNode {
   public:
-    InjectNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc,
-               const std::vector<OutputPort>&& output_ports, IFlow* flow)
-        : SourceNode(id, desc, move(output_ports), flow, config), _once(config.at("once").as_bool()) {
+    InjectNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc, IFlow* flow)
+        : SourceNode(id, desc, flow, config), _once(config.at("once").as_bool()) {
 
         if (auto props_value = config.if_contains("props")) {
             for (auto const& prop : props_value->as_array()) {
