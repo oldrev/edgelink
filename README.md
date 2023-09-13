@@ -1,61 +1,55 @@
-# EdgeLink - 物联网边缘网关数据采集与推送系统
+# EdgeLink：使用 C++ 重新实现的 Node-RED
 
-![EdgeLink Logo](edge_link_logo.png)
-
-EdgeLink 是一个用于物联网边缘网关的数据采集与推送系统，旨在帮助用户从多种接口（如Modbus TCP, Modbus RTU, OPC UA等）采集数据，并通过MQTT协议将数据推送到远程采集端。这个项目的目标是提供一个可靠、高效且易于配置的解决方案，以满足物联网应用的数据采集和传输需求。
-
+EdgeLink 是一个使用 C++20 重新实现的 Node-RED，旨在降低资源特别是内存的需求，特别适用于资源有限的 Linux 或其他嵌入式系统。
 
 ## 特性
 
-- **多接口支持**: EdgeLink 提供了对多种常见物联网接口的支持，包括 Modbus TCP, Modbus RTU, OPC UA 等，使您可以轻松地连接到不同类型的设备和传感器。
+- **资源需求**: 相比 JavaScript 语言开发并使用标准 Node.js 运行时的 Node-RED，EdgeLink 显著减少了内存消耗。运行一个简单的程序 EdgeLink 只占用大约 15MB 的内存，而不是 Node-RED 的约 100MB。非常适合 256MB 甚至 128MB 内存的嵌入式 Linux 机器。
 
-- **MQTT 数据推送**: EdgeLink 使用 MQTT 协议来实现数据的安全、可靠的推送。这种通信方式适用于远程监控、数据存储和分析等多种场景。
+- **高性能**: EdgeLink 的流程运行环境采用 C++20 编写，为 Node-RED 流程提供了全新的高性能运行环境。
 
-- **配置灵活**: EdgeLink 提供了灵活的配置选项，使用户能够根据其具体需求轻松定制数据采集和推送规则。
+- **兼容性**: 尽可能与现有的 Node-RED 系统内置流程和节点保持兼容，允许重用大部分现有的节点和流程。
 
-- **可扩展性**: 项目的架构允许轻松添加新的接口和协议支持，以适应不断变化的物联网生态系统。
+## 安装
 
-- **安全性**: EdgeLink 强调数据的安全性，支持传输层加密和身份验证，确保数据在传输过程中得到保护。
+在开始之前，确保你已经安装了以下依赖：
 
-## 快速开始
+- C++ 编译器 (建议使用 g++)
+- Node.js 和 npm
 
-### 安装与配置
+克隆仓库并安装 EdgeLink：
 
-1. 安装库依赖
+```bash
+git clone https://github.com/yourusername/node-red-cpp.git
+cd node-red-cpp
+npm install
+```
 
-    假设 Ubuntu:
+## 使用
 
-    ```bash
-    sudo apt install libmodbus-dev libboost1.81-all-dev libboost-url1.81-dev
-    ```
+启动 EdgeLink 重新实现：
 
-2. 克隆本仓库到您的设备上：
+打开浏览器，并访问 http://localhost:1990 查看 EdgeLink 界面。
 
-    ```bash
-    git clone git@github.com:edge-link/edgelink.git
-    cd edgelink
-    git submodule init                  # 仅第一次需要
-    git submodule update --recursive    # 仅第一次需要
-    ```
-
-3. 执行构建
-
-    ```bash
-    ./build.sh
-    ```
-
-根据您的需求，编辑配置文件 `edgelink-conf.json`，配置数据采集接口、MQTT服务器等参数。
-
-### 运行 EdgeLink：
-
-TODO
-
-## 使用示例
-
-以下是一个简单的使用示例，假设您的 EdgeLink 配置允许从 Modbus TCP 设备采集数据并将其发送到 MQTT 服务器。
+在此界面中可以创建和编辑流程，使用流程编辑器连接不同的节点来实现你的自动化任务或物联网应用。
 
 
+## 致谢
+
+我们要感谢以下开源库和项目，它们为本项目的开发和成功实现做出了重要贡献：
+
+* Boost C++ Libraries: 用于 C++ 开发的高质量库集合。
+
+## 许可证
+
+该项目基于私有许可证。请在使用前阅读许可证内容。
+
+## 联系我们
+
+如果你有任何问题或建议，请联系我们：
+
+* 电子邮件：your.email@example.com
+* GitHub 仓库：https://github.com/yourusername/node-red-cpp
 
 
-
-
+注意: Node-RED 是由 Node-RED 社区开发和维护的开源项目。EdgeLink 项目与 Node-RED 官方团队无关。
