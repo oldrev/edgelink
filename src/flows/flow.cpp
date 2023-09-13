@@ -14,7 +14,7 @@ Flow::Flow(const boost::json::object& json_config, IEngine* engine)
     : _logger(spdlog::default_logger()->clone("Flow")), _engine(engine), _id(json_config.at("id").as_string()),
       _label(json_config.at("label").as_string()), _disabled(edgelink::json::value_or(json_config, "disabled", true)),
       _nodes() {
-    //
+    BOOST_ASSERT(engine != nullptr);
 }
 
 Flow::~Flow() {

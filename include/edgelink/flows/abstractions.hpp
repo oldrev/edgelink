@@ -226,7 +226,7 @@ class FlowNode : public IFlowNode {
     FlowNode(const std::string_view id, const INodeDescriptor* desc, IFlow* flow, const boost::json::object& config)
         : _logger(spdlog::default_logger()->clone(fmt::format("NODE({}:{})", config.at("type").as_string(), id))),
           _id(id), _type(config.at("type").as_string()), _name(config.at("name").as_string()),
-          _disabled(edgelink::json::value_or(config, "d", false)), _descriptor(desc),
+          _disabled(edgelink::json::value_or(config, "d", false)), _descriptor(desc), _flow(flow),
           _output_ports(std::move(FlowNode::setup_output_ports(config, flow))) {
         // constructor
     }

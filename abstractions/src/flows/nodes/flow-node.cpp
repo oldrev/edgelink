@@ -44,7 +44,9 @@ Awaitable<void> FlowNode::async_send_to_many_port(std::vector<std::shared_ptr<Ms
             msg_sent = true;
         }
     }
-    co_await this->flow()->async_send_many(std::move(envelopes));
+    auto flow = this->flow();
+    BOOST_ASSERT(flow != nullptr);
+    co_await flow->async_send_many(std::forward<std::vector<std::unique_ptr<Envelope>>>(envelopes));
     co_return;
 }
 
