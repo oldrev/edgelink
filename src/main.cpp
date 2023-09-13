@@ -2,6 +2,8 @@
 #include "edgelink/edgelink.hpp"
 #include "logging.hpp"
 
+#include "app.hpp"
+
 #include "flows/flow.hpp"
 #include "flows/flow-factory.hpp"
 

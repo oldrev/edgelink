@@ -16,3 +16,7 @@
 [submodule "libs/catch2"]
 	path = libs/catch2
 	url = git@github.com:catchorg/Catch2.git
+[submodule "libs/libs/beast"]
+	path = libs/libs/beast
+	url = git@github.com:boostorg/beast.git
+	branch = 5e55b55
