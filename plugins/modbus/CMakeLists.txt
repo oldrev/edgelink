@@ -1,16 +1,20 @@
 cmake_minimum_required(VERSION 3.22)
 
-edgelink_plugin("modbus")
+if(EL_WITH_MODBUS)
 
-find_library(LIBMODBUS NAMES modbus REQUIRED)
+    edgelink_plugin("modbus")
 
-target_include_directories(${THIS_PLUGIN}
-    PRIVATE ./libs/async_mqtt/include
-)
+    find_library(LIBMODBUS NAMES modbus REQUIRED)
 
-target_link_libraries(${THIS_PLUGIN}
-    PRIVATE async_mqtt_iface
-    PRIVATE ${LIBMODBUS}
-)
+    target_include_directories(${THIS_PLUGIN}
+        PRIVATE ./libs/async_mqtt/include
+    )
 
-target_precompile_headers(${THIS_PLUGIN} PRIVATE src/pch.hpp)
+    target_link_libraries(${THIS_PLUGIN}
+        PRIVATE async_mqtt_iface
+        PRIVATE ${LIBMODBUS}
+    )
+
+    target_precompile_headers(${THIS_PLUGIN} PRIVATE src/pch.hpp)
+
+endif()

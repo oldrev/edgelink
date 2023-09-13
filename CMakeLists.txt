@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.22)
 
 include(FetchContent)
 
+option(EL_WITH_MQTT "Include MQTT support" YES)
+#option(EL_WITH_MODBUS "Include ModBus support" YES)
 
 set(CMAKE_GENERATOR "Ninja")
 
@@ -27,6 +29,12 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 project(EdgeLinkApp)
 
+add_custom_target(git_versioning
+  ${CMAKE_COMMAND} -D SRC=${CMAKE_SOURCE_DIR}/version-config.h.in
+                   -D DST=${CMAKE_BINARY_DIR}/version-config.h
+                   -P ${CMAKE_SOURCE_DIR}/cmake/GenerateGitVersionHeader.cmake
+)
+
 # 查找Boost库
 find_package(Boost REQUIRED COMPONENTS system url json)
 set(Boost_MINIMUM_REQUIRED 1.81.0)
@@ -43,6 +51,7 @@ find_library(LIBDUKTAPE NAMES duktape REQUIRED)
 add_subdirectory(./libs/async_mqtt)
 
 include_directories(
+    ${CMAKE_BINARY_DIR}
     ./include
     "${CMAKE_CURRENT_SOURCE_DIR}/libs/mustache/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/libs/async_mqtt/include"
@@ -61,11 +70,15 @@ file(GLOB_RECURSE EL_SOURCES
 
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 
+add_subdirectory(./abstractions)
+
+############################################## Main App #################################################
 # 添加可执行文件
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 add_executable(${PROJECT_NAME} ${EL_SOURCES})
 
-add_subdirectory(./abstractions)
+add_dependencies(${PROJECT_NAME} git_versioning)
+
 add_dependencies(${PROJECT_NAME} "edgelink-abstractions")
 
 # target_compile_options(${PROJECT_NAME} PRIVATE -fno-rtti), 不要关掉 RTTI
@@ -159,6 +172,7 @@ macro(edgelink_plugin PLUGIN_NAME)
     add_library(${THIS_PLUGIN} SHARED ${SOURCES})
 
     add_dependencies(${THIS_PLUGIN} "edgelink-abstractions")
+    add_dependencies(${THIS_PLUGIN} git_versioning)
 
     target_link_libraries(
         ${THIS_PLUGIN}

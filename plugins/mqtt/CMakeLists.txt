@@ -1,13 +1,17 @@
 cmake_minimum_required(VERSION 3.22)
 
-edgelink_plugin("mqtt")
+if(EL_WITH_MQTT) 
 
-target_include_directories(${THIS_PLUGIN}
-    PRIVATE ./libs/async_mqtt/include
-)
+    edgelink_plugin("mqtt")
 
-target_link_libraries(${THIS_PLUGIN}
-    PRIVATE async_mqtt_iface
-)
+    target_include_directories(${THIS_PLUGIN}
+        PRIVATE ./libs/async_mqtt/include
+    )
 
-target_precompile_headers(${THIS_PLUGIN} PRIVATE src/pch.hpp)
+    target_link_libraries(${THIS_PLUGIN}
+        PRIVATE async_mqtt_iface
+    )
+
+    target_precompile_headers(${THIS_PLUGIN} PRIVATE src/pch.hpp)
+
+endif()

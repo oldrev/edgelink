@@ -1,3 +1,4 @@
+#include "version-config.h"
 #include "edgelink/edgelink.hpp"
 #include "logging.hpp"
 
@@ -58,6 +59,7 @@ using namespace edgelink;
 int main(int argc, char* argv[]) {
 
     std::cout << "EdgeLink 物联网边缘数据采集系统" << std::endl;
+    std::cout << "版本：" << EDGELINK_VERSION << "\t" << "REV: " << GIT_REVISION << std::endl;
     std::cout << std::endl;
 
     // 初始化日志系统
