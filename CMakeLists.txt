@@ -7,14 +7,6 @@ option(EL_WITH_MQTT "Include MQTT support" YES)
 
 set(CMAKE_GENERATOR "Ninja")
 
-# 设置C++标准
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-# 设置 C++ 编译器为 ccache
-set(CMAKE_CXX_COMPILER_LAUNCHER ccache)
-set(CMAKE_C_COMPILER_LAUNCHER ccache)
-
 # 按代码尺寸优化
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
     string(REPLACE "-O3" "-Os" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
@@ -27,6 +19,14 @@ set(CMAKE_DEBUG_POSTFIX d)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+# 设置C++标准
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# 设置 C++ 编译器为 ccache
+set(CMAKE_CXX_COMPILER_LAUNCHER ccache)
+set(CMAKE_C_COMPILER_LAUNCHER ccache)
+
 project(EdgeLinkApp)
 
 add_custom_target(git_versioning
@@ -36,7 +36,7 @@ add_custom_target(git_versioning
 )
 
 # 查找Boost库
-find_package(Boost REQUIRED COMPONENTS system url json)
+find_package(Boost REQUIRED COMPONENTS system url json program_options)
 set(Boost_MINIMUM_REQUIRED 1.81.0)
 if(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
@@ -149,7 +149,7 @@ endif()
 
 
 # 添加复制操作，将配置文件复制到输出目录
-configure_file(./edgelink-conf.json ${EXECUTABLE_OUTPUT_PATH}/edgelink-conf.json COPYONLY)
+configure_file(./edgelink.ini ${EXECUTABLE_OUTPUT_PATH}/edgelink.ini COPYONLY)
 configure_file(./flows.json ${EXECUTABLE_OUTPUT_PATH}/flows.json COPYONLY)
 
 
@@ -169,6 +169,7 @@ macro(edgelink_plugin PLUGIN_NAME)
     get_filename_component(CURRENT_CMAKE_SOURCE_DIR "${CMAKE_CURRENT_LIST_FILE}" DIRECTORY)
     set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PLUGINS_OUTPUT_DIR})
 
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
     add_library(${THIS_PLUGIN} SHARED ${SOURCES})
 
     add_dependencies(${THIS_PLUGIN} "edgelink-abstractions")

@@ -91,6 +91,14 @@ std::unique_ptr<IFlow> FlowFactory::create_flow(const boost::json::array& flows_
                     sorter.add_edge(from, to);
                 }
             }
+            // 如果有 scope 属性也计算在内
+            if (elem.contains("scope")) {
+                for (const auto& scoped_node_id : elem.at("scope").as_array()) {
+                    std::string_view from = node_id;
+                    std::string_view to = scoped_node_id.as_string();
+                    sorter.add_edge(from, to);
+                }
+            }
         }
     }
 

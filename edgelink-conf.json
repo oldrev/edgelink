@@ -1,6 +1,0 @@
-{
-    "projectID": "yncic-dangerous",
-    "deviceID": "3D24E79E3D7D4078B48440B528E7BF74",
-    "serverUrl": "tcp://test.mosquitto.org:1883",
-    "queueCapacity": 100
-}

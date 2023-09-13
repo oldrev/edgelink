@@ -14,7 +14,8 @@
 namespace edgelink {
 
 /// @brief 程序配置
-struct EdgeLinkConfig {
+struct EdgeLinkSettings {
+    const std::string main_exe_path;
     const std::string flows_json_path;
 };
 

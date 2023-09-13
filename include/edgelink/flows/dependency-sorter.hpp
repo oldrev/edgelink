@@ -4,7 +4,7 @@ namespace edgelink {
 
 template <typename T> class DependencySorter {
   public:
-    void add_edge(const T& source, const T& destination) { adjacency_list[source].push_back(destination); }
+    void add_edge(const T& source, const T& destination) { adjacency_list[source].insert(destination); }
     void clear() { this->adjacency_list.clear(); }
 
     std::vector<T> sort() {
@@ -46,7 +46,7 @@ template <typename T> class DependencySorter {
     }
 
   private:
-    std::map<T, std::vector<T>> adjacency_list;
+    std::map<T, std::unordered_set<T>> adjacency_list;
 };
 
 }; // namespace edgelink

@@ -3,17 +3,19 @@
 TEST_CASE("debug node", "[debug][load]") {
 
     auto json_text = R"(
+    [
         {
             "id": "flow1",
             "type": "tab",
-            "label": "Flow1",
+            "label": "Flow1"
         },
         {
             "id": "n1",
             "type": "debug",
-            "name": Debug",
+            "name": "Debug",
             "complete": "false"
         }
+    ]
     )";
     auto json = boost::json::parse(json_text).as_array();
 

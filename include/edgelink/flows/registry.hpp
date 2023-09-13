@@ -29,8 +29,8 @@ class Registry : public IRegistry {
 
   private:
     std::shared_ptr<spdlog::logger> _logger;
-    std::unordered_map<std::string_view, std::unique_ptr<IFlowNodeProvider>> _flow_node_providers;
-    std::unordered_map<std::string_view, std::unique_ptr<IStandaloneNodeProvider>> _standalone_node_providers;
+    std::map<std::string_view, std::unique_ptr<IFlowNodeProvider>> _flow_node_providers;
+    std::map<std::string_view, std::unique_ptr<IStandaloneNodeProvider>> _standalone_node_providers;
     std::vector<std::unique_ptr<rttr::library>> _libs;
 
   private:

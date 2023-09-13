@@ -8,7 +8,7 @@ using CloneMsgStaticVector = boost::container::static_vector<std::shared_ptr<edg
 
 namespace edgelink {
 
-Engine::Engine(const EdgeLinkConfig& el_config, const IFlowFactory& flow_factory)
+Engine::Engine(const EdgeLinkSettings& el_config, const IFlowFactory& flow_factory)
     : _logger(spdlog::default_logger()->clone("Engine")), _flows_json_path(el_config.flows_json_path),
       _flow_factory(flow_factory) {
 

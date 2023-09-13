@@ -2,11 +2,11 @@
 
 namespace edgelink {
 
-class CompleteNode : public FlowNode {
+class CompleteNode : public SinkNode {
   public:
     CompleteNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc,
                  const std::vector<OutputPort>&& output_ports, IFlow* flow)
-        : FlowNode(id, desc, std::move(output_ports), flow, config),
+        : SinkNode(id, desc, std::move(output_ports), flow, config),
           _scope(std::move(CompleteNode::config_scope(config))) {
         // TODO 挂接 scope 里节点的连接事件
     }
