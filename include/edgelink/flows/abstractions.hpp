@@ -165,6 +165,10 @@ struct INode : public IFlowElement {
     virtual const INodeDescriptor* descriptor() const = 0;
 };
 
+struct INodeWithScope {
+    virtual const std::vector<IFlowNode*>& scope() const = 0;
+};
+
 struct IStandaloneNode : public INode {
     virtual IEngine* engine() const = 0;
 };
@@ -288,6 +292,32 @@ class SourceNode : public FlowNode {
 
   protected:
     virtual Awaitable<void> on_async_run() = 0;
+};
+
+class ScopedSourceNode : public SourceNode, public INodeWithScope {
+  public:
+    ScopedSourceNode(const std::string_view id, const INodeDescriptor* desc,
+                     const std::vector<OutputPort>&& output_ports, IFlow* flow, const boost::json::object& config)
+        : SourceNode(id, desc, std::move(output_ports), flow, config),
+          _scope(std::move(ScopedSourceNode::setup_scope(config, flow))) {
+        //
+    }
+
+    const std::vector<IFlowNode*>& scope() const override { return _scope; }
+
+  private:
+    std::vector<IFlowNode*> _scope;
+
+  private:
+    static std::vector<IFlowNode*> setup_scope(const boost::json::object& config, IFlow* flow) {
+        std::vector<IFlowNode*> scope;
+        for (auto const& scope_item : config.at("scope").as_array()) {
+            const std::string_view node_id = scope_item.as_string();
+            auto node = flow->get_node(node_id);
+            scope.push_back(node);
+        }
+        return scope;
+    }
 };
 
 /// @brief 抽象数据接收器节点
