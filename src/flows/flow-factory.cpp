@@ -113,20 +113,18 @@ std::unique_ptr<IFlow> FlowFactory::create_flow(const boost::json::array& flows_
         const boost::json::object& elem = *json_nodes.at(elem_id);
         const auto& elem_type = elem.at("type").as_string();
 
-        _logger->info("开始创建流程节点：[type='{0}', json_id='{1}']", elem_type, elem_id);
+        _logger->info("创建流程节点：[type='{0}', json_id='{1}']", elem_type, elem_id);
         auto const& provider_iter = _registry.get_flow_node_provider(elem_type);
         try {
             auto node = provider_iter->create(elem_id, elem, flow.get());
             node_map[elem_id] = node.get();
             flow->emplace_node(std::move(node));
         } catch (std::exception& ex) {
-            _logger->error("开始创建独立节点：[type='{}', id='{}'] 发生错误：{}", elem_type, elem_id, ex.what());
+            _logger->error("创建流程节点：[type='{}', id='{}'] 发生错误：{}", elem_type, elem_id, ex.what());
             throw;
         }
     }
-    std::unique_ptr<IFlow> ret = std::move(flow);
-
-    return ret;
+    return std::move(flow);
 }
 
 RTTR_REGISTRATION {
