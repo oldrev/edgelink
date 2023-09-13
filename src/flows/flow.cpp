@@ -6,7 +6,7 @@ using namespace edgelink;
 using namespace boost;
 namespace this_coro = boost::asio::this_coro;
 
-//using CloneMsgStaticVector = boost::container::static_vector<std::shared_ptr<edgelink::Msg>, 32>;
+// using CloneMsgStaticVector = boost::container::static_vector<std::shared_ptr<edgelink::Msg>, 32>;
 
 namespace edgelink::flows {
 
@@ -64,7 +64,7 @@ Awaitable<void> Flow::async_send_many(std::vector<std::unique_ptr<Envelope>>&& e
     auto exec = co_await this_coro::executor;
 
     for (auto&& e : envelopes) {
-        //co_await this->async_send_one(std::move(e));
+        // co_await this->async_send_one(std::move(e));
         boost::asio::co_spawn(exec, this->async_send_one_internal(std::move(e)), boost::asio::detached);
     }
     co_return;
@@ -95,6 +95,15 @@ Awaitable<void> Flow::async_send_one_internal(std::unique_ptr<Envelope> envelope
         co_await envelope->destination_node->receive_async(envelope->msg);
         this->on_post_deliver_event()(this, envelope.get());
     }
+}
+
+IFlowNode* Flow::get_node(const std::string_view id) const {
+    for (auto&& n : _nodes) {
+        if (n->id() == id) {
+            return n.get();
+        }
+    }
+    throw std::runtime_error(fmt::format("找不到节点 ID：{0}", id));
 }
 
 RTTR_REGISTRATION {
