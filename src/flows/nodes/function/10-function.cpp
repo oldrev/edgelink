@@ -40,6 +40,7 @@ class EvalEnv final {
 
     const std::string_view get_node_id() const { return _node->id(); }
     const std::string_view get_node_name() const { return _node->name(); }
+    const unsigned int get_output_count() const { return _node->output_count(); }
 
     static std::shared_ptr<EvalEnv> create(FlowNode* node) {
         auto ptr = std::make_shared<EvalEnv>(node);
@@ -131,7 +132,8 @@ class FunctionNode : public FlowNode {
             m.class_<EvalEnv>("EvalEnv")
                 .fun<&EvalEnv::generate_msg_id>("generateMsgID")
                 .property<&EvalEnv::get_node_id>("nodeID")
-                .property<&EvalEnv::get_node_name>("nodeName");
+                .property<&EvalEnv::get_node_name>("nodeName")
+                .property<&EvalEnv::get_output_count>("outputCount");
 
             // 注册全局变量
             _context.global()["evalEnv"] = EvalEnv::create(this);
