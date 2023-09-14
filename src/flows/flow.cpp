@@ -85,7 +85,7 @@ Awaitable<void> Flow::async_send_one_internal(std::unique_ptr<Envelope> envelope
 
     default:
         auto error_msg = fmt::format("错误的节点类型 [msg_id={}, source={}, destination={}]", envelope->msg->id(),
-                                     envelope->source_id, envelope->destination_id);
+                                     envelope->source_node->id(), envelope->destination_node->id());
         _logger->error(error_msg);
         throw InvalidDataException(error_msg);
     }

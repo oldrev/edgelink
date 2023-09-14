@@ -36,9 +36,8 @@ Awaitable<void> FlowNode::async_send_to_many_port(std::vector<std::shared_ptr<Ms
 
             IFlowNode* dest_node = port->wires().at(iwire);
 
-            auto env = std::make_unique<Envelope>(msgs.at(iport), msg_sent, this->id(), this, port);
-            env->destination_id = dest_node->id();
-            env->destination_node = dest_node;
+            auto env = std::make_unique<Envelope>(msgs.at(iport), msg_sent, this->id(), this, port, dest_node->id(),
+                                                  dest_node);
 
             envelopes.emplace_back(std::move(env));
             msg_sent = true;
@@ -46,7 +45,7 @@ Awaitable<void> FlowNode::async_send_to_many_port(std::vector<std::shared_ptr<Ms
     }
     auto flow = this->flow();
     BOOST_ASSERT(flow != nullptr);
-    co_await flow->async_send_many(std::forward<std::vector<std::unique_ptr<Envelope>>>(envelopes));
+    co_await flow->async_send_many(std::move(envelopes));
     co_return;
 }
 

@@ -31,31 +31,15 @@ class FlowContext {
 struct Envelope : private boost::noncopyable {
     std::shared_ptr<Msg> msg;
     bool clone_message;
-    std::string_view source_id;
-    IFlowNode* source_node;
-    const OutputPort* source_port;
-    std::string_view destination_id;
-    IFlowNode* destination_node;
-
-    /// @brief 默认构造函数
-    Envelope()
-        : clone_message(true), source_id(), source_node(nullptr), source_port(0), destination_id(),
-          destination_node(nullptr) {}
+    IFlowNode* source_node = nullptr;
+    const OutputPort* source_port = nullptr;
+    IFlowNode* destination_node = nullptr;
 
     /// @brief 构造函数，用于初始化所有成员，并指定源信息
     Envelope(std::shared_ptr<Msg> message, bool clone, const std::string_view& src_id, IFlowNode* src_node,
-             const OutputPort* src_port)
-        : msg(message), clone_message(clone), source_id(src_id), source_node(src_node), source_port(src_port),
-          destination_id(), destination_node(nullptr) {}
-
-    /*
-    /// @brief 修改目标节点信息
-    void change_destination(IFlowNode* node) {
-        BOOST_ASSERT(node != nullptr);
-        this->destination_id = node->id();
-        this->destination_node = node;
-    }
-    */
+             const OutputPort* src_port, const std::string_view& dest_id, IFlowNode* dest_node)
+        : msg(message), clone_message(clone), source_node(src_node), source_port(src_port),
+          destination_node(dest_node) {}
 };
 
 using FlowOnSendEvent = boost::signals2::signal<void(IFlow* sender, std::vector<std::unique_ptr<Envelope>>& env)>;
