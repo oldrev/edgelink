@@ -36,7 +36,7 @@
         "type": "function",
         "z": "73e0fcd142fc5256",
         "name": "function 1",
-        "func": "var timestamp = msg.payload;\nmsg.payload = {\n    say: \"hello world\",\n    time: String(timestamp),\n};\nreturn [msg, msg];",
+        "func": "var timestamp = msg.payload;\nmsg.payload = {\n    say: \"hello world\",\n    time: String(timestamp),\n};\nreturn [msg, cloneMsg(msg)];",
         "outputs": 2,
         "timeout": 0,
         "noerr": 0,

@@ -5,16 +5,27 @@ namespace edgelink {
 using MsgID = uint32_t;
 
 /*
-/// @brief 消息值
-using MsgValue = rva::variant<          //
-    std::nullptr_t,                     // json null
-    bool,                               // json boolean
-    std::decimal::decimal64,            // json number
-    std::string,                        // json string
-    std::map<std::string, rva::self_t>, // json object, type is std::map<std::string, json_value>
-    std::vector<rva::self_t>>;          // json array, type is std::vector<json_value>
+using Bytes = std::vector<uint8_t>;
 
-using MsgObjectValue = std::map<std::string, MsgValue>;
+enum class MsgValueKindIndex {
+    NULLPTR = 0,
+    BOOL = 0,
+    DOUBLE = 0,
+    STRING = 0,
+    BYTES = 0,
+    OBJECT = 0,
+    ARRAY = 0,
+};
+
+/// @brief 消息值
+using MsgValue = rva::variant<          ///
+    std::nullptr_t,                     ///< null
+    bool,                               ///< boolean
+    double,                             ///< number
+    std::string,                        ///< string
+    Bytes,                              ///< bytes buffer
+    std::map<std::string, rva::self_t>, ///< object, type is std::map<std::string, json_value>
+    std::vector<rva::self_t>>;          ///< array, type is std::vector<json_value>
 */
 
 struct FlowNode;

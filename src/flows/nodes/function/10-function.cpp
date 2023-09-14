@@ -34,41 +34,67 @@ class EvalEnv final {
   public:
     EvalEnv() {}
 
-    EvalEnv(FlowNode* node, const std::string&& msg_json_text)
-        : _node(node), _msg_json_text(std::move(msg_json_text)) {}
-
-    const std::string& msg_json_text() const { return _msg_json_text; }
+    EvalEnv(FlowNode* node) : _node(node) {}
 
     MsgID generate_msg_id() { return Msg::generate_msg_id(); }
-    const std::string node_id() const { return std::string(_node->id()); }
 
-    static std::shared_ptr<EvalEnv> create(FlowNode* node, std::shared_ptr<Msg> msg) {
-        auto ptr = std::make_shared<EvalEnv>(node, std::move(boost::json::serialize(msg->data())));
+    const std::string_view get_node_id() const { return _node->id(); }
+    const std::string_view get_node_name() const { return _node->name(); }
+
+    static std::shared_ptr<EvalEnv> create(FlowNode* node) {
+        auto ptr = std::make_shared<EvalEnv>(node);
         return ptr;
     }
 
   private:
     FlowNode* _node;
-    const std::string _msg_json_text;
+};
+
+class EvalContext final {
+  public:
+    EvalContext() {}
+
+    static std::shared_ptr<EvalContext> create(FlowNode* node, std::shared_ptr<Msg> msg) {
+        auto ptr = std::make_shared<EvalContext>();
+        return ptr;
+    }
+
+  private:
+    FlowNode* _node;
 };
 
 constexpr char JS_PRELUDE[] = R"(
 function jsonDeepClone(v) { return JSON.parse(JSON.stringify(v)); }
 
 function cloneMsg(v) {
-    var newMsg = jsonDeepClone(v); 
+    var newMsg = jsonDeepClone(v);
     newMsg.id = evalEnv.generateMsgID();
     return newMsg;
 }
 
+const node = {
+    id: evalEnv.nodeID,
+    name: evalEnv.nodeName,
+};
+
+/*
+const RED = {
+    uitl: {
+        cloneMessage: function(msg) {
+            return cloneMsg(msg);
+        },
+    }
+};
+*/
+
 )";
 
-constexpr char JS_CODE_TEMPLATE[] = R"(
-    var __func_node_user_func = function() {{ 
-		var msg = JSON.parse(evalEnv.msgJsonText); 
-        var user_func = function() {{
+constexpr char JS_USER_FUNC_TEMPLATE[] = R"(
+    function __el_user_func(context, msgJsonText) {{
+		var msg = JSON.parse(msgJsonText);
+        const user_func = function() {{
         /* 用户代码开始 */
-        {0}; 
+        {0};
         /* 用户代码结束 */
         }};
         return JSON.stringify(user_func());
@@ -97,23 +123,41 @@ class FunctionNode : public FlowNode {
             _modules.emplace_back(std::move(me));
         }
 
-        auto& m = _context.addModule("EdgeLink");
-        // m.function<&println>("println");
-        m.class_<EvalEnv>("EvalEnv")
-            .fun<&EvalEnv::generate_msg_id>("generateMsgID")
-            .property<&EvalEnv::msg_json_text>("msgJsonText")
-            .property<&EvalEnv::node_id>("nodeID");
+        try {
+            auto& m = _context.addModule("EdgeLink");
 
-        // 加载前置代码
+            m.class_<EvalContext>("EvalContext");
 
-        // 加载 EdgeLink 模块
-        _context.eval(R"xxx(
-            import * as el from 'EdgeLink';
-            globalThis.el = el;
+            m.class_<EvalEnv>("EvalEnv")
+                .fun<&EvalEnv::generate_msg_id>("generateMsgID")
+                .property<&EvalEnv::get_node_id>("nodeID")
+                .property<&EvalEnv::get_node_name>("nodeName");
+
+            // 注册全局变量
+            _context.global()["evalEnv"] = EvalEnv::create(this);
+
+            // 加载前置代码
+
+            // 加载 EdgeLink 模块
+            _context.eval(R"xxx(
+            import * as edgeLink from 'EdgeLink';
+            globalThis.edgeLink = edgeLink;
         )xxx",
-                      "<import>", JS_EVAL_TYPE_MODULE);
-        auto prelude_value = _context.eval(JS_PRELUDE);
-        this->logger()->info("PRELUDE RESULT: {0}", prelude_value.as<const std::string>());
+                          "<import>", JS_EVAL_TYPE_MODULE);
+            _context.eval(JS_PRELUDE);
+
+            auto js_user_func = fmt::format(JS_USER_FUNC_TEMPLATE, _func);
+            _context.eval(js_user_func);
+
+            _user_func_cb =
+                static_cast<std::function<const std::string(std::shared_ptr<EvalContext>, const std::string&)>>(
+                    _context.eval("__el_user_func"));
+
+        } catch (qjs::exception) {
+            auto exc = _context.getException();
+            this->logger()->error("QuickJS 错误：{0}", static_cast<const std::string>(exc));
+            throw InvalidDataException("function 内置的脚本解析异常");
+        }
     }
 
     Awaitable<void> async_start() override { co_return; }
@@ -122,16 +166,12 @@ class FunctionNode : public FlowNode {
 
     Awaitable<void> receive_async(std::shared_ptr<Msg> msg) override {
 
-        auto eval_env = EvalEnv::create(this, msg);
-        _context.global()["evalEnv"] = eval_env.get();
-
-        auto js_code = fmt::format(JS_CODE_TEMPLATE, _func);
+        auto eval_ctx = EvalContext::create(this, msg);
 
         try {
 
-            _context.eval(js_code);
-            auto user_func_callback = (std::function<std::string()>)_context.eval("__func_node_user_func");
-            const std::string result_json = user_func_callback();
+            auto const msg_json_text = msg->to_string();
+            const std::string result_json = _user_func_cb(eval_ctx, msg_json_text);
 
             // 后续处理执行成果
             auto js_result = boost::json::parse(result_json);
@@ -183,6 +223,8 @@ class FunctionNode : public FlowNode {
     std::vector<ModuleEntry> _modules;
     qjs::Runtime _runtime;
     qjs::Context _context;
+
+    std::function<const std::string(std::shared_ptr<EvalContext>, const std::string&)> _user_func_cb;
 };
 
 RTTR_REGISTRATION {
