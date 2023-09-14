@@ -92,7 +92,7 @@
         "id": "3c39cf63714c26a4",
         "type": "mqtt-broker",
         "name": "",
-        "broker": "broker-cn.emqx.io",
+        "broker": "test.mosquitto.org",
         "port": "1883",
         "clientid": "3369",
         "autoConnect": true,

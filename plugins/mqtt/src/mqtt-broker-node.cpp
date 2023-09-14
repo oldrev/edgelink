@@ -115,7 +115,7 @@ class MqttBrokerNode : public EndpointNode,
                                       },
                                       [](auto const&) {}});
             } else {
-                auto error_msg = ("MQTT recv error: {0}", pv.get<am::system_error>().what());
+                auto error_msg = fmt::format("MQTT recv error: {0}", pv.get<am::system_error>().what());
                 this->logger()->error(error_msg);
         this->unlock();
                 throw IOException(error_msg);

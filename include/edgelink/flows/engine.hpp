@@ -45,8 +45,6 @@ class Engine : public IEngine, private std::enable_shared_from_this<Engine> {
     std::vector<std::unique_ptr<IStandaloneNode>> _global_nodes;
 
     std::unique_ptr<std::stop_source> _stop_source;
-    const std::string _id;
-    const std::string _name;
     bool _disabled;
     std::vector<std::unique_ptr<IFlow>> _flows;
 
