@@ -60,7 +60,7 @@ const std::vector<OutputPort> FlowNode::setup_output_ports(const boost::json::ob
         auto port = OutputPort(std::move(output_wires));
         ports.emplace_back(std::move(port));
     }
-    return std::move(ports);
+    return ports;
 }
 
 }; // namespace edgelink
