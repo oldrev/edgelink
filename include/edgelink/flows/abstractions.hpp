@@ -210,7 +210,7 @@ class FlowNode : public IFlowNode {
     FlowNode(const std::string_view id, const INodeDescriptor* desc, IFlow* flow, const boost::json::object& config)
         : _logger(spdlog::default_logger()->clone(fmt::format("NODE({}:{})", config.at("type").as_string(), id))),
           _id(id), _type(config.at("type").as_string()), _name(config.at("name").as_string()),
-          _disabled(edgelink::json::value_or(config, "d", false)), _descriptor(desc), _flow(flow),
+          _disabled(edgelink::json::value_or(config, "d", false)), _flow(flow), _descriptor(desc), 
           _output_ports(std::move(FlowNode::setup_output_ports(config, flow))) {
         // constructor
     }
@@ -240,7 +240,7 @@ class FlowNode : public IFlowNode {
     const std::string _type;
     const std::string _name;
     bool _disabled;
-    IFlow* _flow;
+    IFlow* const _flow;
     const INodeDescriptor* _descriptor;
     const std::vector<OutputPort> _output_ports;
 
@@ -300,7 +300,7 @@ class ScopedSourceNode : public SourceNode, public INodeWithScope {
             auto node = flow->get_node(node_id);
             scope.push_back(node);
         }
-        return std::move(scope);
+        return scope;
     }
 };
 

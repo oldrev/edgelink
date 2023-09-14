@@ -23,6 +23,11 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# 设置C语言编译器选项
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+
+
 # 设置 C++ 编译器为 ccache
 set(CMAKE_CXX_COMPILER_LAUNCHER ccache)
 set(CMAKE_C_COMPILER_LAUNCHER ccache)
@@ -45,7 +50,6 @@ endif()
 find_library(LIBSPDLOG NAMES spdlog REQUIRED)
 find_library(LIBFMT NAMES fmt REQUIRED)
 find_library(LIBRTTR_CORE NAMES rttr_core REQUIRED)
-find_library(LIBDUKTAPE NAMES duktape REQUIRED)
 
 # 通过 cmake 引入 ASYNC_MQTT 库
 add_subdirectory(./libs/async_mqtt)
@@ -57,7 +61,6 @@ include_directories(
     ./include
     "${CMAKE_CURRENT_SOURCE_DIR}/libs/mustache/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/libs/async_mqtt/include"
-    "${CMAKE_CURRENT_SOURCE_DIR}/libs/duktape-cpp/src"
     "${CMAKE_CURRENT_SOURCE_DIR}/libs/rva/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/libs/boost-di/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/libs/croncpp/include"
@@ -65,7 +68,6 @@ include_directories(
 )
 
 file(GLOB_RECURSE EL_SOURCES 
-    "${CMAKE_CURRENT_SOURCE_DIR}/libs/duktape-cpp/src/DuktapeCpp.cpp"
     "src/*.c"
     "src/*.cpp"
     "./libs/mustache/src/renderer.cpp"
@@ -94,7 +96,6 @@ set(EL_DEP_LIBS
     PRIVATE ${LIBSPDLOG}
     PRIVATE ${LIBFMT}
     PRIVATE ${LIBRTTR_CORE}
-    PRIVATE ${LIBDUKTAPE} 
     PRIVATE quickjspp
     PRIVATE quickjs
     PRIVATE EdgeLinkAbstractions

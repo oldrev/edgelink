@@ -42,7 +42,6 @@ class EvalEnv final {
     MsgID generate_msg_id() { return Msg::generate_msg_id(); }
     const std::string node_id() const { return std::string(_node->id()); }
 
-
     static std::shared_ptr<EvalEnv> create(FlowNode* node, std::shared_ptr<Msg> msg) {
         auto ptr = std::make_shared<EvalEnv>(node, std::move(boost::json::serialize(msg->data())));
         return ptr;
@@ -58,16 +57,22 @@ function jsonDeepClone(v) { return JSON.parse(JSON.stringify(v)); }
 
 function cloneMsg(v) {
     var newMsg = jsonDeepClone(v); 
-    newMsg.id = el.evalEnv.generateMsgID();
+    newMsg.id = evalEnv.generateMsgID();
     return newMsg;
 }
 
 )";
 
 constexpr char JS_CODE_TEMPLATE[] = R"(
-    var msg = JSON.parse(el.evalEnv.msgJsonText); 
-    var __func_node_proc = function() {{ {0}; }};
-    __func_node_proc();
+    var __func_node_user_func = function() {{ 
+		var msg = JSON.parse(evalEnv.msgJsonText); 
+        var user_func = function() {{
+        /* 用户代码开始 */
+        {0}; 
+        /* 用户代码结束 */
+        }};
+        return JSON.stringify(user_func());
+    }};
 )";
 
 struct ModuleEntry {
@@ -79,8 +84,8 @@ class FunctionNode : public FlowNode {
 
   public:
     FunctionNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc, IFlow* flow)
-        : FlowNode(id, desc, flow, config), _func(config.at("func").as_string()),
-          _outputs(config.at("outputs").to_number<size_t>()), _initialize(config.at("initialize").as_string()),
+        : FlowNode(id, desc, flow, config), _outputs(config.at("outputs").to_number<size_t>()),
+          _func(config.at("func").as_string()), _initialize(config.at("initialize").as_string()),
           _finalize(config.at("finalize").as_string()), _runtime(), _context(_runtime) {
 
         for (auto const& module_json : config.at("libs").as_array()) {
@@ -93,7 +98,7 @@ class FunctionNode : public FlowNode {
         }
 
         auto& m = _context.addModule("EdgeLink");
-        //m.function<&println>("println");
+        // m.function<&println>("println");
         m.class_<EvalEnv>("EvalEnv")
             .fun<&EvalEnv::generate_msg_id>("generateMsgID")
             .property<&EvalEnv::msg_json_text>("msgJsonText")
@@ -107,7 +112,8 @@ class FunctionNode : public FlowNode {
             globalThis.el = el;
         )xxx",
                       "<import>", JS_EVAL_TYPE_MODULE);
-        _context.eval(JS_PRELUDE);
+        auto prelude_value = _context.eval(JS_PRELUDE);
+        this->logger()->info("PRELUDE RESULT: {0}", prelude_value.as<const std::string>());
     }
 
     Awaitable<void> async_start() override { co_return; }
@@ -121,37 +127,49 @@ class FunctionNode : public FlowNode {
 
         auto js_code = fmt::format(JS_CODE_TEMPLATE, _func);
 
-        auto eval_result_value = _context.eval(js_code.c_str()).toJSON();
-        const std::string_view result_json = eval_result_value;
+        try {
 
-        // 后续处理执行成果
-        auto js_result = boost::json::parse(result_json);
+            _context.eval(js_code);
+            auto user_func_callback = (std::function<std::string()>)_context.eval("__func_node_user_func");
+            const std::string result_json = user_func_callback();
 
-        if (js_result.kind() == boost::json::kind::array) { // 多个端口消息的情况
-            int port = 0;
-            auto array = js_result.as_array();
-            if (array.size() > this->output_ports().size()) {
-                auto error_msg = "JS 脚本输出错误的端口数";
-                this->logger()->error(error_msg);
-                throw std::out_of_range(error_msg);
-            }
-            std::vector<std::shared_ptr<Msg>> msgs;
+            // 后续处理执行成果
+            auto js_result = boost::json::parse(result_json);
 
-            for (auto& msg_json_value : array) {
-                // 直接分发消息，只有是对象的才分发
-                if (msg_json_value.kind() == boost::json::kind::object) {
-                    auto msg_json = msg_json_value.as_object();
-                    auto evaled_msg = std::make_shared<Msg>(msg_json);
-                    msgs.emplace_back(std::move(evaled_msg));
+            if (js_result.kind() == boost::json::kind::array) { // 多个端口消息的情况
+                auto array = js_result.as_array();
+                if (array.size() > this->output_ports().size()) {
+                    auto error_msg = "JS 脚本输出错误的端口数";
+                    this->logger()->error(error_msg);
+                    throw std::out_of_range(error_msg);
                 }
+                std::vector<std::shared_ptr<Msg>> msgs;
+
+                for (auto& msg_json_value : array) {
+                    // 直接分发消息，只有是对象的才分发
+                    if (msg_json_value.kind() == boost::json::kind::object) {
+                        auto msg_json = msg_json_value.as_object();
+                        auto evaled_msg = std::make_shared<Msg>(msg_json);
+                        msgs.emplace_back(std::move(evaled_msg));
+                    }
+                }
+                co_await this->async_send_to_many_port(std::forward<std::vector<std::shared_ptr<Msg>>>(msgs));
+            } else if (js_result.kind() == boost::json::kind::object) { // 单个端口消息的情况
+                auto object_result = js_result.as_object();
+                auto evaled_msg = std::make_shared<Msg>(std::move(object_result));
+                co_await this->async_send_to_one_port(std::move(evaled_msg));
+            } else { // 其他类型不支持
+                this->logger()->error("不支持的消息格式：{0}", result_json);
             }
-            co_await this->async_send_to_many_port(std::forward<std::vector<std::shared_ptr<Msg>>>(msgs));
-        } else if (js_result.kind() == boost::json::kind::object) { // 单个端口消息的情况
-            auto object_result = js_result.as_object();
-            auto evaled_msg = std::make_shared<Msg>(std::move(object_result));
-            co_await this->async_send_to_one_port(std::move(evaled_msg));
-        } else { // 其他类型不支持
-            this->logger()->error("不支持的消息格式：{0}", result_json);
+        } catch (qjs::exception) {
+            auto exc = _context.getException();
+            this->logger()->error("QuickJS 错误：{0}", static_cast<const std::string>(exc));
+            // TODO 这里报告错误给 flow
+            co_return;
+        }
+        catch (std::exception& ex) {
+            this->logger()->error("错误：{0}", ex.what());
+            throw;
         }
         co_return;
     }

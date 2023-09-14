@@ -39,9 +39,9 @@ class TemplateNode : public FlowNode {
     }
 
   private:
-    const std::string _template;
     const std::string _field;
     const std::string _field_type;
+    const std::string _template;
 };
 
 RTTR_REGISTRATION {
