@@ -1,24 +1,20 @@
 [
     {
-        "id": "73e0fcd142fc5256",
+        "id": "dee0d1b0cfd62a6c",
         "type": "tab",
         "label": "流程 1",
-        "disabled": true,
+        "disabled": false,
         "info": "",
         "env": []
     },
     {
-        "id": "e978982598e42d37",
+        "id": "9d83039419596038",
         "type": "inject",
-        "z": "73e0fcd142fc5256",
+        "z": "dee0d1b0cfd62a6c",
         "name": "",
         "props": [
             {
                 "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
             }
         ],
         "repeat": "5",
@@ -28,20 +24,20 @@
         "topic": "",
         "payload": "",
         "payloadType": "date",
-        "x": 500,
+        "x": 520,
         "y": 280,
         "wires": [
             [
-                "6301403be614681a"
+                "aa99a38ea7efd6ae"
             ]
         ]
     },
     {
-        "id": "6301403be614681a",
+        "id": "aa99a38ea7efd6ae",
         "type": "function",
-        "z": "73e0fcd142fc5256",
+        "z": "dee0d1b0cfd62a6c",
         "name": "function 1",
-        "func": "var timestamp = msg.payload;\nmsg.payload = {\n    say: \"hello world\",\n    time: String(timestamp),\n};\nreturn [msg, msg];",
+        "func": "var timestamp = msg.payload;\nmsg.payload = {\n    say: \"hello world\",\n    time: String(timestamp),\n};\nvar msg2 = JSON.parse(JSON.stringify(msg));\nreturn [msg, msg2];",
         "outputs": 2,
         "timeout": 0,
         "noerr": 0,
@@ -52,23 +48,24 @@
         "y": 280,
         "wires": [
             [
-                "6b435f6fae0bd992"
+                "6d4f9b7555fbdb8c"
             ],
             [
-                "29487235f536cc7c"
+                "fc98216cb9318ce3"
             ]
         ]
     },
     {
-        "id": "6b435f6fae0bd992",
+        "id": "6d4f9b7555fbdb8c",
         "type": "debug",
-        "z": "73e0fcd142fc5256",
+        "z": "dee0d1b0cfd62a6c",
         "name": "debug 1",
         "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
-        "complete": "false",
+        "complete": "payload",
+        "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
         "x": 960,
@@ -76,11 +73,11 @@
         "wires": []
     },
     {
-        "id": "29487235f536cc7c",
+        "id": "fc98216cb9318ce3",
         "type": "mqtt out",
-        "z": "73e0fcd142fc5256",
-        "name": "",
-        "topic": "/yncic-dangerous/data/test1",
+        "z": "dee0d1b0cfd62a6c",
+        "name": "MQTT上报",
+        "topic": "/edgelink/test1",
         "qos": "1",
         "retain": "false",
         "respTopic": "",
@@ -88,16 +85,16 @@
         "userProps": "",
         "correl": "",
         "expiry": "",
-        "broker": "3c39cf63714c26a4",
-        "x": 1020,
-        "y": 420,
+        "broker": "7c3d5db9f803b38d",
+        "x": 970,
+        "y": 360,
         "wires": []
     },
     {
-        "id": "3c39cf63714c26a4",
+        "id": "7c3d5db9f803b38d",
         "type": "mqtt-broker",
-        "name": "",
-        "broker": "broker-cn.emqx.io",
+        "name": "broker1",
+        "broker": "test.mosquitto.org",
         "port": "1883",
         "clientid": "3369",
         "autoConnect": true,
@@ -105,6 +102,7 @@
         "protocolVersion": "4",
         "keepalive": "60",
         "cleansession": true,
+        "autoUnsubscribe": true,
         "birthTopic": "",
         "birthQos": "0",
         "birthPayload": "",
