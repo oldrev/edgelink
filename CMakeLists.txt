@@ -50,6 +50,8 @@ find_library(LIBDUKTAPE NAMES duktape REQUIRED)
 # 通过 cmake 引入 ASYNC_MQTT 库
 add_subdirectory(./libs/async_mqtt)
 
+add_subdirectory(./libs/quickjspp)
+
 include_directories(
     ${CMAKE_BINARY_DIR}
     ./include
@@ -59,6 +61,7 @@ include_directories(
     "${CMAKE_CURRENT_SOURCE_DIR}/libs/rva/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/libs/boost-di/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/libs/croncpp/include"
+    "${CMAKE_CURRENT_SOURCE_DIR}/libs/quickjspp"
 )
 
 file(GLOB_RECURSE EL_SOURCES 
@@ -81,6 +84,9 @@ add_dependencies(${PROJECT_NAME} git_versioning)
 
 add_dependencies(${PROJECT_NAME} EdgeLinkAbstractions)
 
+add_dependencies(${PROJECT_NAME} quickjspp)
+add_dependencies(${PROJECT_NAME} quickjs)
+
 # target_compile_options(${PROJECT_NAME} PRIVATE -fno-rtti), 不要关掉 RTTI
 
 set(EL_DEP_LIBS
@@ -88,7 +94,9 @@ set(EL_DEP_LIBS
     PRIVATE ${LIBSPDLOG}
     PRIVATE ${LIBFMT}
     PRIVATE ${LIBRTTR_CORE}
-    PRIVATE ${LIBDUKTAPE}
+    PRIVATE ${LIBDUKTAPE} 
+    PRIVATE quickjspp
+    PRIVATE quickjs
     PRIVATE EdgeLinkAbstractions
 )
 
@@ -174,6 +182,8 @@ macro(edgelink_plugin PLUGIN_NAME)
 
     add_dependencies(${THIS_PLUGIN} EdgeLinkAbstractions)
     add_dependencies(${THIS_PLUGIN} git_versioning)
+    add_dependencies(${PROJECT_NAME} quickjspp)
+    add_dependencies(${PROJECT_NAME} quickjs)
 
     target_link_libraries(
         ${THIS_PLUGIN}

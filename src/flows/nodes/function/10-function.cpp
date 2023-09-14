@@ -1,12 +1,10 @@
 
-#include <duktape.h>
-#include <duktape-cpp/DuktapeCpp.h>
+#include <quickjs/quickjs.h>
+#include <quickjspp.hpp>
 
 #include "edgelink/edgelink.hpp"
-#include "edgelink/scripting/duktape.hpp"
 
 using namespace edgelink;
-using namespace edgelink::scripting;
 
 /*
     {
@@ -44,12 +42,6 @@ class EvalEnv final {
     MsgID generate_msg_id() { return Msg::generate_msg_id(); }
     const std::string node_id() const { return std::string(_node->id()); }
 
-    template <class Inspector> static void inspect(Inspector& i) {
-        i.construct(&std::make_shared<EvalEnv>);
-        i.property("msgJsonText", &EvalEnv::msg_json_text);
-        i.property("nodeID", &EvalEnv::node_id);
-        i.method("generateMsgID", &EvalEnv::generate_msg_id);
-    }
 
     static std::shared_ptr<EvalEnv> create(FlowNode* node, std::shared_ptr<Msg> msg) {
         auto ptr = std::make_shared<EvalEnv>(node, std::move(boost::json::serialize(msg->data())));
@@ -61,23 +53,21 @@ class EvalEnv final {
     const std::string _msg_json_text;
 };
 
-DUK_CPP_DEF_CLASS_NAME(EvalEnv);
-
 constexpr char JS_PRELUDE[] = R"(
 function jsonDeepClone(v) { return JSON.parse(JSON.stringify(v)); }
 
 function cloneMsg(v) {
     var newMsg = jsonDeepClone(v); 
-    newMsg.id = evalEnv.generateMsgID(); 
-    return newMsg; 
+    newMsg.id = el.evalEnv.generateMsgID();
+    return newMsg;
 }
 
 )";
 
 constexpr char JS_CODE_TEMPLATE[] = R"(
-    var msg = JSON.parse(evalEnv.msgJsonText); 
+    var msg = JSON.parse(el.evalEnv.msgJsonText); 
     var __func_node_proc = function() {{ {0}; }};
-    JSON.stringify(__func_node_proc());
+    __func_node_proc();
 )";
 
 struct ModuleEntry {
@@ -91,7 +81,7 @@ class FunctionNode : public FlowNode {
     FunctionNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc, IFlow* flow)
         : FlowNode(id, desc, flow, config), _func(config.at("func").as_string()),
           _outputs(config.at("outputs").to_number<size_t>()), _initialize(config.at("initialize").as_string()),
-          _finalize(config.at("finalize").as_string()) {
+          _finalize(config.at("finalize").as_string()), _runtime(), _context(_runtime) {
 
         for (auto const& module_json : config.at("libs").as_array()) {
             auto const& entry = module_json.as_object();
@@ -102,10 +92,22 @@ class FunctionNode : public FlowNode {
             _modules.emplace_back(std::move(me));
         }
 
-        _ctx.registerClass<EvalEnv>();
+        auto& m = _context.addModule("EdgeLink");
+        //m.function<&println>("println");
+        m.class_<EvalEnv>("EvalEnv")
+            .fun<&EvalEnv::generate_msg_id>("generateMsgID")
+            .property<&EvalEnv::msg_json_text>("msgJsonText")
+            .property<&EvalEnv::node_id>("nodeID");
 
         // 加载前置代码
-        _ctx.evalStringNoRes(JS_PRELUDE);
+
+        // 加载 EdgeLink 模块
+        _context.eval(R"xxx(
+            import * as el from 'EdgeLink';
+            globalThis.el = el;
+        )xxx",
+                      "<import>", JS_EVAL_TYPE_MODULE);
+        _context.eval(JS_PRELUDE);
     }
 
     Awaitable<void> async_start() override { co_return; }
@@ -114,15 +116,13 @@ class FunctionNode : public FlowNode {
 
     Awaitable<void> receive_async(std::shared_ptr<Msg> msg) override {
 
-        edgelink::scripting::DuktapeStashingGuard stash_guard(_ctx);
-
         auto eval_env = EvalEnv::create(this, msg);
-        _ctx.addGlobal("evalEnv", eval_env);
+        _context.global()["evalEnv"] = eval_env.get();
 
         auto js_code = fmt::format(JS_CODE_TEMPLATE, _func);
 
-        boost::json::string result_json;
-        _ctx.evalString(result_json, js_code.c_str());
+        auto eval_result_value = _context.eval(js_code.c_str()).toJSON();
+        const std::string_view result_json = eval_result_value;
 
         // 后续处理执行成果
         auto js_result = boost::json::parse(result_json);
@@ -163,7 +163,8 @@ class FunctionNode : public FlowNode {
     const std::string _finalize;
     unsigned int _noerr;
     std::vector<ModuleEntry> _modules;
-    duk::Context _ctx;
+    qjs::Runtime _runtime;
+    qjs::Context _context;
 };
 
 RTTR_REGISTRATION {
