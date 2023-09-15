@@ -16,7 +16,7 @@ FlowFactory::FlowFactory(const IRegistry& registry)
 
 std::vector<std::unique_ptr<IFlow>> FlowFactory::create_flows(const boost::json::array& flows_config,
                                                               IEngine* engine) const {
-    auto node_provider_type = rttr::type::get<IFlowNodeProvider>();
+    // auto node_provider_type = rttr::type::get<IFlowNodeProvider>();
 
     // auto dataflow_elements = flows_config["dataflow"];
     std::vector<std::unique_ptr<IFlow>> flows;

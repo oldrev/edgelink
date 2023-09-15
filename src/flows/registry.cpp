@@ -10,7 +10,7 @@ bool is_valid_provider_type(const rttr::type& type) {
 
 Registry::Registry() : _logger(spdlog::default_logger()->clone("Flow")), _libs() {
 
-    auto node_provider_type = rttr::type::get<INodeProvider>();
+    // auto node_provider_type = rttr::type::get<INodeProvider>();
 
     // 注册内置节点
     {

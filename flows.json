@@ -17,11 +17,10 @@
                 "p": "payload"
             }
         ],
-        "repeat": "5",
+        "repeat": "2",
         "crontab": "",
         "once": false,
         "onceDelay": 0.1,
-        "topic": "",
         "payload": "",
         "payloadType": "date",
         "x": 520,
@@ -37,7 +36,11 @@
         "type": "function",
         "z": "dee0d1b0cfd62a6c",
         "name": "function 1",
+<<<<<<< HEAD
         "func": "var timestamp = msg.payload;\nmsg.payload = {\n    say: \"hello world\",\n    time: String(timestamp),\n};\nvar msg2 = JSON.parse(JSON.stringify(msg));\nreturn [msg, msg2];",
+=======
+        "func": "var timestamp = msg.payload;\nmsg.payload = {\n    say: \"hello world\",\n    time: String(timestamp),\n};\nreturn [msg, cloneMsg(msg)];",
+>>>>>>> de12f425dd2e97fcadeeb4512e8e81e4ac2a0f8d
         "outputs": 2,
         "timeout": 0,
         "noerr": 0,
@@ -75,8 +78,13 @@
     {
         "id": "fc98216cb9318ce3",
         "type": "mqtt out",
+<<<<<<< HEAD
         "z": "dee0d1b0cfd62a6c",
         "name": "MQTT上报",
+=======
+        "z": "73e0fcd142fc5256",
+        "name": "",
+>>>>>>> de12f425dd2e97fcadeeb4512e8e81e4ac2a0f8d
         "topic": "/edgelink/test1",
         "qos": "1",
         "retain": "false",
@@ -93,7 +101,11 @@
     {
         "id": "7c3d5db9f803b38d",
         "type": "mqtt-broker",
+<<<<<<< HEAD
         "name": "broker1",
+=======
+        "name": "",
+>>>>>>> de12f425dd2e97fcadeeb4512e8e81e4ac2a0f8d
         "broker": "test.mosquitto.org",
         "port": "1883",
         "clientid": "3369",

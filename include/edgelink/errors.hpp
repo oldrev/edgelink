@@ -34,7 +34,7 @@ class IOException : public std::exception {
 
 class BadConfigException : public std::exception {
   public:
-    BadConfigException(const std::string& key, const std::string& message) : _key(key), _message(message) {}
+    BadConfigException(const std::string& key, const std::string& message) : _message(message), _key(key) {}
     const char* what() const noexcept override { return _message.c_str(); }
     const std::string_view key() const noexcept { return _key.c_str(); }
 

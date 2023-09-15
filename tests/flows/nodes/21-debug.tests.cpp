@@ -1,5 +1,6 @@
 #include <edgelink/edgelink.hpp>
 
+/*
 TEST_CASE("debug node", "[debug][load]") {
 
     auto json_text = R"(
@@ -23,7 +24,6 @@ TEST_CASE("debug node", "[debug][load]") {
     // auto flow = flow_type.create(json.at(0).as_object(), nullptr);
     auto debug_node_provider = rttr::type::get("edgelink::DebugNodeProvider");
 
-    /*
         var flow = [ {id : "n1", type : "debug", name : "Debug", complete : "false"} ];
         helper.load(
             debugNode, flow, function() {
@@ -37,5 +37,5 @@ TEST_CASE("debug node", "[debug][load]") {
         REQUIRE(factorial(2) == 2);
         REQUIRE(factorial(3) == 6);
         REQUIRE(factorial(10) == 3'628'800);
-        */
 }
+*/

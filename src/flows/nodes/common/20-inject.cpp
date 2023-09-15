@@ -80,7 +80,7 @@ class InjectNode : public SourceNode {
         }
 
         /* Handle legacy */
-        if (auto props_value = config.if_contains("props")) {
+        if (config.if_contains("props")) {
             for (size_t i = 0, l = _props.size(); i < l; i++) {
                 if (_props.at(i).p == "payload" && !_props[i].v) {
                     _props[i].v = config.at("payload");
@@ -164,7 +164,7 @@ class InjectNode : public SourceNode {
             }
         }
 
-        return std::move(msg);
+        return msg;
     }
 
     Awaitable<void> async_once_task(asio::any_io_executor executor) {

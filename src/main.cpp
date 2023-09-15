@@ -1,3 +1,6 @@
+#include <boost/program_options.hpp>
+#include <boost/di.hpp>
+
 #include "version-config.h"
 #include "edgelink/edgelink.hpp"
 #include "logging.hpp"

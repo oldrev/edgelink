@@ -1,12 +1,10 @@
 
-#include <duktape.h>
-#include <duktape-cpp/DuktapeCpp.h>
+#include <quickjs/quickjs.h>
+#include <quickjspp.hpp>
 
 #include "edgelink/edgelink.hpp"
-#include "edgelink/scripting/duktape.hpp"
 
 using namespace edgelink;
-using namespace edgelink::scripting;
 
 /*
     {
@@ -36,48 +34,72 @@ class EvalEnv final {
   public:
     EvalEnv() {}
 
-    EvalEnv(FlowNode* node, const std::string&& msg_json_text)
-        : _node(node), _msg_json_text(std::move(msg_json_text)) {}
-
-    const std::string& msg_json_text() const { return _msg_json_text; }
+    EvalEnv(FlowNode* node) : _node(node) {}
 
     MsgID generate_msg_id() { return Msg::generate_msg_id(); }
-    const std::string node_id() const { return std::string(_node->id()); }
 
-    template <class Inspector> static void inspect(Inspector& i) {
-        i.construct(&std::make_shared<EvalEnv>);
-        i.property("msgJsonText", &EvalEnv::msg_json_text);
-        i.property("nodeID", &EvalEnv::node_id);
-        i.method("generateMsgID", &EvalEnv::generate_msg_id);
-    }
+    const std::string_view get_node_id() const { return _node->id(); }
+    const std::string_view get_node_name() const { return _node->name(); }
+    const unsigned int get_output_count() const { return _node->output_count(); }
 
-    static std::shared_ptr<EvalEnv> create(FlowNode* node, std::shared_ptr<Msg> msg) {
-        auto ptr = std::make_shared<EvalEnv>(node, std::move(boost::json::serialize(msg->data())));
+    static std::shared_ptr<EvalEnv> create(FlowNode* node) {
+        auto ptr = std::make_shared<EvalEnv>(node);
         return ptr;
     }
 
   private:
     FlowNode* _node;
-    const std::string _msg_json_text;
 };
 
-DUK_CPP_DEF_CLASS_NAME(EvalEnv);
+class EvalContext final {
+  public:
+    EvalContext() {}
+
+    static std::shared_ptr<EvalContext> create(FlowNode* node, std::shared_ptr<Msg> msg) {
+        auto ptr = std::make_shared<EvalContext>();
+        return ptr;
+    }
+
+  private:
+    FlowNode* _node;
+};
 
 constexpr char JS_PRELUDE[] = R"(
 function jsonDeepClone(v) { return JSON.parse(JSON.stringify(v)); }
 
 function cloneMsg(v) {
-    var newMsg = jsonDeepClone(v); 
-    newMsg.id = evalEnv.generateMsgID(); 
-    return newMsg; 
+    var newMsg = jsonDeepClone(v);
+    newMsg.id = evalEnv.generateMsgID();
+    return newMsg;
 }
+
+const node = {
+    id: evalEnv.nodeID,
+    name: evalEnv.nodeName,
+};
+
+/*
+const RED = {
+    uitl: {
+        cloneMessage: function(msg) {
+            return cloneMsg(msg);
+        },
+    }
+};
+*/
 
 )";
 
-constexpr char JS_CODE_TEMPLATE[] = R"(
-    var msg = JSON.parse(evalEnv.msgJsonText); 
-    var __func_node_proc = function() {{ {0}; }};
-    JSON.stringify(__func_node_proc());
+constexpr char JS_USER_FUNC_TEMPLATE[] = R"(
+    function __el_user_func(context, msgJsonText) {{
+		var msg = JSON.parse(msgJsonText);
+        const user_func = function() {{
+        /* 用户代码开始 */
+        {0};
+        /* 用户代码结束 */
+        }};
+        return JSON.stringify(user_func());
+    }};
 )";
 
 struct ModuleEntry {
@@ -89,9 +111,9 @@ class FunctionNode : public FlowNode {
 
   public:
     FunctionNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc, IFlow* flow)
-        : FlowNode(id, desc, flow, config), _func(config.at("func").as_string()),
-          _outputs(config.at("outputs").to_number<size_t>()), _initialize(config.at("initialize").as_string()),
-          _finalize(config.at("finalize").as_string()) {
+        : FlowNode(id, desc, flow, config), _outputs(config.at("outputs").to_number<size_t>()),
+          _func(config.at("func").as_string()), _initialize(config.at("initialize").as_string()),
+          _finalize(config.at("finalize").as_string()), _runtime(), _context(_runtime) {
 
         for (auto const& module_json : config.at("libs").as_array()) {
             auto const& entry = module_json.as_object();
@@ -102,10 +124,42 @@ class FunctionNode : public FlowNode {
             _modules.emplace_back(std::move(me));
         }
 
-        _ctx.registerClass<EvalEnv>();
+        try {
+            auto& m = _context.addModule("EdgeLink");
 
-        // 加载前置代码
-        _ctx.evalStringNoRes(JS_PRELUDE);
+            m.class_<EvalContext>("EvalContext");
+
+            m.class_<EvalEnv>("EvalEnv")
+                .fun<&EvalEnv::generate_msg_id>("generateMsgID")
+                .property<&EvalEnv::get_node_id>("nodeID")
+                .property<&EvalEnv::get_node_name>("nodeName")
+                .property<&EvalEnv::get_output_count>("outputCount");
+
+            // 注册全局变量
+            _context.global()["evalEnv"] = EvalEnv::create(this);
+
+            // 加载前置代码
+
+            // 加载 EdgeLink 模块
+            _context.eval(R"xxx(
+            import * as edgeLink from 'EdgeLink';
+            globalThis.edgeLink = edgeLink;
+        )xxx",
+                          "<import>", JS_EVAL_TYPE_MODULE);
+            _context.eval(JS_PRELUDE);
+
+            auto js_user_func = fmt::format(JS_USER_FUNC_TEMPLATE, _func);
+            _context.eval(js_user_func);
+
+            _user_func_cb =
+                static_cast<std::function<const std::string(std::shared_ptr<EvalContext>, const std::string&)>>(
+                    _context.eval("__el_user_func"));
+
+        } catch (qjs::exception) {
+            auto exc = _context.getException();
+            this->logger()->error("QuickJS 错误：{0}", static_cast<const std::string>(exc));
+            throw InvalidDataException("function 内置的脚本解析异常");
+        }
     }
 
     Awaitable<void> async_start() override { co_return; }
@@ -114,44 +168,50 @@ class FunctionNode : public FlowNode {
 
     Awaitable<void> receive_async(std::shared_ptr<Msg> msg) override {
 
-        edgelink::scripting::DuktapeStashingGuard stash_guard(_ctx);
+        auto eval_ctx = EvalContext::create(this, msg);
 
-        auto eval_env = EvalEnv::create(this, msg);
-        _ctx.addGlobal("evalEnv", eval_env);
+        try {
 
-        auto js_code = fmt::format(JS_CODE_TEMPLATE, _func);
+            auto const msg_json_text = msg->to_string();
+            const std::string result_json = _user_func_cb(eval_ctx, msg_json_text);
 
-        boost::json::string result_json;
-        _ctx.evalString(result_json, js_code.c_str());
+            // 后续处理执行成果
+            auto js_result = boost::json::parse(result_json);
 
-        // 后续处理执行成果
-        auto js_result = boost::json::parse(result_json);
-
-        if (js_result.kind() == boost::json::kind::array) { // 多个端口消息的情况
-            int port = 0;
-            auto array = js_result.as_array();
-            if (array.size() > this->output_ports().size()) {
-                auto error_msg = "JS 脚本输出错误的端口数";
-                this->logger()->error(error_msg);
-                throw std::out_of_range(error_msg);
-            }
-            std::vector<std::shared_ptr<Msg>> msgs;
-
-            for (auto& msg_json_value : array) {
-                // 直接分发消息，只有是对象的才分发
-                if (msg_json_value.kind() == boost::json::kind::object) {
-                    auto msg_json = msg_json_value.as_object();
-                    auto evaled_msg = std::make_shared<Msg>(msg_json);
-                    msgs.emplace_back(std::move(evaled_msg));
+            if (js_result.kind() == boost::json::kind::array) { // 多个端口消息的情况
+                auto array = js_result.as_array();
+                if (array.size() > this->output_ports().size()) {
+                    auto error_msg = "JS 脚本输出错误的端口数";
+                    this->logger()->error(error_msg);
+                    throw std::out_of_range(error_msg);
                 }
+                std::vector<std::shared_ptr<Msg>> msgs;
+
+                for (auto& msg_json_value : array) {
+                    // 直接分发消息，只有是对象的才分发
+                    if (msg_json_value.kind() == boost::json::kind::object) {
+                        auto msg_json = msg_json_value.as_object();
+                        auto evaled_msg = std::make_shared<Msg>(msg_json);
+                        msgs.emplace_back(std::move(evaled_msg));
+                    }
+                }
+                co_await this->async_send_to_many_port(std::forward<std::vector<std::shared_ptr<Msg>>>(msgs));
+            } else if (js_result.kind() == boost::json::kind::object) { // 单个端口消息的情况
+                auto object_result = js_result.as_object();
+                auto evaled_msg = std::make_shared<Msg>(std::move(object_result));
+                co_await this->async_send_to_one_port(std::move(evaled_msg));
+            } else { // 其他类型不支持
+                this->logger()->error("不支持的消息格式：{0}", result_json);
             }
-            co_await this->async_send_to_many_port(std::forward<std::vector<std::shared_ptr<Msg>>>(msgs));
-        } else if (js_result.kind() == boost::json::kind::object) { // 单个端口消息的情况
-            auto object_result = js_result.as_object();
-            auto evaled_msg = std::make_shared<Msg>(std::move(object_result));
-            co_await this->async_send_to_one_port(std::move(evaled_msg));
-        } else { // 其他类型不支持
-            this->logger()->error("不支持的消息格式：{0}", result_json);
+        } catch (qjs::exception) {
+            auto exc = _context.getException();
+            this->logger()->error("QuickJS 错误：{0}", static_cast<const std::string>(exc));
+            // TODO 这里报告错误给 flow
+            co_return;
+        }
+        catch (std::exception& ex) {
+            this->logger()->error("错误：{0}", ex.what());
+            throw;
         }
         co_return;
     }
@@ -163,7 +223,10 @@ class FunctionNode : public FlowNode {
     const std::string _finalize;
     unsigned int _noerr;
     std::vector<ModuleEntry> _modules;
-    duk::Context _ctx;
+    qjs::Runtime _runtime;
+    qjs::Context _context;
+
+    std::function<const std::string(std::shared_ptr<EvalContext>, const std::string&)> _user_func_cb;
 };
 
 RTTR_REGISTRATION {
