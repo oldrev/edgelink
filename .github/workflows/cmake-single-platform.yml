@@ -25,7 +25,7 @@ jobs:
         submodules: recursive
 
     - name: Install dependencies
-      run: sudo apt-get install git build-essential libsqlite3-dev uuid-dev git libspnav-dev cmake libmodbus-dev libpaho-mqtt-dev libpaho-mqttpp-dev libspdlog-dev librttr-dev duktape-dev ccache -y
+      run: sudo apt-get install git build-essential libsqlite3-dev uuid-dev git libspnav-dev cmake libmodbus-dev libspdlog-dev librttr-dev cache -y
 
     - name: Install boost
       uses: MarkusJx/install-boost@v2.4.4
