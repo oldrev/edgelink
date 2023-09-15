@@ -23,8 +23,8 @@ Registry::Registry(const EdgeLinkSettings& el_config) : _logger(spdlog::default_
         }
     }
 
-    _logger->info("开始注册插件提供的流程节点...");
     auto plugins_path = std::string(el_config.executable_location / "plugins");
+    _logger->info("开始注册插件提供的流程节点，插件目录：{0}", plugins_path);
 
     using std::filesystem::directory_iterator;
     namespace fs = std::filesystem;
@@ -37,16 +37,16 @@ Registry::Registry(const EdgeLinkSettings& el_config) : _logger(spdlog::default_
         std::string lib_path = path; // path.replace_extension("");
         _logger->info("找到插件：{}", lib_path);
 
-        auto lib = make_unique<rttr::library>(lib_path);
+        auto lib = std::make_unique<rttr::library>(lib_path);
         auto is_loaded = lib->load();
         if (!is_loaded) {
-            throw std::runtime_error(
-                fmt::format("无法加载插件 '{}'：{}", lib_path, std::string(lib->get_error_string())));
+            auto error_msg = fmt::format("无法加载插件 '{0}'： {1}", lib_path, std::string(lib->get_error_string()));
+            throw std::runtime_error(error_msg);
         }
 
         for (auto type : lib->get_types()) {
             if (is_valid_provider_type(type)) {
-                _logger->debug("发现插件节点类型：{}", std::string(type.get_name()));
+                _logger->debug("发现插件节点类型：{0}", std::string(type.get_name()));
                 this->register_node_provider(type);
             }
         }
