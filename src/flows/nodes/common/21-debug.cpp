@@ -1,6 +1,6 @@
 #include "edgelink/edgelink.hpp"
 
-namespace edgelink {
+using namespace edgelink;
 
 /*
     {
@@ -33,7 +33,7 @@ class DebugNode : public SinkNode {
 
     Awaitable<void> receive_async(std::shared_ptr<Msg> msg) override {
         //
-        std::cout << fmt::format("node {}\n{}", this->name(), msg->to_string()) << std::endl;
+        fmt::print("node {0}\n{0}\n", this->name(), msg->to_string());
         co_return;
     }
 
@@ -54,5 +54,3 @@ RTTR_REGISTRATION {
     rttr::registration::class_<FlowNodeProvider<DebugNode, "debug", NodeKind::SINK>>("edgelink::DebugNodeProvider")
         .constructor()(rttr::policy::ctor::as_raw_ptr);
 };
-
-}; // namespace edgelink

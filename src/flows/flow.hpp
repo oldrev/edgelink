@@ -56,8 +56,10 @@ class Flow : public IFlow {
     FlowPreDeliverEvent _on_pre_deliver_event;
     FlowPostDeliverEvent _on_post_deliver_event;
 
+#if EL_TEST
   private:
     RTTR_ENABLE(IFlow)
+#endif
 };
 
 }; // namespace edgelink::flows

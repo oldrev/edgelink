@@ -1,6 +1,6 @@
 #include "edgelink/edgelink.hpp"
 
-namespace edgelink {
+using namespace edgelink;
 
 class JunctionNode : public FlowNode {
   public:
@@ -22,5 +22,3 @@ RTTR_REGISTRATION {
         "edgelink::JunctionNodeProvider")
         .constructor()(rttr::policy::ctor::as_raw_ptr);
 };
-
-}; // namespace edgelink

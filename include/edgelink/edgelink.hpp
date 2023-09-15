@@ -4,6 +4,7 @@
 #include "errors.hpp"
 #include "utils.hpp"
 #include "json.hpp"
+#include "settings.hpp"
 
 #include "flows/common.hpp"
 #include "flows/msg.hpp"
@@ -12,12 +13,6 @@
 #include "flows/engine.hpp"
 
 namespace edgelink {
-
-/// @brief 程序配置
-struct EdgeLinkSettings {
-    const std::string main_exe_path;
-    const std::string flows_json_path;
-};
 
 struct IDaemonApp {
     virtual void run() = 0;

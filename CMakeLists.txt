@@ -133,6 +133,8 @@ if(BUILD_TESTING)
         ${TESTS_SOURCES}
     )
 
+    target_compile_definitions(EdgeLinkTests PRIVATE EL_TEST)
+
     target_precompile_headers(EdgeLinkTests PRIVATE tests/pch.hpp)
 
     # 链接cache2和其他项目依赖项
@@ -208,3 +210,19 @@ foreach(CHILD ${PLUGIN_SUBDIRS})
         add_subdirectory("${PLUGIN_SOURCE_DIR}")
     endif()
 endforeach()
+
+
+
+
+
+# 打包和安装 ------------------------------------
+
+SET(CPACK_PACKAGE_NAME "edgelink")
+
+IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+  set(CMAKE_INSTALL_PREFIX "/opt/${CPACK_PACKAGE_NAME}" CACHE PATH "Install path prefix, prepended onto install directories." FORCE)
+ENDIF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+
+install(TARGETS EdgeLink DESTINATION ${CMAKE_INSTALL_PREFIX})
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/resources DESTINATION ${CMAKE_INSTALL_PREFIX})
+#install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt DESTINATION ${CMAKE_INSTALL_PREFIX})

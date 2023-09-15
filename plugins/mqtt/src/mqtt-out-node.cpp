@@ -93,8 +93,9 @@ class MqttOutNode : public SinkNode, public std::enable_shared_from_this<MqttOut
         auto mqtt_node = this->flow()->engine()->get_global_node(_mqtt_broker_node_id);
         auto mqtt = dynamic_cast<IMqttBrokerEndpoint*>(mqtt_node);
         if (mqtt == nullptr) {
-            SPDLOG_ERROR("转换无效！！！");
-            co_return;
+            auto error_msg = "参数指定的 broker 节点不是 'mqtt-broker' 节点类型";
+            this->logger()->error(error_msg);
+            throw InvalidDataException(error_msg);
         }
 
         std::optional<async_mqtt::buffer> buf_to_send;
@@ -152,4 +153,5 @@ RTTR_PLUGIN_REGISTRATION {
         "edgelink::plugins::mqtt::MqttOutNodeProvider")
         .constructor()(rttr::policy::ctor::as_raw_ptr);
 };
+
 }; // namespace edgelink::plugins::mqtt

@@ -8,104 +8,9 @@
         "env": []
     },
     {
-        "id": "9d83039419596038",
-        "type": "inject",
-        "z": "dee0d1b0cfd62a6c",
-        "name": "",
-        "props": [
-            {
-                "p": "payload"
-            }
-        ],
-        "repeat": "2",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "payload": "",
-        "payloadType": "date",
-        "x": 520,
-        "y": 280,
-        "wires": [
-            [
-                "aa99a38ea7efd6ae"
-            ]
-        ]
-    },
-    {
-        "id": "aa99a38ea7efd6ae",
-        "type": "function",
-        "z": "dee0d1b0cfd62a6c",
-        "name": "function 1",
-<<<<<<< HEAD
-        "func": "var timestamp = msg.payload;\nmsg.payload = {\n    say: \"hello world\",\n    time: String(timestamp),\n};\nvar msg2 = JSON.parse(JSON.stringify(msg));\nreturn [msg, msg2];",
-=======
-        "func": "var timestamp = msg.payload;\nmsg.payload = {\n    say: \"hello world\",\n    time: String(timestamp),\n};\nreturn [msg, cloneMsg(msg)];",
->>>>>>> de12f425dd2e97fcadeeb4512e8e81e4ac2a0f8d
-        "outputs": 2,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 720,
-        "y": 280,
-        "wires": [
-            [
-                "6d4f9b7555fbdb8c"
-            ],
-            [
-                "fc98216cb9318ce3"
-            ]
-        ]
-    },
-    {
-        "id": "6d4f9b7555fbdb8c",
-        "type": "debug",
-        "z": "dee0d1b0cfd62a6c",
-        "name": "debug 1",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 960,
-        "y": 280,
-        "wires": []
-    },
-    {
-        "id": "fc98216cb9318ce3",
-        "type": "mqtt out",
-<<<<<<< HEAD
-        "z": "dee0d1b0cfd62a6c",
-        "name": "MQTT上报",
-=======
-        "z": "73e0fcd142fc5256",
-        "name": "",
->>>>>>> de12f425dd2e97fcadeeb4512e8e81e4ac2a0f8d
-        "topic": "/edgelink/test1",
-        "qos": "1",
-        "retain": "false",
-        "respTopic": "",
-        "contentType": "",
-        "userProps": "",
-        "correl": "",
-        "expiry": "",
-        "broker": "7c3d5db9f803b38d",
-        "x": 970,
-        "y": 360,
-        "wires": []
-    },
-    {
         "id": "7c3d5db9f803b38d",
         "type": "mqtt-broker",
-<<<<<<< HEAD
         "name": "broker1",
-=======
-        "name": "",
->>>>>>> de12f425dd2e97fcadeeb4512e8e81e4ac2a0f8d
         "broker": "test.mosquitto.org",
         "port": "1883",
         "clientid": "3369",
@@ -129,5 +34,86 @@
         "willMsg": {},
         "userProps": "",
         "sessionExpiry": ""
+    },
+    {
+        "id": "9d83039419596038",
+        "type": "inject",
+        "z": "dee0d1b0cfd62a6c",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "3",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 500,
+        "y": 280,
+        "wires": [
+            [
+                "d22f80b22a569ac5"
+            ]
+        ]
+    },
+    {
+        "id": "6d4f9b7555fbdb8c",
+        "type": "debug",
+        "z": "dee0d1b0cfd62a6c",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 960,
+        "y": 280,
+        "wires": []
+    },
+    {
+        "id": "fc98216cb9318ce3",
+        "type": "mqtt out",
+        "z": "dee0d1b0cfd62a6c",
+        "name": "MQTT上报",
+        "topic": "/edgelink/test1",
+        "qos": "1",
+        "retain": "false",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "7c3d5db9f803b38d",
+        "x": 970,
+        "y": 360,
+        "wires": []
+    },
+    {
+        "id": "d22f80b22a569ac5",
+        "type": "function",
+        "z": "dee0d1b0cfd62a6c",
+        "name": "function 1",
+        "func": "msg.payload = msg.payload % 1000;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 660,
+        "y": 280,
+        "wires": [
+            [
+                "6d4f9b7555fbdb8c",
+                "fc98216cb9318ce3"
+            ]
+        ]
     }
 ]

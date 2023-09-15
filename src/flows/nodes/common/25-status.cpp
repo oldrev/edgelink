@@ -1,6 +1,6 @@
 #include "edgelink/edgelink.hpp"
 
-namespace edgelink {
+using namespace edgelink;
 
 class StatusNode : public ScopedSourceNode {
   public:
@@ -24,5 +24,3 @@ RTTR_REGISTRATION {
     rttr::registration::class_<FlowNodeProvider<StatusNode, "status", NodeKind::SOURCE>>("edgelink::StatusNodeProvider")
         .constructor()(rttr::policy::ctor::as_raw_ptr);
 };
-
-}; // namespace edgelink

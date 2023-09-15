@@ -9,7 +9,7 @@ using CloneMsgStaticVector = boost::container::static_vector<std::shared_ptr<edg
 namespace edgelink {
 
 Engine::Engine(const EdgeLinkSettings& el_config, const IFlowFactory& flow_factory)
-    : _logger(spdlog::default_logger()->clone("Engine")), _flow_factory(flow_factory),
+    : _logger(spdlog::default_logger()->clone("Engine")), _settings(el_config), _flow_factory(flow_factory),
       _flows_json_path(el_config.flows_json_path) {
 
     // std::vector<std::unique_ptr<IFlow>> create_flows(const boost::json::array& flows_config);
@@ -91,9 +91,13 @@ Awaitable<void> Engine::async_stop() {
     co_return;
 }
 
+#if EL_TEST
+
 RTTR_REGISTRATION {
     rttr::registration::class_<edgelink::IEngine>("edgelink::IEngine");
     rttr::registration::class_<edgelink::Engine>("edgelink::Engine");
 }
+
+#endif
 
 }; // namespace edgelink

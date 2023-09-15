@@ -1,6 +1,6 @@
 #include "edgelink/edgelink.hpp"
 
-namespace edgelink {
+using namespace edgelink;
 
 class CatchNode : public ScopedSourceNode {
   public:
@@ -25,5 +25,3 @@ RTTR_REGISTRATION {
     rttr::registration::class_<FlowNodeProvider<CatchNode, "catch", NodeKind::SOURCE>>("edgelink::CatchNodeProvider")
         .constructor()(rttr::policy::ctor::as_raw_ptr);
 };
-
-}; // namespace edgelink

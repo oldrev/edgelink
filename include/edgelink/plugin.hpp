@@ -4,6 +4,7 @@
 #include "edgelink/errors.hpp"
 #include "edgelink/utils.hpp"
 #include "edgelink/json.hpp"
+#include "edgelink/settings.hpp"
 
 #include "edgelink/flows/common.hpp"
 #include "edgelink/flows/msg.hpp"

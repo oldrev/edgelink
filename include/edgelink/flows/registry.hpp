@@ -10,13 +10,15 @@ struct IRegistry {
     virtual const std::unique_ptr<IStandaloneNodeProvider>&
     get_standalone_node_provider(const std::string_view& name) const = 0;
 
+#if EL_TEST
   private:
     RTTR_ENABLE()
+#endif
 };
 
 class Registry : public IRegistry {
   public:
-    Registry();
+    Registry(const EdgeLinkSettings& el_config);
     virtual ~Registry();
 
     const std::unique_ptr<IFlowNodeProvider>& get_flow_node_provider(const std::string_view& type_name) const override;
@@ -33,8 +35,10 @@ class Registry : public IRegistry {
     std::map<std::string_view, std::unique_ptr<IStandaloneNodeProvider>> _standalone_node_providers;
     std::vector<std::unique_ptr<rttr::library>> _libs;
 
+#if EL_TEST
   private:
     RTTR_ENABLE(IRegistry)
+#endif
 };
 
 }; // namespace edgelink

@@ -1,6 +1,6 @@
 #include "edgelink/edgelink.hpp"
 
-namespace edgelink {
+using namespace edgelink;
 
 class CompleteNode : public ScopedSourceNode {
   public:
@@ -23,5 +23,3 @@ RTTR_REGISTRATION {
         "edgelink::CompleteNodeProvider")
         .constructor()(rttr::policy::ctor::as_raw_ptr);
 };
-
-}; // namespace edgelink

@@ -1,6 +1,6 @@
 #include "edgelink/edgelink.hpp"
 
-namespace edgelink {
+using namespace edgelink;
 
 class BlackholeNode : public SinkNode {
   public:
@@ -25,5 +25,3 @@ RTTR_REGISTRATION {
         "edgelink::BlackholeNodeProvider")
         .constructor()(rttr::policy::ctor::as_raw_ptr);
 };
-
-}; // namespace edgelink

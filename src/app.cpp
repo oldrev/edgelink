@@ -12,7 +12,12 @@ Awaitable<void> App::run_async() {
     auto executor = co_await this_coro::executor;
     // auto self = shared_from_this();
 
-    co_await _engine->async_start();
+    try {
+        co_await _engine->async_start();
+    } catch (std::exception& ex) {
+        SPDLOG_ERROR("流程引擎启动异常：{0}", ex.what());
+        co_return;
+    }
     asio::co_spawn(
         executor, [self = this->shared_from_this()] { return self->idle_loop(); }, asio::detached);
 
@@ -24,20 +29,19 @@ Awaitable<void> App::idle_loop() {
     auto executor = co_await this_coro::executor;
     auto cs = co_await boost::asio::this_coro::cancellation_state;
     // 引擎
-    spdlog::info("正在启动 IDLE 协程");
+    SPDLOG_INFO("正在启动 IDLE 协程");
     // 阻塞
     for (;;) {
         if (cs.cancelled() != boost::asio::cancellation_type::none) {
-            spdlog::info("IDLE 协程停止中...");
+            SPDLOG_INFO("IDLE 协程停止中...");
             break;
         }
         // 协程 IDLE
         asio::steady_timer timer(executor, std::chrono::milliseconds(1000));
         co_await timer.async_wait(asio::use_awaitable);
     }
-    spdlog::info("IDLE 协程已结束");
+    SPDLOG_INFO("IDLE 协程已结束");
     co_return;
 }
-
 
 }; // namespace edgelink

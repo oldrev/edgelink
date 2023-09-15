@@ -20,10 +20,8 @@ namespace po = boost::program_options;
 using namespace edgelink;
 
 void show_banner() {
-    std::cout << "EdgeLink 物联网边缘数据采集系统" << std::endl;
-    std::cout << "版本：" << EDGELINK_VERSION << "\t"
-              << "REV: " << GIT_REVISION << std::endl;
-    std::cout << std::endl;
+    fmt::print("EdgeLink 物联网边缘数据采集系统\n");
+    fmt::print("版本：{0}, REV: {1}\n", EDGELINK_VERSION, GIT_REVISION);
 }
 
 std::string get_home_dir() {
@@ -77,19 +75,16 @@ int main(int argc, char* argv[]) {
         po::notify(vm);
 
         if (vm.count("help")) {
-            std::cout << desc << std::endl;
             return 0;
         }
 
         if (vm.count("flows")) {
-            std::cout << "Flows file: " << vm["flows"].as<std::string>() << std::endl;
         }
 
         if (vm.count("output-file")) {
-            std::cout << "Output file: " << vm["output-file"].as<std::string>() << std::endl;
         }
     } catch (const std::exception& e) {
-        std::cerr << "Error: " << e.what() << std::endl;
+        fmt::print("Error: {0}\n", e.what());
         return 1;
     }
 
@@ -99,7 +94,8 @@ int main(int argc, char* argv[]) {
     SPDLOG_INFO("日志子系统已初始化");
 
     EdgeLinkSettings el_settings{
-        .main_exe_path = std::string(exec_path),
+        .home_path = fs::path("./"), // exec_path.parent_path(),
+        .executable_location = exec_path.parent_path(),
         .flows_json_path = "./flows.json",
     };
 

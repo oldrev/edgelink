@@ -6,7 +6,7 @@
 namespace this_coro = boost::asio::this_coro;
 namespace asio = boost::asio;
 
-namespace edgelink {
+using namespace edgelink;
 
 /*
    {
@@ -213,5 +213,3 @@ RTTR_REGISTRATION {
     rttr::registration::class_<FlowNodeProvider<InjectNode, "inject", NodeKind::SOURCE>>("edgelink::InjectNodeProvider")
         .constructor()(rttr::policy::ctor::as_raw_ptr);
 };
-
-}; // namespace edgelink

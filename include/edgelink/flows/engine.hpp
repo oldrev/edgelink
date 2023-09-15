@@ -15,6 +15,8 @@ class Engine : public IEngine, private std::enable_shared_from_this<Engine> {
 
     bool is_disabled() const override { return _disabled; }
 
+    const EdgeLinkSettings& settings() const override { return _settings; }
+
     Awaitable<void> async_start() override;
     Awaitable<void> async_stop() override;
 
@@ -40,6 +42,7 @@ class Engine : public IEngine, private std::enable_shared_from_this<Engine> {
 
   private:
     std::shared_ptr<spdlog::logger> _logger;
+    const EdgeLinkSettings& _settings;
     const IFlowFactory& _flow_factory;
     const std::string _flows_json_path;
     std::vector<std::unique_ptr<IStandaloneNode>> _global_nodes;
@@ -48,8 +51,10 @@ class Engine : public IEngine, private std::enable_shared_from_this<Engine> {
     bool _disabled;
     std::vector<std::unique_ptr<IFlow>> _flows;
 
+#if EL_TEST
   private:
     RTTR_ENABLE(IEngine)
+#endif
 };
 
 }; // namespace edgelink

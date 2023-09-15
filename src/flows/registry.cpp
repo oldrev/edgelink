@@ -8,7 +8,7 @@ bool is_valid_provider_type(const rttr::type& type) {
            type.get_name() != "edgelink::IFlowNodeProvider";
 }
 
-Registry::Registry() : _logger(spdlog::default_logger()->clone("Flow")), _libs() {
+Registry::Registry(const EdgeLinkSettings& el_config) : _logger(spdlog::default_logger()->clone("Flow")), _libs() {
 
     // auto node_provider_type = rttr::type::get<INodeProvider>();
 
@@ -24,12 +24,12 @@ Registry::Registry() : _logger(spdlog::default_logger()->clone("Flow")), _libs()
     }
 
     _logger->info("开始注册插件提供的流程节点...");
-    std::string path = "./plugins";
+    auto plugins_path = std::string(el_config.executable_location / "plugins");
 
     using std::filesystem::directory_iterator;
     namespace fs = std::filesystem;
 
-    for (const auto& file : fs::directory_iterator(path)) {
+    for (const auto& file : fs::directory_iterator(plugins_path)) {
         auto path = fs::path(file.path());
         if (!fs::is_regular_file(file)) {
             continue;
@@ -97,9 +97,11 @@ void Registry::register_node_provider(const rttr::type& provider_type) {
     }
 }
 
+#if EL_TEST
 RTTR_REGISTRATION {
     rttr::registration::class_<edgelink::IRegistry>("edgelink::IRegistry");
     rttr::registration::class_<edgelink::Registry>("edgelink::Registry");
 }
+#endif
 
 }; // namespace edgelink

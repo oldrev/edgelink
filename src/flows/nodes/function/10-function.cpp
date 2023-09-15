@@ -124,6 +124,7 @@ class FunctionNode : public FlowNode {
             _modules.emplace_back(std::move(me));
         }
 
+
         try {
             auto& m = _context.addModule("EdgeLink");
 
@@ -146,7 +147,10 @@ class FunctionNode : public FlowNode {
             globalThis.edgeLink = edgeLink;
         )xxx",
                           "<import>", JS_EVAL_TYPE_MODULE);
-            _context.eval(JS_PRELUDE);
+
+            auto prelude_js_path =
+                std::string(flow->engine()->settings().home_path / "resources" / "nodes" / "function" / "prelude.js");
+            _context.evalFile(prelude_js_path.c_str(), JS_EVAL_TYPE_GLOBAL);
 
             auto js_user_func = fmt::format(JS_USER_FUNC_TEMPLATE, _func);
             _context.eval(js_user_func);

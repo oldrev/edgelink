@@ -217,6 +217,9 @@ class MqttBrokerNode : public EndpointNode,
 
     std::unique_ptr<channel<void()>> _lock; //{socket_.get_executor(), 1};
     //std::unique_ptr<async::AsyncLock<boost::asio::any_io_executor>> _lock;
+
+  private:
+    RTTR_ENABLE(IMqttBrokerEndpoint)
 };
 
 RTTR_PLUGIN_REGISTRATION {

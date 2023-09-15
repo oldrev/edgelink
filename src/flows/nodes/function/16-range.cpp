@@ -1,6 +1,6 @@
 #include "edgelink/edgelink.hpp"
 
-namespace edgelink {
+using namespace edgelink;
 
 /*
     {
@@ -95,5 +95,3 @@ RTTR_REGISTRATION {
     rttr::registration::class_<FlowNodeProvider<RangeNode, "range", NodeKind::PIPE>>("edgelink::RangeNodeProvider")
         .constructor()(rttr::policy::ctor::as_raw_ptr);
 };
-
-}; // namespace edgelink
