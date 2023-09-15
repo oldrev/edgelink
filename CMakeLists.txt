@@ -32,6 +32,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
 set(CMAKE_CXX_COMPILER_LAUNCHER ccache)
 set(CMAKE_C_COMPILER_LAUNCHER ccache)
 
+set (BUILD_TESTING OFF) 
+
 project(EdgeLink)
 
 add_custom_target(git_versioning
@@ -89,6 +91,7 @@ add_dependencies(${PROJECT_NAME} EdgeLinkAbstractions)
 add_dependencies(${PROJECT_NAME} quickjspp)
 add_dependencies(${PROJECT_NAME} quickjs)
 
+
 # target_compile_options(${PROJECT_NAME} PRIVATE -fno-rtti), 不要关掉 RTTI
 
 set(EL_DEP_LIBS
@@ -113,6 +116,9 @@ target_precompile_headers(${PROJECT_NAME} PRIVATE src/pch.hpp)
 # 测试 ---------------------------------------------------------------------------
 
 # 启用测试
+
+set (BUILD_TESTING ON) 
+
 include(CTest)
 if(BUILD_TESTING)
     enable_testing()
