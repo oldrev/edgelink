@@ -15,7 +15,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -s")
 endif()
 
-set(CMAKE_DEBUG_POSTFIX d)
+#set(CMAKE_DEBUG_POSTFIX d)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
@@ -32,7 +32,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
 set(CMAKE_CXX_COMPILER_LAUNCHER ccache)
 set(CMAKE_C_COMPILER_LAUNCHER ccache)
 
-set (BUILD_TESTING OFF) 
+#set (BUILD_TESTING OFF) 
 
 project(EdgeLink)
 
@@ -54,9 +54,16 @@ find_library(LIBFMT NAMES fmt REQUIRED)
 find_library(LIBRTTR_CORE NAMES rttr_core REQUIRED)
 
 # 通过 cmake 引入 ASYNC_MQTT 库
-add_subdirectory(./libs/async_mqtt)
 
+set(_TMP_BUILD_TESTING BUILD_TESTING)
+if(BUILD_TESTING) 
+	set(BUILD_TESTING OFF)
+endif()
+
+add_subdirectory(./libs/async_mqtt)
 add_subdirectory(./libs/quickjspp)
+
+set(BUILD_TESTING _TMP_BUILD_TESTING)
 
 include_directories(
     ${CMAKE_BINARY_DIR}
@@ -113,17 +120,22 @@ add_definitions(-DBOOST_LOG_DYN_LINK)
 
 target_precompile_headers(${PROJECT_NAME} PRIVATE src/pch.hpp)
 
+
+# 数据文件 -----------------------------------------------------------------------
+file(COPY ./resources/nodes/function/prelude.js DESTINATION ${CMAKE_BINARY_DIR}/resources/nodes/function/)
+
+
 # 测试 ---------------------------------------------------------------------------
 
 # 启用测试
-
-set (BUILD_TESTING ON) 
 
 include(CTest)
 if(BUILD_TESTING)
     enable_testing()
 
-    add_subdirectory(libs/catch2)
+	set(BUILD_TESTING OFF)
+	add_subdirectory(libs/catch2)
+	set(BUILD_TESTING ON)
 
     set(TESTS_EL_SOURCES ${EL_SOURCES})
     list(REMOVE_ITEM TESTS_EL_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp")
@@ -182,6 +194,8 @@ file(MAKE_DIRECTORY ${PLUGINS_OUTPUT_DIR})
 macro(edgelink_plugin PLUGIN_NAME)
     set(THIS_PLUGIN "EdgeLink.Plugins.${PLUGIN_NAME}")
 
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fvisibility=hidden")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden")
     file(GLOB_RECURSE SOURCES "src/*.c" "src/*.cpp")
     get_filename_component(CURRENT_CMAKE_SOURCE_DIR "${CMAKE_CURRENT_LIST_FILE}" DIRECTORY)
     set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PLUGINS_OUTPUT_DIR})
@@ -212,8 +226,17 @@ file(GLOB PLUGIN_SUBDIRS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SO
 foreach(CHILD ${PLUGIN_SUBDIRS})
     set(PLUGIN_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/${CHILD})
     if(IS_DIRECTORY ${PLUGIN_SOURCE_DIR})
-        MESSAGE(STATUS "Plugin found: ${PLUGIN_SOURCE_DIR}")
-        add_subdirectory("${PLUGIN_SOURCE_DIR}")
+        add_subdirectory(${PLUGIN_SOURCE_DIR})
+
+		# 获取子目录的项目列表
+		get_directory_property(subdirectory_projects DIRECTORY ${PLUGIN_SOURCE_DIR} DEFINITION THIS_PLUGIN)
+
+		# 输出子目录中的项目名称
+		foreach(plugin_project_name IN LISTS subdirectory_projects)
+		    message(STATUS "EdgeLink plugin found: ${plugin_project_name}")
+            add_dependencies(EdgeLink ${plugin_project_name})
+		endforeach()
+
     endif()
 endforeach()
 
@@ -223,7 +246,7 @@ endforeach()
 
 # 打包和安装 ------------------------------------
 
-SET(CPACK_PACKAGE_NAME "edgelink")
+#SET(CPACK_PACKAGE_NAME "edgelink")
 
 IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
   set(CMAKE_INSTALL_PREFIX "/opt/${CPACK_PACKAGE_NAME}" CACHE PATH "Install path prefix, prepended onto install directories." FORCE)

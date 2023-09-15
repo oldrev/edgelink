@@ -7,8 +7,8 @@ namespace edgelink::plugins::modbus {
 class ModbusLogNode : public SinkNode {
   public:
     ModbusLogNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc,
-                  const std::vector<OutputPort>&& output_ports, IFlow* flow)
-        : edgelink::SinkNode(id, desc, move(output_ports), flow, config) {}
+                  IFlow* flow)
+        : SinkNode(id, desc, flow, config) {}
 
     Awaitable<void> async_start() override { co_return; }
 
@@ -26,5 +26,4 @@ RTTR_PLUGIN_REGISTRATION {
         "edgelink::plugins::modbus::ModbusLogNodeProvider")
         .constructor()(rttr::policy::ctor::as_raw_ptr);
 };
-
 }; // namespace edgelink::plugins::modbus

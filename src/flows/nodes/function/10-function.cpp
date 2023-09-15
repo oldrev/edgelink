@@ -148,9 +148,12 @@ class FunctionNode : public FlowNode {
         )xxx",
                           "<import>", JS_EVAL_TYPE_MODULE);
 
-            auto prelude_js_path =
-                std::string(flow->engine()->settings().home_path / "resources" / "nodes" / "function" / "prelude.js");
-            _context.evalFile(prelude_js_path.c_str(), JS_EVAL_TYPE_GLOBAL);
+            auto prelude_js_path = std::filesystem::current_path() / "resources" / "nodes" / "function" / "prelude.js";
+            std::ifstream f(prelude_js_path, std::ios::in | std::ios::binary);
+            std::stringstream sstream;
+            sstream << f.rdbuf();
+
+            _context.eval(sstream.str());
 
             auto js_user_func = fmt::format(JS_USER_FUNC_TEMPLATE, _func);
             _context.eval(js_user_func);

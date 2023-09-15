@@ -7,7 +7,7 @@ namespace edgelink {
 
 }; // namespace edgelink
 
-RTTR_PLUGIN_REGISTRATION // remark the different registration macro!
+RTTR_REGISTRATION // remark the different registration macro!
 {
     rttr::registration::class_<edgelink::MyPluginClass>("edgelink::MyPluginClass").constructor<>();
 }

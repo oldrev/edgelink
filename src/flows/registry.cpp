@@ -23,24 +23,23 @@ Registry::Registry(const EdgeLinkSettings& el_config) : _logger(spdlog::default_
         }
     }
 
-    auto plugins_path = el_config.executable_location / "plugins";
-    _logger->info("开始注册插件提供的流程节点，插件目录：{0}", plugins_path.string());
-
-    using std::filesystem::directory_iterator;
     namespace fs = std::filesystem;
+
+    auto plugins_path = fs::path("./plugins");
+    _logger->info("开始注册插件提供的流程节点，插件目录：{0}", plugins_path.string());
 
     for (fs::directory_entry const& entry : fs::directory_iterator(plugins_path)) {
         if (!entry.is_regular_file()) {
             continue;
         }
 
-        std::string lib_path = entry.path().string();
-        _logger->info("找到插件：{}", lib_path);
-
-        auto lib = std::make_unique<rttr::library>(lib_path.c_str());
+        auto lib_path = entry.path().string();
+        _logger->info("找到插件：'{0}'", lib_path);
+        auto lib = std::make_unique<rttr::library>(lib_path);
         auto is_loaded = lib->load();
         if (!is_loaded) {
-            auto error_msg = fmt::format("无法加载插件 '{0}'： {1}", lib_path, std::string(lib->get_error_string()));
+            auto error_msg =
+                fmt::format("无法加载插件 '{0}'： {1}", lib_path, std::string(lib->get_error_string()));
             throw std::runtime_error(error_msg);
         }
 

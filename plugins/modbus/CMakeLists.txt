@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.22)
 
 if(EL_WITH_MODBUS)
 
-    edgelink_plugin("modbus")
+    edgelink_plugin("Modbus")
 
     find_library(LIBMODBUS NAMES modbus REQUIRED)
 
