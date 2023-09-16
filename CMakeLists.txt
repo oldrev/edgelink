@@ -129,10 +129,6 @@ include(CTest)
 if(BUILD_TESTING)
     enable_testing()
 
-	set(BUILD_TESTING OFF)
-	add_subdirectory(libs/catch2)
-	set(BUILD_TESTING ON)
-
     set(TESTS_EL_SOURCES ${EL_SOURCES})
     list(REMOVE_ITEM TESTS_EL_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp")
 
