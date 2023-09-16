@@ -57,6 +57,7 @@ jobs:
 
 
     - name: Configure Conan
+      if: steps.github-cache-conan.outputs.cache-hit != 'true'
       run: conan install . --output-folder=build --build=missing --settings=build_type=${{env.BUILD_TYPE}} --settings=compiler.cppstd=23 -pr ${{github.workspace}}/profiles/armhf
 
     - name: Configure CMake
