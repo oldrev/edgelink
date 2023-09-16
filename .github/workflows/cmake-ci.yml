@@ -31,6 +31,9 @@ jobs:
       id: conan
       uses: turtlebrowser/get-conan@main
 
+    - name: Conan detect profile
+      run: conan profile detect
+
     - name: Install boost
       uses: MarkusJx/install-boost@v2.4.4
       id: install-boost
