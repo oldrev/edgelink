@@ -17,6 +17,12 @@ EdgeLink 是一个使用 C++20 重新实现的 Node-RED，旨在降低资源特�
 - C++ 编译器 (建议使用 g++)
 - Node.js 和 npm
 
+交叉编译工具：
+
+```bash
+$sudo apt install crossbuild-essential-armhf
+```
+
 克隆仓库并安装 EdgeLink：
 
 ```bash
