@@ -76,9 +76,12 @@ jobs:
     - uses: pguyot/arm-runner-action@v2
       name: Run tests
       with:
+        bind_mount_repository: true
         commands: |
             ls -lh
+            ls -lh ./build
             cd ./build
+            chmod +x ./EdgeLinkTests
             ./EdgeLinkTests
 
     - name: Package
