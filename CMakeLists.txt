@@ -40,8 +40,8 @@ add_custom_target(git_versioning
 )
 
 # 查找Boost库
-find_package(Boost REQUIRED COMPONENTS system url json program_options)
-set(Boost_MINIMUM_REQUIRED 1.81.0)
+find_package(Boost REQUIRED COMPONENTS url json program_options)
+set(Boost_MINIMUM_REQUIRED 1.83.0)
 if(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
 endif()
@@ -51,7 +51,6 @@ find_package(spdlog REQUIRED)
 find_package(fmt REQUIRED)
 
 # 通过 cmake 引入 ASYNC_MQTT 库
-
 set(_TMP_BUILD_TESTING BUILD_TESTING)
 if(BUILD_TESTING) 
 	set(BUILD_TESTING OFF)
@@ -98,7 +97,8 @@ add_dependencies(${PROJECT_NAME} quickjs)
 # target_compile_options(${PROJECT_NAME} PRIVATE -fno-rtti), 不要关掉 RTTI
 
 set(EL_DEP_LIBS
-    PRIVATE ${Boost_LIBRARIES}
+    PRIVATE Boost::system
+    PRIVATE Boost::json
     PRIVATE spdlog::spdlog
     PRIVATE fmt::fmt
     PRIVATE RTTR::Core
@@ -107,9 +107,9 @@ set(EL_DEP_LIBS
     PRIVATE EdgeLinkAbstractions
 )
 
-target_link_libraries(
-    ${PROJECT_NAME}
+target_link_libraries(${PROJECT_NAME}
     ${EL_DEP_LIBS}
+    PRIVATE Boost::program_options
 )
 
 add_definitions(-DBOOST_LOG_DYN_LINK)
@@ -125,14 +125,18 @@ file(COPY ./resources/nodes/function/prelude.js DESTINATION ${CMAKE_BINARY_DIR}/
 
 # 启用测试
 
-include(CTest)
 if(BUILD_TESTING)
     enable_testing()
+
+    find_package(Catch2 3 REQUIRED)
+    if(Catch2_FOUND)
+        include_directories(${Catch2_INCLUDE_DIRS})
+    endif()
 
     set(TESTS_EL_SOURCES ${EL_SOURCES})
     list(REMOVE_ITEM TESTS_EL_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp")
 
-    file(GLOB_RECURSE TESTS_SOURCES 
+    file(GLOB_RECURSE TESTS_SOURCES
         "tests/*.c"
         "tests/*.cpp"
     )
@@ -142,6 +146,7 @@ if(BUILD_TESTING)
         ${TESTS_EL_SOURCES}
         ${TESTS_SOURCES}
     )
+    add_dependencies(EdgeLinkTests EdgeLinkAbstractions)
 
     target_compile_definitions(EdgeLinkTests PRIVATE EL_TEST)
 
@@ -150,19 +155,12 @@ if(BUILD_TESTING)
     # 链接cache2和其他项目依赖项
     target_link_libraries(EdgeLinkTests PRIVATE
         ${EL_DEP_LIBS}
-        Catch2
-        Catch2WithMain
+        PRIVATE Catch2::Catch2WithMain
     )
 
-    # 添加测试
-    add_test(NAME EdgeLinkTests COMMAND EdgeLinkTests)
-    add_dependencies(EdgeLinkTests EdgeLinkAbstractions)
-
-    list(APPEND CMAKE_MODULE_PATH ${CMAKE_INSTALL_PREFIX}/lib/cmake/Catch2)
-    list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
-    include(CTest)
-    include(Catch)
-    catch_discover_tests(EdgeLinkTests)
+    #include(CTest)
+    #include(Catch)
+    #catch_discover_tests(EdgeLinkTests)
 
 endif()
 
@@ -202,7 +200,7 @@ macro(edgelink_plugin PLUGIN_NAME)
 
     target_link_libraries(
         ${THIS_PLUGIN}
-        PRIVATE ${Boost_LIBRARIES}
+        PRIVATE Boost::json
         PRIVATE spdlog::spdlog
         PRIVATE fmt::fmt
         PRIVATE RTTR::Core

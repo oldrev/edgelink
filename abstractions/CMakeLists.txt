@@ -26,7 +26,7 @@ target_include_directories(${THE_LIB}
 
 target_link_libraries(
     ${THE_LIB}
-    PRIVATE ${Boost_LIBRARIES}
+    PRIVATE Boost::json
     PRIVATE fmt::fmt
     PRIVATE spdlog::spdlog
     PRIVATE RTTR::Core
