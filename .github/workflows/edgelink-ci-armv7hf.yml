@@ -77,6 +77,7 @@ jobs:
       name: Run tests
       with:
         commands: |
+            cd ${{github.workspace}}/build
             ./EdgeLinkTests
 
     - name: Package
