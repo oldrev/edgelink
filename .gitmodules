@@ -13,9 +13,6 @@
 [submodule "libs/croncpp"]
 	path = libs/croncpp
 	url = git@github.com:mariusbancila/croncpp.git
-[submodule "libs/catch2"]
-	path = libs/catch2
-	url = git@github.com:catchorg/Catch2.git
 [submodule "libs/beast"]
 	path = libs/beast
 	url = git@github.com:boostorg/beast.git
