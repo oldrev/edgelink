@@ -2,6 +2,7 @@
 rttr/0.9.6
 spdlog/1.10.0
 fmt/8.1.1
+boost/1.83.0
 
 [test_requires]
 catch2/3.4.0

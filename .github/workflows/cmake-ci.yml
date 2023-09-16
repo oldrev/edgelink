@@ -36,22 +36,14 @@ jobs:
     - name: Conan detect profile
       run: conan profile detect
 
-    - name: Install boost
-      uses: MarkusJx/install-boost@v2.4.4
-      id: install-boost
-      with:
-          # REQUIRED: Specify the required boost version
-          # A list of supported versions can be found here:
-          # https://github.com/MarkusJx/prebuilt-boost/blob/main/versions-manifest.json
-          boost_version: 1.81.0
-          # OPTIONAL: Specify a platform version
-          platform_version: 22.04
-          # OPTIONAL: Specify a custom install location
-          boost_install_dir: /home/runner/libboost
-          # OPTIONAL: Specify a toolset
-          toolset: gcc
-          # OPTIONAL: Specify an architecture
-          # arch: x86
+#    - name: Install boost
+#      uses: MarkusJx/install-boost@v2.4.4
+#      id: install-boost
+#      with:
+#          boost_version: 1.81.0
+#          platform_version: 22.04
+#          boost_install_dir: /home/runner/libboost
+#          toolset: gcc
 
     # Check if GitHub Cache has it, because that's free
     - name: Using the builtin GitHub Cache Action for .conan
