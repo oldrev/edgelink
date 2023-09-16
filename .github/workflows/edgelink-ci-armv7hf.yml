@@ -76,7 +76,6 @@ jobs:
     - uses: pguyot/arm-runner-action@v2
       name: Run tests
       with:
-        base_image: raspi_2_bookworm:20230612
         commands: |
             ./EdgeLinkTests
 
