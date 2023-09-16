@@ -78,7 +78,7 @@ jobs:
       with:
         commands: |
             ls -lh
-            cd ${{github.workspace}}/build
+            cd ./build
             ./EdgeLinkTests
 
     - name: Package
