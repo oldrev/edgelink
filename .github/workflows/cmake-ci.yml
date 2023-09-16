@@ -27,7 +27,7 @@ jobs:
         submodules: recursive
 
     - name: Install dependencies
-      run: sudo apt-get install git build-essential libsqlite3-dev git cmake libmodbus-dev ccache ninja-build -y
+      run: sudo apt-get install git build-essential crossbuild-essential-armhf libsqlite3-dev git cmake libmodbus-dev ninja-build -y
 
     - name: Install Conan
       id: conan

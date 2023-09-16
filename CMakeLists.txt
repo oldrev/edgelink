@@ -29,11 +29,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
 
-
-# 设置 C++ 编译器为 ccache
-set(CMAKE_CXX_COMPILER_LAUNCHER ccache)
-set(CMAKE_C_COMPILER_LAUNCHER ccache)
-
 #set (BUILD_TESTING OFF) 
 
 project(EdgeLink)
