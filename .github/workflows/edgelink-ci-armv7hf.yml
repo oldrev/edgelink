@@ -59,6 +59,9 @@ jobs:
     - name: Configure Conan
       run: conan install . --output-folder=build --build=missing --settings=build_type=${{env.BUILD_TYPE}} --settings=compiler.cppstd=23 -pr profiles/armhf
 
+    - name: Activate Conan environment
+      run: source ${{github.workspace}}/build/conanbuild.sh
+
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
