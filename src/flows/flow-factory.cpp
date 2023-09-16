@@ -28,7 +28,7 @@ std::vector<std::unique_ptr<IFlow>> FlowFactory::create_flows(const boost::json:
                 auto flow = this->create_flow(flows_config, json_node, engine);
                 flows.emplace_back(std::move(flow));
             } catch (std::exception& ex) {
-                _logger->error("创建流时发生错误：{}", ex.what());
+                _logger->error("创建流时发生错误：{0}", ex.what());
                 throw;
             }
         }
@@ -51,7 +51,7 @@ std::vector<std::unique_ptr<IStandaloneNode>> FlowFactory::create_global_nodes(c
                 auto node = provider_iter->create(elem_id, json_node, engine);
                 global_nodes.emplace_back(std::move(node));
             } catch (std::exception& ex) {
-                _logger->error("开始创建独立节点：[type='{}', id='{}'] 发生错误：{}", elem_type, elem_id, ex.what());
+                _logger->error("开始创建独立节点：[type='{0}', id='{1}'] 发生错误：{2}", elem_type, elem_id, ex.what());
                 throw;
             }
         }
@@ -120,7 +120,7 @@ std::unique_ptr<IFlow> FlowFactory::create_flow(const boost::json::array& flows_
             node_map[elem_id] = node.get();
             flow->emplace_node(std::move(node));
         } catch (std::exception& ex) {
-            _logger->error("创建流程节点：[type='{}', id='{}'] 发生错误：{}", elem_type, elem_id, ex.what());
+            _logger->error("创建流程节点：[type='{0}', id='{1}'] 发生错误：{2}", elem_type, elem_id, ex.what());
             throw;
         }
     }

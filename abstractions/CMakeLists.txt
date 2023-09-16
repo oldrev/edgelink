@@ -7,6 +7,9 @@ set(THE_LIB "EdgeLinkAbstractions")
 
 file(GLOB_RECURSE SOURCES "src/*.c" "src/*.cpp")
 
+find_package(rttr REQUIRED)
+find_package(spdlog REQUIRED)
+find_package(fmt REQUIRED)
 
 get_filename_component(CURRENT_CMAKE_SOURCE_DIR "${CMAKE_CURRENT_LIST_FILE}" DIRECTORY)
 
@@ -24,9 +27,9 @@ target_include_directories(${THE_LIB}
 target_link_libraries(
     ${THE_LIB}
     PRIVATE ${Boost_LIBRARIES}
-    PRIVATE ${LIBSPDLOG}
-    PRIVATE ${LIBFMT}
-    PRIVATE ${LIBRTTR_CORE}
+    PRIVATE fmt::fmt
+    PRIVATE spdlog::spdlog
+    PRIVATE RTTR::Core
 )
 
 target_precompile_headers(${THE_LIB} PRIVATE src/pch.hpp)

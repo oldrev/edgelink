@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.22)
 
+#set(CMAKE_TOOLCHAIN_FILE conan_toolchain.cmake)
+
 include(FetchContent)
 
 option(EL_WITH_MQTT "Include MQTT support" YES)
@@ -20,7 +22,7 @@ endif()
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # 设置C++标准
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # 设置C语言编译器选项
@@ -49,9 +51,9 @@ if(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
 endif()
 
-find_library(LIBSPDLOG NAMES spdlog REQUIRED)
-find_library(LIBFMT NAMES fmt REQUIRED)
-find_library(LIBRTTR_CORE NAMES rttr_core REQUIRED)
+find_package(rttr REQUIRED)
+find_package(spdlog REQUIRED)
+find_package(fmt REQUIRED)
 
 # 通过 cmake 引入 ASYNC_MQTT 库
 
@@ -98,14 +100,13 @@ add_dependencies(${PROJECT_NAME} EdgeLinkAbstractions)
 add_dependencies(${PROJECT_NAME} quickjspp)
 add_dependencies(${PROJECT_NAME} quickjs)
 
-
 # target_compile_options(${PROJECT_NAME} PRIVATE -fno-rtti), 不要关掉 RTTI
 
 set(EL_DEP_LIBS
     PRIVATE ${Boost_LIBRARIES}
-    PRIVATE ${LIBSPDLOG}
-    PRIVATE ${LIBFMT}
-    PRIVATE ${LIBRTTR_CORE}
+    PRIVATE spdlog::spdlog
+    PRIVATE fmt::fmt
+    PRIVATE RTTR::Core
     PRIVATE quickjspp
     PRIVATE quickjs
     PRIVATE EdgeLinkAbstractions
@@ -211,9 +212,9 @@ macro(edgelink_plugin PLUGIN_NAME)
     target_link_libraries(
         ${THIS_PLUGIN}
         PRIVATE ${Boost_LIBRARIES}
-        PRIVATE ${LIBSPDLOG}
-        PRIVATE ${LIBFMT}
-        PRIVATE ${LIBRTTR_CORE}
+        PRIVATE spdlog::spdlog
+        PRIVATE fmt::fmt
+        PRIVATE RTTR::Core
         PRIVATE EdgeLinkAbstractions
     )
 endmacro()

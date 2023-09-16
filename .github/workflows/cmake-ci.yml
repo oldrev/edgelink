@@ -25,7 +25,11 @@ jobs:
         submodules: recursive
 
     - name: Install dependencies
-      run: sudo apt-get install git build-essential libsqlite3-dev uuid-dev git libspnav-dev cmake libmodbus-dev libspdlog-dev librttr-dev cache -y
+      run: sudo apt-get install git build-essential libsqlite3-dev git cmake libmodbus-dev ccache -y
+
+    - name: Install Conan
+      id: conan
+      uses: turtlebrowser/get-conan@main
 
     - name: Install boost
       uses: MarkusJx/install-boost@v2.4.4
@@ -44,14 +48,15 @@ jobs:
           # OPTIONAL: Specify an architecture
           # arch: x86
 
+    - name: Configure Conan
+      run: conan install . --output-folder=build --build=missing --settings=build_type=${{env.BUILD_TYPE}} --settings=compiler.cppstd=23
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -G Ninja DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake
       env:
         BOOST_ROOT: ${{ steps.install-boost.outputs.BOOST_ROOT }}
-
 
     - name: Build
       # Build your program with the given configuration

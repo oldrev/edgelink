@@ -1,0 +1,17 @@
+[requires]
+rttr/0.9.6
+spdlog/1.10.0
+fmt/8.1.1
+
+[test_requires]
+catch2/3.4.0
+
+[generators]
+CMakeDeps
+CMakeToolchain
+
+[options]
+rttr/*:shared=True
+spdlog/*:shared=True
+fmt/*:shared=True
+rttr/*:with_rtti=True
