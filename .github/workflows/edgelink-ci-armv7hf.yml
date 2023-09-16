@@ -57,7 +57,7 @@ jobs:
 
 
     - name: Configure Conan
-      run: conan install . --output-folder=build --build=missing --settings=build_type=${{env.BUILD_TYPE}} --settings=compiler.cppstd=23 -pr profiles/armhf
+      run: conan install . --output-folder=build --build=missing --settings=build_type=${{env.BUILD_TYPE}} --settings=compiler.cppstd=23 -pr ${{github.workspace}}/profiles/armhf
 
     - name: Activate Conan environment
       run: source ${{github.workspace}}/build/conanbuild.sh
