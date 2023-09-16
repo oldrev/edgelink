@@ -2,7 +2,7 @@
 
 namespace edgelink {
 
-struct IClosable {
+struct EDGELINK_EXPORT IClosable {
     virtual void close() noexcept = 0;
 };
 

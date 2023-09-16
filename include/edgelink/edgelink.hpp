@@ -1,5 +1,6 @@
 #pragma once
 
+#include "export.hpp"
 #include "common.hpp"
 #include "errors.hpp"
 #include "utils.hpp"
@@ -14,7 +15,7 @@
 
 namespace edgelink {
 
-struct IDaemonApp {
+struct EDGELINK_EXPORT IDaemonApp {
     virtual void run() = 0;
 };
 

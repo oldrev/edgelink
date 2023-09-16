@@ -17,7 +17,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -s")
 endif()
 
-#set(CMAKE_DEBUG_POSTFIX d)
+set(CMAKE_DEBUG_POSTFIX _d)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
@@ -28,8 +28,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # 设置C语言编译器选项
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
-
-#set (BUILD_TESTING OFF) 
 
 project(EdgeLink)
 
@@ -56,8 +54,8 @@ if(BUILD_TESTING)
 	set(BUILD_TESTING OFF)
 endif()
 
-add_subdirectory(./libs/async_mqtt)
-add_subdirectory(./libs/quickjspp)
+add_subdirectory(./libs/async_mqtt EXCLUDE_FROM_ALL)
+add_subdirectory(./libs/quickjspp/quickjs EXCLUDE_FROM_ALL)
 
 set(BUILD_TESTING _TMP_BUILD_TESTING)
 
@@ -91,7 +89,6 @@ add_dependencies(${PROJECT_NAME} git_versioning)
 
 add_dependencies(${PROJECT_NAME} EdgeLinkAbstractions)
 
-add_dependencies(${PROJECT_NAME} quickjspp)
 add_dependencies(${PROJECT_NAME} quickjs)
 
 # target_compile_options(${PROJECT_NAME} PRIVATE -fno-rtti), 不要关掉 RTTI
@@ -102,7 +99,6 @@ set(EL_DEP_LIBS
     PRIVATE spdlog::spdlog
     PRIVATE fmt::fmt
     PRIVATE RTTR::Core
-    PRIVATE quickjspp
     PRIVATE quickjs
     PRIVATE EdgeLinkAbstractions
 )
@@ -195,7 +191,6 @@ macro(edgelink_plugin PLUGIN_NAME)
 
     add_dependencies(${THIS_PLUGIN} EdgeLinkAbstractions)
     add_dependencies(${THIS_PLUGIN} git_versioning)
-    add_dependencies(${PROJECT_NAME} quickjspp)
     add_dependencies(${PROJECT_NAME} quickjs)
 
     target_link_libraries(
@@ -236,12 +231,83 @@ endforeach()
 
 # 打包和安装 ------------------------------------
 
-#SET(CPACK_PACKAGE_NAME "edgelink")
+SET(CPACK_PACKAGE_NAME "edgelink")
 
-IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-  set(CMAKE_INSTALL_PREFIX "/opt/${CPACK_PACKAGE_NAME}" CACHE PATH "Install path prefix, prepended onto install directories." FORCE)
-ENDIF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+set(CPACK_GENERATOR "ZIP")
 
-install(TARGETS EdgeLink DESTINATION ${CMAKE_INSTALL_PREFIX})
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/resources DESTINATION ${CMAKE_INSTALL_PREFIX})
+string(TOLOWER ${CMAKE_SYSTEM_NAME} LOWERCASE_SYSTEM_NAME)
+set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${EL_VERSION}-${CMAKE_SYSTEM_PROCESSOR}-${LOWERCASE_SYSTEM_NAME}")
+set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY OFF)
+set(CPACK_COMPONENT_INCLUDE_TOPLEVEL OFF)
+set(CPACK_COMPONENT_INCLUDE_TOPLEVEL_DIRECTORY OFF)
+set(CPACK_STRIP_FILES ON)
+
+include(CPack)
+include(GNUInstallDirs)
+
+set(CMAKE_INSTALL_PREFIX "${CPACK_PACKAGE_NAME}" CACHE PATH "Install path prefix, prepended onto install directories." FORCE)
+
+install(TARGETS EdgeLink
+    EXPORT elTargets
+    RUNTIME DESTINATION
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_BINDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
+install(TARGETS EdgeLinkAbstractions
+    EXPORT elTargets
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_BINDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
+#install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/resources DESTINATION ${CMAKE_INSTALL_PREFIX})
 #install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt DESTINATION ${CMAKE_INSTALL_PREFIX})
+
+install(CODE [[
+    file(GET_RUNTIME_DEPENDENCIES
+        RESOLVED_DEPENDENCIES_VAR RES
+        UNRESOLVED_DEPENDENCIES_VAR UNRES
+        CONFLICTING_DEPENDENCIES_PREFIX CONFLICTING_DEPENDENCIES
+        EXECUTABLES $<TARGET_FILE:EdgeLink>
+        LIBRARIES
+            $<TARGET_FILE:EdgeLinkAbstractions>
+            $<TARGET_FILE:EdgeLink.Plugins.Mqtt>
+    )
+    set(so_include_patterns
+        ".*EdgeLink.*"
+        ".*boost.*"
+        ".*spdlog.*"
+        ".*fmt.*"
+        ".*rttr.*"
+    )
+
+    set(filtered_RES)
+    foreach(_file ${RES})
+        foreach(pattern ${so_include_patterns})
+            string(REGEX MATCH "${pattern}" is_matched "${_file}")
+            if(is_matched)
+                list(APPEND filtered_RES ${_file})
+            endif()
+        endforeach()
+    endforeach()
+
+    foreach(_file ${filtered_RES})
+        message(">> Include shared library: ${_file}")
+        file(INSTALL
+            DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
+            TYPE SHARED_LIBRARY
+            FOLLOW_SYMLINK_CHAIN
+            FILES "${_file}"
+        )
+    endforeach()
+
+    foreach(DEP ${UNRES})
+        message(WARNING ">> Unresolved dependency: ${DEP}")
+    endforeach()
+]])
+
+
+# 添加要打包的文件
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/resources DESTINATION ${CMAKE_INSTALL_DATADIR}/resources)

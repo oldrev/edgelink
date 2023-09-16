@@ -16,3 +16,4 @@ rttr/*:shared=True
 spdlog/*:shared=True
 fmt/*:shared=True
 rttr/*:with_rtti=True
+boost/*:shared=True

@@ -14,7 +14,7 @@ struct Envelope;
 class OutputPort;
 
 /// @brief 数据处理上下文
-class FlowContext {
+class EDGELINK_EXPORT FlowContext {
 
   public:
     FlowContext(IEngine* engine, Msg* msg) : _engine(engine), _msg(msg) {}
@@ -28,7 +28,7 @@ class FlowContext {
 };
 
 /// @brief 路由中的消息封装
-struct Envelope : private boost::noncopyable {
+struct EDGELINK_EXPORT Envelope : private boost::noncopyable {
     std::shared_ptr<Msg> msg;
     bool clone_message;
     IFlowNode* source_node = nullptr;
@@ -53,7 +53,7 @@ using OnDoneEvent = boost::signals2::signal<Awaitable<void>(IFlow* sender, std::
 using OnErrorEvent = boost::signals2::signal<Awaitable<void>(IFlow* sender, std::shared_ptr<Msg> msg)>;
 
 /// @brief 消息流
-struct IFlow {
+struct EDGELINK_EXPORT IFlow {
 
     virtual FlowOnSendEvent& on_send_event() = 0;
     virtual FlowPreRouteEvent& on_pre_route_event() = 0;
@@ -93,7 +93,7 @@ struct IFlow {
 };
 
 /// @brief 数据处理引擎接口
-struct IEngine {
+struct EDGELINK_EXPORT IEngine {
     virtual const EdgeLinkSettings& settings() const = 0;
     virtual Awaitable<void> async_start() = 0;
     virtual Awaitable<void> async_stop() = 0;
@@ -108,7 +108,7 @@ struct IEngine {
 };
 
 /// @brief 流工厂
-struct IFlowFactory {
+struct EDGELINK_EXPORT IFlowFactory {
 
     virtual std::vector<std::unique_ptr<IFlow>> create_flows(const boost::json::array& flows_config,
                                                              IEngine* engine) const = 0;
@@ -124,7 +124,7 @@ private:
 
 
 /// @brief 节点的发出连接端口
-class OutputPort {
+class EDGELINK_EXPORT OutputPort {
   public:
     explicit OutputPort(const std::vector<IFlowNode*>&& wires) : _wires(std::move(wires)) {}
     explicit OutputPort(const std::vector<IFlowNode*>& wires) : _wires(wires) {}
@@ -136,7 +136,7 @@ class OutputPort {
 };
 
 /// @brief 流程处理基础元素
-struct IFlowElement {
+struct EDGELINK_EXPORT IFlowElement {
     virtual const std::string_view id() const = 0;
     virtual const bool is_disabled() const = 0;
     virtual Awaitable<void> async_start() = 0;
@@ -151,13 +151,13 @@ enum class NodeKind {
     PIPE = 4      ///< 过滤器
 };
 
-struct INode : public IFlowElement {
+struct EDGELINK_EXPORT INode : public IFlowElement {
     virtual const std::string_view name() const = 0;
     virtual const std::string_view type() const = 0;
     virtual const INodeDescriptor* descriptor() const = 0;
 };
 
-struct INodeWithScope {
+struct EDGELINK_EXPORT INodeWithScope {
     virtual const std::vector<IFlowNode*>& scope() const = 0;
 };
 
@@ -166,7 +166,7 @@ struct IStandaloneNode : public INode {
 };
 
 /// @brief 独立节点抽象类
-class StandaloneNode : public IStandaloneNode {
+class EDGELINK_EXPORT StandaloneNode : public IStandaloneNode {
   protected:
     StandaloneNode(const std::string_view id, const INodeDescriptor* desc, const boost::json::object& config,
                    IEngine* engine)
@@ -202,7 +202,7 @@ class StandaloneNode : public IStandaloneNode {
 };
 
 /// @brief 流程节点抽象类
-struct IFlowNode : public INode {
+struct EDGELINK_EXPORT IFlowNode : public INode {
 
     virtual const std::vector<OutputPort>& output_ports() const = 0;
     virtual const size_t output_count() const = 0;
@@ -213,7 +213,7 @@ struct IFlowNode : public INode {
 };
 
 /// @brief 流程节点基类
-class FlowNode : public IFlowNode {
+class EDGELINK_EXPORT FlowNode : public IFlowNode {
   protected:
     FlowNode(const std::string_view id, const INodeDescriptor* desc, IFlow* flow, const boost::json::object& config)
         : _logger(spdlog::default_logger()->clone(fmt::format("NODE({}:{})", config.at("type").as_string(), id))),
@@ -261,7 +261,7 @@ class FlowNode : public IFlowNode {
 };
 
 /// @brief 抽象数据源
-class SourceNode : public FlowNode {
+class EDGELINK_EXPORT SourceNode : public FlowNode {
   protected:
     SourceNode(const std::string_view id, const INodeDescriptor* desc, IFlow* flow, const boost::json::object& config)
         : FlowNode(id, desc, flow, config) {}
@@ -287,7 +287,7 @@ class SourceNode : public FlowNode {
     virtual Awaitable<void> on_async_run() = 0;
 };
 
-class ScopedSourceNode : public SourceNode, public INodeWithScope {
+class EDGELINK_EXPORT ScopedSourceNode : public SourceNode, public INodeWithScope {
   public:
     ScopedSourceNode(const std::string_view id, const INodeDescriptor* desc, IFlow* flow,
                      const boost::json::object& config)
@@ -313,14 +313,14 @@ class ScopedSourceNode : public SourceNode, public INodeWithScope {
 };
 
 /// @brief 抽象数据接收器节点
-class SinkNode : public FlowNode {
+class EDGELINK_EXPORT SinkNode : public FlowNode {
   protected:
     SinkNode(const std::string_view id, const INodeDescriptor* desc, IFlow* flow, const boost::json::object& config)
         : FlowNode(id, desc, flow, config) {}
 };
 
 /// @brief 全局配置节点
-class GlobalConfigNode : public StandaloneNode {
+class EDGELINK_EXPORT GlobalConfigNode : public StandaloneNode {
   protected:
     GlobalConfigNode(const std::string_view id, const INodeDescriptor* desc, const boost::json::object& config,
                      IEngine* engine)
@@ -328,7 +328,7 @@ class GlobalConfigNode : public StandaloneNode {
 };
 
 /// @brief 网络端点节点
-class EndpointNode : public StandaloneNode {
+class EDGELINK_EXPORT EndpointNode : public StandaloneNode {
   protected:
     EndpointNode(const std::string_view id, const INodeDescriptor* desc, const boost::json::object& config,
                  IEngine* engine, const std::string_view host, uint16_t port)
@@ -344,13 +344,13 @@ class EndpointNode : public StandaloneNode {
 };
 
 /// @brief 抽象数据过滤器
-class PipeNode : public FlowNode {
+class EDGELINK_EXPORT PipeNode : public FlowNode {
   protected:
     PipeNode(const std::string_view id, const INodeDescriptor* desc, IFlow* flow, const boost::json::object& config)
         : FlowNode(id, desc, flow, config) {}
 };
 
-struct INodeDescriptor {
+struct EDGELINK_EXPORT INodeDescriptor {
     virtual const std::string_view type_name() const = 0;
     virtual const NodeKind kind() const = 0;
 
@@ -358,14 +358,14 @@ struct INodeDescriptor {
     RTTR_ENABLE()
 };
 
-struct INodeProvider {
+struct EDGELINK_EXPORT INodeProvider {
     virtual const INodeDescriptor* descriptor() const = 0;
 
   private:
     RTTR_ENABLE()
 };
 
-struct IFlowNodeProvider : public INodeProvider {
+struct EDGELINK_EXPORT IFlowNodeProvider : public INodeProvider {
     virtual std::unique_ptr<IFlowNode> create(const std::string_view id, const boost::json::object& config,
                                               IFlow* flow) const = 0;
 
@@ -373,7 +373,7 @@ struct IFlowNodeProvider : public INodeProvider {
     RTTR_ENABLE(INodeProvider)
 };
 
-struct IStandaloneNodeProvider : public INodeProvider {
+struct EDGELINK_EXPORT IStandaloneNodeProvider : public INodeProvider {
     virtual std::unique_ptr<IStandaloneNode> create(const std::string_view id, const boost::json::object& config,
                                                     IEngine* engine) const = 0;
 

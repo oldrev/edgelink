@@ -32,7 +32,7 @@ struct FlowNode;
 
 using JsonPointerExpression = boost::static_string<256>;
 
-class Msg final : private boost::noncopyable {
+class EDGELINK_EXPORT Msg final : private boost::noncopyable {
   public:
     Msg() : Msg(Msg::generate_msg_id()) {}
 

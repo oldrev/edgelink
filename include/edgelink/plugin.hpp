@@ -1,5 +1,6 @@
 #pragma once
 
+#include "edgelink/export.hpp"
 #include "edgelink/common.hpp"
 #include "edgelink/errors.hpp"
 #include "edgelink/utils.hpp"
