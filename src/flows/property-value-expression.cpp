@@ -16,15 +16,26 @@ std::optional<JsonValue> evaluate_property_value(const JsonValue& value, const s
     if (type == "str") {
         result = value;
     } else if (type == "num") {
-        try {
-            result = boost::lexical_cast<double>(value.as_string());
-        } catch (const std::exception&) {
+        if (value.is_string()) {
+            try {
+                result = boost::lexical_cast<double>(value.as_string());
+
+            } catch (const std::exception&) {
+                throw std::runtime_error("Invalid number format");
+                return result;
+            }
+        } else if (value.is_number()) {
+            result = value;
+        } else {
             throw std::runtime_error("Invalid number format");
-            return result;
         }
     } else if (type == "json") {
         try {
-            result = json::parse(value.as_string());
+            if (value.is_string()) {
+                result = json::parse(value.as_string());
+            } else {
+                result = value;
+            }
         } catch (const std::exception&) {
             throw std::runtime_error("Invalid JSON format");
         }
@@ -63,10 +74,7 @@ std::optional<JsonValue> evaluate_property_value(const JsonValue& value, const s
         */
         TODO("暂时没实现");
     } else if (type == "msg" && msg) {
-        /*
-            result = getMessageProperty(msg, value);
-        */
-        TODO("暂时不知支持");
+        result = JsonValue(msg->get_navigation_property_value(value.as_string()));
     } else if ((type == "flow" || type == "global") && node != nullptr) {
         /*
         ContextKey contextKey = parseContextStore(value.as_string().c_str());
