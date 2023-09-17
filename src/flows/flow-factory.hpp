@@ -10,7 +10,7 @@ struct IFlowNode;
 
 namespace edgelink::flows {
 
-class FlowFactory : public edgelink::IFlowFactory {
+class FlowFactory : public edgelink::IFlowFactory, private Noncopyable {
   public:
     FlowFactory(const IRegistry& registry);
 

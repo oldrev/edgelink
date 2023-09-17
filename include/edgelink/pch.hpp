@@ -23,6 +23,8 @@
 #include <boost/signals2.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/static_string.hpp>
+#include <boost/ptr_container/ptr_vector.hpp>
+#include <boost/ptr_container/ptr_map.hpp>
 
 
 

@@ -16,7 +16,7 @@ struct EDGELINK_EXPORT IRegistry {
 #endif
 };
 
-class Registry : public IRegistry {
+class Registry : public IRegistry, private Noncopyable {
   public:
     Registry(const EdgeLinkSettings& el_config);
     virtual ~Registry();

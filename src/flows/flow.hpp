@@ -10,7 +10,7 @@ struct IEngine;
 
 namespace edgelink::flows {
 
-class Flow : public IFlow {
+class Flow : public IFlow, private Noncopyable {
 
   public:
     Flow(const JsonObject& json_config, IEngine* engine);

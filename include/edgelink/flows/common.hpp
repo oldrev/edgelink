@@ -2,6 +2,10 @@
 
 namespace edgelink {
 
+
+using Noncopyable = boost::noncopyable;
+
+
 using FlowElementID = unsigned int;
 
 class EDGELINK_EXPORT FlowConfig {
