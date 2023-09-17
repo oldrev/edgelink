@@ -2,8 +2,8 @@
     "version": 3,
     "configurePresets": [
         {
-            "name": "linux-debug",
-            "displayName": "Linux Debug",
+            "name": "x86-64-linux-debug",
+            "displayName": "X86-64 Linux Debug",
             "generator": "Ninja",
             "binaryDir": "${sourceDir}/build/${presetName}",
             "installDir": "${sourceDir}/build/install/${presetName}",

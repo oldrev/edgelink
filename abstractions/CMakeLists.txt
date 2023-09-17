@@ -7,7 +7,6 @@ set(THE_LIB "EdgeLinkAbstractions")
 
 file(GLOB_RECURSE SOURCES "src/*.c" "src/*.cpp")
 
-find_package(rttr REQUIRED)
 find_package(spdlog REQUIRED)
 find_package(fmt REQUIRED)
 

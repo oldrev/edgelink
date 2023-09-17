@@ -44,7 +44,6 @@ if(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
 endif()
 
-find_package(rttr REQUIRED)
 find_package(spdlog REQUIRED)
 find_package(fmt REQUIRED)
 
@@ -56,6 +55,15 @@ endif()
 
 add_subdirectory(./libs/async_mqtt EXCLUDE_FROM_ALL)
 add_subdirectory(./libs/quickjspp/quickjs EXCLUDE_FROM_ALL)
+add_subdirectory(./libs/rttr EXCLUDE_FROM_ALL)
+
+#set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/libs/rttr" 
+#    APPEND PROPERTY BUILD_UNIT_TESTS OFF
+#    APPEND PROPERTY BUILD_EXAMPLES OFF
+#    APPEND PROPERTY BUILD_DOCUMENTATION OFF
+#    APPEND PROPERTY BUILD_INSTALL OFF
+#    APPEND PROPERTY BUILD_PACKAGE OFF
+#)
 
 set(BUILD_TESTING _TMP_BUILD_TESTING)
 
@@ -307,7 +315,6 @@ install(CODE [[
         message(WARNING ">> Unresolved dependency: ${DEP}")
     endforeach()
 ]])
-
 
 # 添加要打包的文件
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/resources DESTINATION ${CMAKE_INSTALL_DATADIR}/resources)

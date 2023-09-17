@@ -1,5 +1,4 @@
 [requires]
-rttr/0.9.6
 spdlog/1.10.0
 fmt/8.1.1
 boost/1.83.0
@@ -12,10 +11,8 @@ CMakeDeps
 CMakeToolchain
 
 [options]
-rttr/*:shared=True
 spdlog/*:shared=True
 fmt/*:shared=True
-rttr/*:with_rtti=True
 
 boost/*:shared=True
 boost/*:without_wave=True

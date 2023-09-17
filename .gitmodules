@@ -20,3 +20,6 @@
 [submodule "libs/quickjspp"]
 	path = libs/quickjspp
 	url = git@github.com:ftk/quickjspp.git
+[submodule "libs/rttr"]
+	path = libs/rttr
+	url = git@github.com:rttrorg/rttr.git

@@ -25,7 +25,7 @@ Registry::Registry(const EdgeLinkSettings& el_config) : _logger(spdlog::default_
 
     namespace fs = std::filesystem;
 
-    auto plugins_path = fs::path("./plugins");
+    auto plugins_path = fs::path(el_config.executable_location / "plugins");
     _logger->info("开始注册插件提供的流程节点，插件目录：{0}", plugins_path.string());
 
     for (fs::directory_entry const& entry : fs::directory_iterator(plugins_path)) {
