@@ -24,7 +24,7 @@ using namespace edgelink;
 
 */
 
-static double parse_json_number(const boost::json::object& config, const std::string_view prop) {
+static double parse_json_number(const JsonObject& config, const std::string_view prop) {
     const auto& str_value = config.at(prop).as_string();
     if (str_value.empty()) {
         return NAN;
@@ -34,7 +34,7 @@ static double parse_json_number(const boost::json::object& config, const std::st
 
 class RangeNode : public FlowNode {
   public:
-    RangeNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc, IFlow* flow)
+    RangeNode(const std::string_view id, const JsonObject& config, const INodeDescriptor* desc, IFlow* flow)
         : FlowNode(id, desc, flow, config),             //
           _minin(parse_json_number(config, "minin")),   //
           _maxin(parse_json_number(config, "maxin")),   //

@@ -49,7 +49,7 @@ Awaitable<void> FlowNode::async_send_to_many_port(std::vector<std::shared_ptr<Ms
     co_return;
 }
 
-const std::vector<OutputPort> FlowNode::setup_output_ports(const boost::json::object& config, IFlow* flow) {
+const std::vector<OutputPort> FlowNode::setup_output_ports(const JsonObject& config, IFlow* flow) {
     auto ports = std::vector<OutputPort>();
     for (const auto& port_config : config.at("wires").as_array()) {
         auto output_wires = std::vector<IFlowNode*>();

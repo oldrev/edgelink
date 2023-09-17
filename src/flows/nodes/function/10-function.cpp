@@ -110,7 +110,7 @@ struct ModuleEntry {
 class FunctionNode : public FlowNode {
 
   public:
-    FunctionNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc, IFlow* flow)
+    FunctionNode(const std::string_view id, const JsonObject& config, const INodeDescriptor* desc, IFlow* flow)
         : FlowNode(id, desc, flow, config), _outputs(config.at("outputs").to_number<size_t>()),
           _func(config.at("func").as_string()), _initialize(config.at("initialize").as_string()),
           _finalize(config.at("finalize").as_string()), _runtime(), _context(_runtime) {
@@ -123,7 +123,6 @@ class FunctionNode : public FlowNode {
             };
             _modules.emplace_back(std::move(me));
         }
-
 
         try {
             auto& m = _context.addModule("EdgeLink");
@@ -181,7 +180,7 @@ class FunctionNode : public FlowNode {
             // 后续处理执行成果
             auto js_result = boost::json::parse(result_json);
 
-            if (js_result.kind() == boost::json::kind::array) { // 多个端口消息的情况
+            if (js_result.kind() == JsonKind::array) { // 多个端口消息的情况
                 auto array = js_result.as_array();
                 if (array.size() > this->output_ports().size()) {
                     auto error_msg = "JS 脚本输出错误的端口数";
@@ -192,14 +191,14 @@ class FunctionNode : public FlowNode {
 
                 for (auto& msg_json_value : array) {
                     // 直接分发消息，只有是对象的才分发
-                    if (msg_json_value.kind() == boost::json::kind::object) {
+                    if (msg_json_value.kind() == JsonKind::object) {
                         auto msg_json = msg_json_value.as_object();
                         auto evaled_msg = std::make_shared<Msg>(msg_json);
                         msgs.emplace_back(std::move(evaled_msg));
                     }
                 }
                 co_await this->async_send_to_many_port(std::forward<std::vector<std::shared_ptr<Msg>>>(msgs));
-            } else if (js_result.kind() == boost::json::kind::object) { // 单个端口消息的情况
+            } else if (js_result.kind() == JsonKind::object) { // 单个端口消息的情况
                 auto object_result = js_result.as_object();
                 auto evaled_msg = std::make_shared<Msg>(std::move(object_result));
                 co_await this->async_send_to_one_port(std::move(evaled_msg));
@@ -211,8 +210,7 @@ class FunctionNode : public FlowNode {
             this->logger()->error("QuickJS 错误：{0}", static_cast<const std::string>(exc));
             // TODO 这里报告错误给 flow
             co_return;
-        }
-        catch (std::exception& ex) {
+        } catch (std::exception& ex) {
             this->logger()->error("错误：{0}", ex.what());
             throw;
         }

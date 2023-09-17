@@ -16,7 +16,7 @@ class NotImplementedException : public std::logic_error {
     NotImplementedException(NotImplementedException&& other) noexcept : std::logic_error(std::move(other)) {}
 };
 
-inline void todo(std::string msg) { throw NotImplementedException(msg); }
+#define TODO(msg) (throw NotImplementedException(msg))
 
 class ArgumentException : public std::invalid_argument {};
 

@@ -28,7 +28,7 @@ namespace edgelink::plugins::mqtt {
 
 class MqttOutNode : public SinkNode, public std::enable_shared_from_this<MqttOutNode> {
   public:
-    MqttOutNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc, IFlow* flow)
+    MqttOutNode(const std::string_view id, const JsonObject& config, const INodeDescriptor* desc, IFlow* flow)
         : SinkNode(id, desc, flow, config), _mqtt_broker_node_id(config.at("broker").as_string()) {
         try {
             //
@@ -102,7 +102,7 @@ class MqttOutNode : public SinkNode, public std::enable_shared_from_this<MqttOut
 
         switch (json_payload_value.kind()) {
 
-        case boost::json::kind::array: { // 是数组就假定要发送的是字节数组
+        case JsonKind::array: { // 是数组就假定要发送的是字节数组
             // 注意不能直接发，这里是 boost::array，需要转换 buffer
             auto json_array = json_payload_value.as_array();
             std::vector<char> bytes(json_array.size());
@@ -113,15 +113,15 @@ class MqttOutNode : public SinkNode, public std::enable_shared_from_this<MqttOut
             buf_to_send = async_mqtt::allocate_buffer(bytes.begin(), bytes.end());
         } break;
 
-        case boost::json::kind::string: { // 字符串原样发送
+        case JsonKind::string: { // 字符串原样发送
             buf_to_send = async_mqtt::allocate_buffer(json_payload_value.as_string());
         } break;
 
-        case boost::json::kind::object:
-        case boost::json::kind::bool_:
-        case boost::json::kind::int64:
-        case boost::json::kind::uint64:
-        case boost::json::kind::double_: { // 如果是对象和其他数字、布尔值就转换为 JSON 字符串发送
+        case JsonKind::object:
+        case JsonKind::bool_:
+        case JsonKind::int64:
+        case JsonKind::uint64:
+        case JsonKind::double_: { // 如果是对象和其他数字、布尔值就转换为 JSON 字符串发送
             auto payload_text = boost::json::serialize(json_payload_value);
             buf_to_send = async_mqtt::allocate_buffer(payload_text);
         } break;

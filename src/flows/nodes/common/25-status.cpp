@@ -4,7 +4,7 @@ using namespace edgelink;
 
 class StatusNode : public ScopedSourceNode {
   public:
-    StatusNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc, IFlow* flow)
+    StatusNode(const std::string_view id, const JsonObject& config, const INodeDescriptor* desc, IFlow* flow)
         : ScopedSourceNode(id, desc, flow, config) {
         //
     }

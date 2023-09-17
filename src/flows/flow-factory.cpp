@@ -110,7 +110,7 @@ std::unique_ptr<IFlow> FlowFactory::create_flow(const boost::json::array& flows_
 
     for (size_t i = 0; i < sorted_ids.size(); i++) {
         const std::string_view elem_id = sorted_ids[i];
-        const boost::json::object& elem = *json_nodes.at(elem_id);
+        const JsonObject& elem = *json_nodes.at(elem_id);
         const auto& elem_type = elem.at("type").as_string();
 
         _logger->info("创建流程节点：[type='{0}', json_id='{1}']", elem_type, elem_id);

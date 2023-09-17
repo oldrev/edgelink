@@ -7,7 +7,7 @@ using namespace edgelink;
 class TemplateNode : public FlowNode {
 
   public:
-    TemplateNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc, IFlow* flow)
+    TemplateNode(const std::string_view id, const JsonObject& config, const INodeDescriptor* desc, IFlow* flow)
         : FlowNode(id, desc, flow, config), _field(config.at("field").as_string()), // .field 属性
           _field_type(config.at("fieldType").as_string()),                          // .fieldType 属性
           _template(config.at("template").as_string())
@@ -22,8 +22,8 @@ class TemplateNode : public FlowNode {
 
     Awaitable<void> receive_async(std::shared_ptr<Msg> msg) override {
 
-        boost::json::value wrapped_msg = boost::json::object({
-            {_field, boost::json::value(msg->data().at(_field))},
+        JsonValue wrapped_msg = JsonObject({
+            {_field, JsonValue(msg->data().at(_field))},
         });
         std::stringstream out;
         boost::mustache::render(_template, out, wrapped_msg, {});

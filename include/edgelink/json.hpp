@@ -1,8 +1,14 @@
 #pragma once
 
-namespace edgelink::json {
+namespace edgelink {
 
-inline const std::string_view value_or(const boost::json::object& json_obj, const std::string_view key,
+using JsonValue = boost::json::value;
+using JsonString = boost::json::string;
+using JsonObject = boost::json::object;
+using JsonArray = boost::json::array;
+using JsonKind = boost::json::kind;
+
+inline const std::string_view value_or(const JsonObject& json_obj, const std::string_view key,
                                        const std::string_view default_value) {
     if (auto val = json_obj.if_contains(key)) {
         return std::string_view(val->as_string());
@@ -15,7 +21,7 @@ inline const std::string_view value_or(const boost::json::object& json_obj, cons
 /// @param key
 /// @param default_value
 /// @return
-inline bool value_or(const boost::json::object& json_obj, const std::string_view key, bool default_value) {
+inline bool value_or(const JsonObject& json_obj, const std::string_view key, bool default_value) {
     if (auto val = json_obj.if_contains(key)) {
         if (val->is_string()) {
             auto str = val->as_string();
@@ -35,7 +41,7 @@ inline bool value_or(const boost::json::object& json_obj, const std::string_view
 /// @return
 template <typename TNumber,
           typename = std::enable_if_t<std::is_same<TNumber, int>::value || std::is_same<TNumber, unsigned int>::value>>
-inline TNumber value_or(const boost::json::object& json_obj, const std::string_view key, TNumber default_value) {
+inline TNumber value_or(const JsonObject& json_obj, const std::string_view key, TNumber default_value) {
     if (auto val = json_obj.if_contains(key)) {
         if (val->is_string()) {
             return boost::lexical_cast<TNumber>(val->as_string().c_str());
@@ -46,4 +52,4 @@ inline TNumber value_or(const boost::json::object& json_obj, const std::string_v
     return default_value;
 }
 
-}; // namespace edgelink::json
+}; // namespace edgelink

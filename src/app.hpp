@@ -7,7 +7,7 @@ struct IEngine;
 
 class App : public std::enable_shared_from_this<App> {
   public:
-    App(std::shared_ptr<boost::json::object>& json_config, std::shared_ptr<IEngine> engine) : _engine(engine) {}
+    App(std::shared_ptr<JsonObject>& json_config, std::shared_ptr<IEngine> engine) : _engine(engine) {}
 
     Awaitable<void> run_async();
 

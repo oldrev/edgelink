@@ -4,7 +4,7 @@ using namespace edgelink;
 
 class JunctionNode : public FlowNode {
   public:
-    JunctionNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc, IFlow* flow)
+    JunctionNode(const std::string_view id, const JsonObject& config, const INodeDescriptor* desc, IFlow* flow)
         : FlowNode(id, desc, flow, config) {}
 
     Awaitable<void> async_start() override { co_return; }

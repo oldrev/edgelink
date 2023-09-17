@@ -46,14 +46,14 @@ using namespace edgelink;
 struct PropertyEntry {
     std::string p;
     std::optional<std::string> vt;
-    std::optional<boost::json::value> v;
+    std::optional<JsonValue> v;
 
-    PropertyEntry(const std::string_view p, const std::string_view vt, const boost::json::value& v)
+    PropertyEntry(const std::string_view p, const std::string_view vt, const JsonValue& v)
         : p(p), vt(vt), v(v) {
         //
     }
 
-    explicit PropertyEntry(const boost::json::object& obj) {
+    explicit PropertyEntry(const JsonObject& obj) {
         this->p = std::string(obj.at("p").as_string());
 
         if (auto jvt = obj.if_contains("vt")) {
@@ -68,7 +68,7 @@ struct PropertyEntry {
 
 class InjectNode : public SourceNode {
   public:
-    InjectNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc, IFlow* flow)
+    InjectNode(const std::string_view id, const JsonObject& config, const INodeDescriptor* desc, IFlow* flow)
         : SourceNode(id, desc, flow, config), _once(config.at("once").as_bool()) {
 
         if (auto props_value = config.if_contains("props")) {

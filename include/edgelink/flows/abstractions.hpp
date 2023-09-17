@@ -168,11 +168,11 @@ struct IStandaloneNode : public INode {
 /// @brief 独立节点抽象类
 class EDGELINK_EXPORT StandaloneNode : public IStandaloneNode {
   protected:
-    StandaloneNode(const std::string_view id, const INodeDescriptor* desc, const boost::json::object& config,
+    StandaloneNode(const std::string_view id, const INodeDescriptor* desc, const JsonObject& config,
                    IEngine* engine)
         : _logger(spdlog::default_logger()->clone(fmt::format("NODE({}:{})", config.at("type").as_string(), id))),
           _id(id), _type(config.at("type").as_string()), _name(config.at("name").as_string()),
-          _disabled(edgelink::json::value_or(config, "d", false)), _descriptor(desc), _engine(engine) {
+          _disabled(edgelink::value_or(config, "d", false)), _descriptor(desc), _engine(engine) {
         // constructor
     }
 
@@ -215,10 +215,10 @@ struct EDGELINK_EXPORT IFlowNode : public INode {
 /// @brief 流程节点基类
 class EDGELINK_EXPORT FlowNode : public IFlowNode {
   protected:
-    FlowNode(const std::string_view id, const INodeDescriptor* desc, IFlow* flow, const boost::json::object& config)
+    FlowNode(const std::string_view id, const INodeDescriptor* desc, IFlow* flow, const JsonObject& config)
         : _logger(spdlog::default_logger()->clone(fmt::format("NODE({}:{})", config.at("type").as_string(), id))),
           _id(id), _type(config.at("type").as_string()), _name(config.at("name").as_string()),
-          _disabled(edgelink::json::value_or(config, "d", false)), _flow(flow), _descriptor(desc), 
+          _disabled(edgelink::value_or(config, "d", false)), _flow(flow), _descriptor(desc),
           _output_ports(std::move(FlowNode::setup_output_ports(config, flow))) {
         // constructor
     }
@@ -257,13 +257,13 @@ class EDGELINK_EXPORT FlowNode : public IFlowNode {
     virtual Awaitable<void> async_stop() = 0;
 
   private:
-    static const std::vector<OutputPort> setup_output_ports(const boost::json::object& config, IFlow* flow);
+    static const std::vector<OutputPort> setup_output_ports(const JsonObject& config, IFlow* flow);
 };
 
 /// @brief 抽象数据源
 class EDGELINK_EXPORT SourceNode : public FlowNode {
   protected:
-    SourceNode(const std::string_view id, const INodeDescriptor* desc, IFlow* flow, const boost::json::object& config)
+    SourceNode(const std::string_view id, const INodeDescriptor* desc, IFlow* flow, const JsonObject& config)
         : FlowNode(id, desc, flow, config) {}
 
   public:
@@ -290,7 +290,7 @@ class EDGELINK_EXPORT SourceNode : public FlowNode {
 class EDGELINK_EXPORT ScopedSourceNode : public SourceNode, public INodeWithScope {
   public:
     ScopedSourceNode(const std::string_view id, const INodeDescriptor* desc, IFlow* flow,
-                     const boost::json::object& config)
+                     const JsonObject& config)
         : SourceNode(id, desc, flow, config), _scope(std::move(ScopedSourceNode::setup_scope(config, flow))) {
         //
     }
@@ -301,7 +301,7 @@ class EDGELINK_EXPORT ScopedSourceNode : public SourceNode, public INodeWithScop
     std::vector<IFlowNode*> _scope;
 
   private:
-    static std::vector<IFlowNode*> setup_scope(const boost::json::object& config, IFlow* flow) {
+    static std::vector<IFlowNode*> setup_scope(const JsonObject& config, IFlow* flow) {
         std::vector<IFlowNode*> scope;
         for (auto const& scope_item : config.at("scope").as_array()) {
             const std::string_view node_id = scope_item.as_string();
@@ -315,14 +315,14 @@ class EDGELINK_EXPORT ScopedSourceNode : public SourceNode, public INodeWithScop
 /// @brief 抽象数据接收器节点
 class EDGELINK_EXPORT SinkNode : public FlowNode {
   protected:
-    SinkNode(const std::string_view id, const INodeDescriptor* desc, IFlow* flow, const boost::json::object& config)
+    SinkNode(const std::string_view id, const INodeDescriptor* desc, IFlow* flow, const JsonObject& config)
         : FlowNode(id, desc, flow, config) {}
 };
 
 /// @brief 全局配置节点
 class EDGELINK_EXPORT GlobalConfigNode : public StandaloneNode {
   protected:
-    GlobalConfigNode(const std::string_view id, const INodeDescriptor* desc, const boost::json::object& config,
+    GlobalConfigNode(const std::string_view id, const INodeDescriptor* desc, const JsonObject& config,
                      IEngine* engine)
         : StandaloneNode(id, desc, config, engine) {}
 };
@@ -330,7 +330,7 @@ class EDGELINK_EXPORT GlobalConfigNode : public StandaloneNode {
 /// @brief 网络端点节点
 class EDGELINK_EXPORT EndpointNode : public StandaloneNode {
   protected:
-    EndpointNode(const std::string_view id, const INodeDescriptor* desc, const boost::json::object& config,
+    EndpointNode(const std::string_view id, const INodeDescriptor* desc, const JsonObject& config,
                  IEngine* engine, const std::string_view host, uint16_t port)
         : StandaloneNode(id, desc, config, engine), _host(host), _port(port) {}
 
@@ -346,7 +346,7 @@ class EDGELINK_EXPORT EndpointNode : public StandaloneNode {
 /// @brief 抽象数据过滤器
 class EDGELINK_EXPORT PipeNode : public FlowNode {
   protected:
-    PipeNode(const std::string_view id, const INodeDescriptor* desc, IFlow* flow, const boost::json::object& config)
+    PipeNode(const std::string_view id, const INodeDescriptor* desc, IFlow* flow, const JsonObject& config)
         : FlowNode(id, desc, flow, config) {}
 };
 
@@ -366,7 +366,7 @@ struct EDGELINK_EXPORT INodeProvider {
 };
 
 struct EDGELINK_EXPORT IFlowNodeProvider : public INodeProvider {
-    virtual std::unique_ptr<IFlowNode> create(const std::string_view id, const boost::json::object& config,
+    virtual std::unique_ptr<IFlowNode> create(const std::string_view id, const JsonObject& config,
                                               IFlow* flow) const = 0;
 
   private:
@@ -374,7 +374,7 @@ struct EDGELINK_EXPORT IFlowNodeProvider : public INodeProvider {
 };
 
 struct EDGELINK_EXPORT IStandaloneNodeProvider : public INodeProvider {
-    virtual std::unique_ptr<IStandaloneNode> create(const std::string_view id, const boost::json::object& config,
+    virtual std::unique_ptr<IStandaloneNode> create(const std::string_view id, const JsonObject& config,
                                                     IEngine* engine) const = 0;
 
   private:
@@ -390,7 +390,7 @@ class FlowNodeProvider final : public IFlowNodeProvider, public INodeDescriptor 
     const std::string_view type_name() const override { return _type_name; }
     inline const NodeKind kind() const override { return TKind; }
 
-    std::unique_ptr<IFlowNode> create(const std::string_view id, const boost::json::object& config,
+    std::unique_ptr<IFlowNode> create(const std::string_view id, const JsonObject& config,
                                       IFlow* flow) const override {
         return std::make_unique<TNode>(id, config, this, flow);
     }
@@ -410,7 +410,7 @@ class StandaloneNodeProvider final : public IStandaloneNodeProvider, public INod
     const std::string_view type_name() const override { return _type_name; }
     inline const NodeKind kind() const override { return TKind; }
 
-    std::unique_ptr<IStandaloneNode> create(const std::string_view id, const boost::json::object& config,
+    std::unique_ptr<IStandaloneNode> create(const std::string_view id, const JsonObject& config,
                                             IEngine* engine) const override {
         return std::make_unique<TNode>(id, config, this, engine);
     }

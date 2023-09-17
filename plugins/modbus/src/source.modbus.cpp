@@ -6,7 +6,7 @@ namespace edgelink::plugins::modbus {
 
 class ModbusLogNode : public SinkNode {
   public:
-    ModbusLogNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc,
+    ModbusLogNode(const std::string_view id, const JsonObject& config, const INodeDescriptor* desc,
                   IFlow* flow)
         : SinkNode(id, desc, flow, config) {}
 

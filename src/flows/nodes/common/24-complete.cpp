@@ -4,7 +4,7 @@ using namespace edgelink;
 
 class CompleteNode : public ScopedSourceNode {
   public:
-    CompleteNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc, IFlow* flow)
+    CompleteNode(const std::string_view id, const JsonObject& config, const INodeDescriptor* desc, IFlow* flow)
         : ScopedSourceNode(id, desc, flow, config) {}
 
     virtual ~CompleteNode() {

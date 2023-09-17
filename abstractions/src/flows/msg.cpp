@@ -4,7 +4,7 @@ namespace edgelink {
 
 std::shared_ptr<Msg> Msg::clone() const {
     //? 是否要重新生成消息 ID?
-    auto new_json = boost::json::object(_data);
+    auto new_json = JsonObject(_data);
     return std::make_shared<Msg>(std::move(new_json));
 }
 

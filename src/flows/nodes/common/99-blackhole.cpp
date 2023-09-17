@@ -4,7 +4,7 @@ using namespace edgelink;
 
 class BlackholeNode : public SinkNode {
   public:
-    BlackholeNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc,
+    BlackholeNode(const std::string_view id, const JsonObject& config, const INodeDescriptor* desc,
                   IFlow* flow)
         : SinkNode(id, desc, flow, config) {}
 

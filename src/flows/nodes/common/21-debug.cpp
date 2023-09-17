@@ -24,7 +24,7 @@ using namespace edgelink;
 
 class DebugNode : public SinkNode {
   public:
-    DebugNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc, IFlow* flow)
+    DebugNode(const std::string_view id, const JsonObject& config, const INodeDescriptor* desc, IFlow* flow)
         : SinkNode(id, desc, flow, config) {}
 
     Awaitable<void> async_start() override { co_return; }

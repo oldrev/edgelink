@@ -36,15 +36,15 @@ class EDGELINK_EXPORT Msg final : private boost::noncopyable {
   public:
     Msg() : Msg(Msg::generate_msg_id()) {}
 
-    Msg(MsgID id) : _data(std::move(boost::json::object({{"_msgid", id}, {"payload", nullptr}}))) {}
+    Msg(MsgID id) : _data(std::move(JsonObject({{"_msgid", id}, {"payload", nullptr}}))) {}
 
     Msg(Msg&& other) : _data(std::move(other._data)) {}
 
-    explicit Msg(boost::json::object const& data) : _data(data) {}
+    explicit Msg(JsonObject const& data) : _data(data) {}
 
-    explicit Msg(boost::json::object&& data) : _data(std::move(data)) {}
+    explicit Msg(JsonObject&& data) : _data(std::move(data)) {}
 
-    inline boost::json::object& data() { return _data; }
+    inline JsonObject& data() { return _data; }
 
     inline MsgID id() const {
         MsgID id = _data.at("_msgid").to_number<MsgID>();
@@ -55,14 +55,12 @@ class EDGELINK_EXPORT Msg final : private boost::noncopyable {
 
     std::shared_ptr<Msg> clone() const;
 
-    inline const boost::json::string to_json_string() const {
-        return boost::json::string(std::move(boost::json::serialize(_data)));
-    }
+    inline const JsonString to_json_string() const { return JsonString(std::move(boost::json::serialize(_data))); }
     inline const std::string to_string() const { return boost::json::serialize(_data); }
 
-    boost::json::value const& get_navigation_property_value(const std::string_view red_prop) const;
+    JsonValue const& get_navigation_property_value(const std::string_view red_prop) const;
 
-    const boost::json::value& get_property_value(const std::string_view prop_expr) const { return _data.at(prop_expr); }
+    const JsonValue& get_property_value(const std::string_view prop_expr) const { return _data.at(prop_expr); }
 
     template <typename TValue> void set_property_value(const std::string_view prop_expr, const TValue& value) {
         auto it = _data.find(prop_expr);
@@ -89,7 +87,7 @@ class EDGELINK_EXPORT Msg final : private boost::noncopyable {
     }
 
   private:
-    boost::json::object _data;
+    JsonObject _data;
 };
 
 using MsgPtr = std::shared_ptr<Msg>;

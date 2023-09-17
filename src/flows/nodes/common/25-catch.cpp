@@ -4,7 +4,7 @@ using namespace edgelink;
 
 class CatchNode : public ScopedSourceNode {
   public:
-    CatchNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc, IFlow* flow)
+    CatchNode(const std::string_view id, const JsonObject& config, const INodeDescriptor* desc, IFlow* flow)
         : ScopedSourceNode(id, desc, flow, config), _uncaught(config.at("uncaught").as_bool()) {}
 
     virtual ~CatchNode() {

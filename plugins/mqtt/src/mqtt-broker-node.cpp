@@ -48,7 +48,7 @@ class MqttBrokerNode : public EndpointNode,
                        public std::enable_shared_from_this<MqttBrokerNode>,
                        public IMqttBrokerEndpoint {
   public:
-    MqttBrokerNode(const std::string_view id, const boost::json::object& config, const INodeDescriptor* desc,
+    MqttBrokerNode(const std::string_view id, const JsonObject& config, const INodeDescriptor* desc,
                    IEngine* engine)
         : EndpointNode(id, desc, config, engine, config.at("broker").as_string(),
                        boost::lexical_cast<uint16_t>(config.at("port").as_string().c_str())) {

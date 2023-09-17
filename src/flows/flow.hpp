@@ -13,7 +13,7 @@ namespace edgelink::flows {
 class Flow : public IFlow {
 
   public:
-    Flow(const boost::json::object& json_config, IEngine* engine);
+    Flow(const JsonObject& json_config, IEngine* engine);
     virtual ~Flow();
 
     FlowOnSendEvent& on_send_event() override { return _on_send_event; }
