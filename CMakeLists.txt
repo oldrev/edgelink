@@ -57,14 +57,6 @@ add_subdirectory(./libs/async_mqtt EXCLUDE_FROM_ALL)
 add_subdirectory(./libs/quickjspp/quickjs EXCLUDE_FROM_ALL)
 add_subdirectory(./libs/rttr EXCLUDE_FROM_ALL)
 
-#set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/libs/rttr" 
-#    APPEND PROPERTY BUILD_UNIT_TESTS OFF
-#    APPEND PROPERTY BUILD_EXAMPLES OFF
-#    APPEND PROPERTY BUILD_DOCUMENTATION OFF
-#    APPEND PROPERTY BUILD_INSTALL OFF
-#    APPEND PROPERTY BUILD_PACKAGE OFF
-#)
-
 set(BUILD_TESTING _TMP_BUILD_TESTING)
 
 include_directories(
