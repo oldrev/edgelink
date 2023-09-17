@@ -44,7 +44,9 @@ class EDGELINK_EXPORT Msg final : private boost::noncopyable {
 
     explicit Msg(JsonObject&& data) : _data(std::move(data)) {}
 
-    inline JsonObject& data() { return _data; }
+    inline JsonObject& data() { return _data.as_object(); }
+
+    inline JsonObject const& data() const { return _data.as_object(); }
 
     inline MsgID id() const {
         MsgID id = _data.at("_msgid").to_number<MsgID>();
@@ -63,12 +65,17 @@ class EDGELINK_EXPORT Msg final : private boost::noncopyable {
     const JsonValue& get_property_value(const std::string_view prop_expr) const { return _data.at(prop_expr); }
 
     template <typename TValue> void set_property_value(const std::string_view prop_expr, const TValue& value) {
-        auto it = _data.find(prop_expr);
-        if (it != _data.end()) {
-            it->value() = value;
-        } else {
-            _data.emplace(prop_expr, value);
-        }
+        this->data().insert_or_assign(prop_expr, value);
+    }
+
+    void set_property_json_value(const std::string_view prop_expr, const JsonValue& value) {
+        this->data().insert_or_assign(prop_expr, value);
+    }
+
+    template <typename TValue>
+    void set_navigation_property_value(const std::string_view red_prop, const TValue& value) {
+        auto jpath = Msg::convert_red_property_to_json_path(red_prop);
+        _data.set_at_pointer(jpath, value, {});
     }
 
     static MsgID generate_msg_id();
@@ -87,7 +94,7 @@ class EDGELINK_EXPORT Msg final : private boost::noncopyable {
     }
 
   private:
-    JsonObject _data;
+    JsonValue _data;
 };
 
 using MsgPtr = std::shared_ptr<Msg>;

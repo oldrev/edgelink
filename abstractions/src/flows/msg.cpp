@@ -4,14 +4,13 @@ namespace edgelink {
 
 std::shared_ptr<Msg> Msg::clone() const {
     //? 是否要重新生成消息 ID?
-    auto new_json = JsonObject(_data);
+    auto new_json = JsonObject(_data.as_object());
     return std::make_shared<Msg>(std::move(new_json));
 }
 
-boost::json::value const& Msg::get_navigation_property_value(const std::string_view red_prop) const {
+JsonValue const& Msg::get_navigation_property_value(const std::string_view red_prop) const {
     auto jpath = Msg::convert_red_property_to_json_path(red_prop);
-    boost::json::value const& jv = _data;
-    return jv.at_pointer(std::string_view(jpath));
+    return _data.at_pointer(std::string_view(jpath));
 }
 
 MsgID Msg::generate_msg_id() {

@@ -2,6 +2,7 @@
 #include <croncpp.h>
 
 #include "edgelink/edgelink.hpp"
+#include "edgelink/flows/property-value-expression.hpp"
 
 namespace this_coro = boost::asio::this_coro;
 namespace asio = boost::asio;
@@ -151,16 +152,10 @@ class InjectNode : public SourceNode {
         auto sinceEpoch = currentTime.time_since_epoch();
         auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(sinceEpoch);
 
-        // 获取毫秒时间戳
-        int64_t milliseconds = millis.count();
-
         for (auto const& prop : _props) {
-            if (prop.p == "payload") {
-                msg->set_property_value(prop.p, milliseconds);
-            } else {
-                if(prop.v) {
-                    msg->set_property_value(prop.p, *prop.v);
-                }
+            auto parsed_value = flows::evaluate_property_value(prop.v.value(), prop.vt.value(), this, msg);
+            if(parsed_value) {
+                msg->set_property_json_value(prop.p, parsed_value.value());
             }
         }
 
