@@ -46,6 +46,7 @@ endif()
 
 find_package(spdlog REQUIRED)
 find_package(fmt REQUIRED)
+find_package(pegtl REQUIRED)
 
 # 通过 cmake 引入 ASYNC_MQTT 库
 set(_TMP_BUILD_TESTING BUILD_TESTING)
@@ -100,6 +101,7 @@ set(EL_DEP_LIBS
     PRIVATE fmt::fmt
     PRIVATE RTTR::Core
     PRIVATE quickjs
+    PRIVATE taocpp::pegtl
     PRIVATE EdgeLinkAbstractions
 )
 

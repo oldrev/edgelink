@@ -4,9 +4,6 @@ namespace edgelink {
 
 using MsgID = uint32_t;
 
-/*
-using Bytes = std::vector<uint8_t>;
-
 enum class MsgValueKindIndex {
     NULLPTR = 0,
     BOOL = 0,
@@ -26,7 +23,6 @@ using MsgValue = rva::variant<          ///
     Bytes,                              ///< bytes buffer
     std::map<std::string, rva::self_t>, ///< object, type is std::map<std::string, json_value>
     std::vector<rva::self_t>>;          ///< array, type is std::vector<json_value>
-*/
 
 struct FlowNode;
 

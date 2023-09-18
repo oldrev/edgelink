@@ -83,7 +83,8 @@
         "coroutine": "cpp",
         "strstream": "cpp",
         "regex": "cpp",
-        "charconv": "cpp"
+        "charconv": "cpp",
+        "*.h++": "cpp"
     },
     "[python]": {
         "editor.defaultFormatter": "ms-python.black-formatter"

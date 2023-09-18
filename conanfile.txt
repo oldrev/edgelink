@@ -2,6 +2,7 @@
 spdlog/1.10.0
 fmt/8.1.1
 boost/1.83.0
+taocpp-pegtl/3.2.7
 
 [test_requires]
 catch2/3.4.0

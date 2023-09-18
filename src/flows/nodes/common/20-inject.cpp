@@ -2,7 +2,7 @@
 #include <croncpp.h>
 
 #include "edgelink/edgelink.hpp"
-#include "edgelink/flows/property-value-expression.hpp"
+#include "edgelink/flows/property-expression.hpp"
 
 namespace this_coro = boost::asio::this_coro;
 namespace asio = boost::asio;

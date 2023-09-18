@@ -1,5 +1,5 @@
 #include "edgelink/edgelink.hpp"
-#include "edgelink/flows/property-value-expression.hpp"
+#include "edgelink/flows/property-expression.hpp"
 
 namespace edgelink::flows {
 
