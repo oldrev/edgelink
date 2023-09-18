@@ -8,7 +8,7 @@ pushd "$BASEDIR"
 
 mkdir -p build
 
-conan install . --output-folder=build --build=missing --settings=build_type=Release --settings=compiler.cppstd=23
+conan install . --output-folder=build --build=missing --settings=build_type=Release --settings=compiler.cppstd=23 -pr profiles/x86_64-linux
 source ./build/conanbuild.sh
 cmake -B build -G Ninja -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release
 cmake --build build
