@@ -1,6 +1,8 @@
 #pragma once
 
-namespace edgelink::flows {
+namespace edgelink::flows::propex {
+
+const size_t PROPERTY_SEGMENT_MAX = 16;
 
 using PropertyValue = std::variant<                     //
     std::string,                                        //
@@ -11,7 +13,19 @@ using PropertyValue = std::variant<                     //
     bool                                                //
     >;
 
+enum class PropertySegmentKindIndex : size_t {
+    IDENTIFIER = 0,
+    INT_INDEX,
+};
+
+using PropertySegment = std::variant<std::string_view, size_t>;
+using PropertySegments = boost::container::static_vector<PropertySegment, PROPERTY_SEGMENT_MAX>;
+
+bool try_parse(const std::string_view input, PropertySegments& result);
+
+const PropertySegments parse(const std::string_view input);
+
 std::optional<JsonValue> evaluate_property_value(const JsonValue& value, const std::string_view type, const INode* node,
                                                  const std::shared_ptr<Msg>& msg);
 
-}; // namespace edgelink::flows
+}; // namespace edgelink::flows::propex
