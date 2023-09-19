@@ -27,24 +27,30 @@ struct Key : pegtl::seq<pegtl::one<'"'>, KeyContent, pegtl::any> {
     using content = KeyContent;
 };
 
-template <char TChar> struct StringContentWithout : pegtl::star<pegtl::not_one<TChar, 10, 13>> {};
-struct DoubleQuotedString : pegtl::seq<pegtl::one<'"'>, StringContentWithout<'"'>, pegtl::one<'"'>> {};
-struct SingleQuotedString : pegtl::seq<pegtl::one<'\''>, StringContentWithout<'\''>, pegtl::one<'\''>> {};
+template <char TChar> struct StringLiteralWithout : pegtl::star<pegtl::not_one<TChar, 10, 13>> {};
+struct DoubleQuotedString : pegtl::seq<pegtl::one<'"'>, StringLiteralWithout<'"'>, pegtl::one<'"'>> {};
+struct SingleQuotedString : pegtl::seq<pegtl::one<'\''>, StringLiteralWithout<'\''>, pegtl::one<'\''>> {};
 struct QuotedString : pegtl::sor<DoubleQuotedString, SingleQuotedString> {};
 
+template <typename TSymbol> struct Tokenize : pegtl::pad<TSymbol, pegtl::ascii::space, pegtl::ascii::space> {};
+
 struct Identifier : pegtl::identifier {};
-struct Dot : pegtl::one<'.'> {};
-struct LBracket : pegtl::one<'['> {};
-struct RBracket : pegtl::one<']'> {};
+struct IdentifierToken : Tokenize<Identifier> {};
+struct DotToken : Tokenize<pegtl::one<'.'>> {};
+struct LBracketToken : Tokenize<pegtl::one<'['>> {};
+struct RBracketToken : Tokenize<pegtl::one<']'>> {};
+
 struct ArrayIndexInteger : pegtl::plus<pegtl::digit> {};
-struct ArrayIndexExpr : pegtl::seq<LBracket, ArrayIndexInteger, RBracket> {};
+struct ArrayIndexExpr : pegtl::seq<LBracketToken, Tokenize<ArrayIndexInteger>, RBracketToken> {};
+
 struct StringKeyMapIndex : QuotedString {};
-struct StringKeyMapIndexExpr : pegtl::seq<LBracket, StringKeyMapIndex, RBracket> {};
+struct StringKeyMapIndexExpr : pegtl::seq<LBracketToken, Tokenize<StringKeyMapIndex>, RBracketToken> {};
+
 struct IndexExpr : pegtl::sor<ArrayIndexExpr, StringKeyMapIndexExpr> {};
 
-struct PropertyExprSegment : pegtl::seq<Identifier, pegtl::star<IndexExpr>> {};
+struct PropertyExprSegment : pegtl::seq<IdentifierToken, pegtl::star<IndexExpr>> {};
 
-struct PropertyExpr : pegtl::list<PropertyExprSegment, pegtl::one<'.'>> {};
+struct PropertyExpr : pegtl::list<PropertyExprSegment, DotToken> {};
 
 enum class PropertySegmentKindIndex : size_t {
     IDENTIFIER = 0,
@@ -98,14 +104,14 @@ template <typename TContainer = PropertySegments> const TContainer parse(const s
 TEST_CASE("Test Property Expression") {
 
     SECTION("Can parse strings Property Expression") {
-        std::string pe1 = "test1.hello.world['aaa'].name_of";
+        std::string pe1 = "test1.hello .world[ 'aaa' ].name_of";
         auto result = pe::parse(pe1);
         REQUIRE(result.size() == 5);
         REQUIRE(result == pe::PropertySegments{"test1", "hello", "world", "aaa", "name_of"});
     }
 
     SECTION("Can parse hybird Property Expression") {
-        std::string pe1 = "test1[100].hello['aaa'][42].world[99]['bbb'].name_of[100]";
+        std::string pe1 = " test1[100] . hello['aaa'] [42 ] .world[99][ 'bbb'].name_of [ 100]";
         auto result = pe::parse<std::vector<pe::PropertySegment>>(pe1);
 
         REQUIRE(result.size() == 10);
