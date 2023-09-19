@@ -5,6 +5,7 @@
 #include "errors.hpp"
 #include "utils.hpp"
 #include "json.hpp"
+#include "dynamic-object.hpp"
 #include "settings.hpp"
 
 #include "flows/common.hpp"

@@ -1,11 +1,11 @@
 #pragma once
 
+
 namespace edgelink {
 
 struct EDGELINK_EXPORT IClosable {
     virtual void close() noexcept = 0;
 };
-
 
 using Bytes = std::vector<uint8_t>;
 

@@ -9,6 +9,7 @@ file(GLOB_RECURSE SOURCES "src/*.c" "src/*.cpp")
 
 find_package(spdlog REQUIRED)
 find_package(fmt REQUIRED)
+find_package(pegtl REQUIRED)
 
 get_filename_component(CURRENT_CMAKE_SOURCE_DIR "${CMAKE_CURRENT_LIST_FILE}" DIRECTORY)
 
@@ -31,6 +32,7 @@ target_link_libraries(
     PRIVATE fmt::fmt
     PRIVATE spdlog::spdlog
     PRIVATE RTTR::Core
+    PRIVATE taocpp::pegtl
 )
 
 target_precompile_headers(${THE_LIB} PRIVATE src/pch.hpp)
