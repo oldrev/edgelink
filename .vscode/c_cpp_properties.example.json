@@ -2,7 +2,8 @@
     "env": {
         "myDefaultIncludePath": [
             "${workspaceFolder}",
-            "${workspaceFolder}/include"
+            "${workspaceFolder}/include",
+            "~/.conan/p/**"
         ],
         "myCompilerPath": "/usr/local/bin/gcc-7"
     },
