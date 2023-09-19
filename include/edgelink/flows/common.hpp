@@ -16,4 +16,13 @@ class EDGELINK_EXPORT FlowConfig {
     boost::json::array _json_array;
 };
 
+using DynamicObject = rva::variant<     ///
+    std::nullptr_t,                     ///< null
+    bool,                               ///< boolean
+    double,                             ///< number
+    std::string,                        ///< string
+    Bytes,                              ///< bytes buffer
+    std::map<std::string, rva::self_t>, ///< object, type is std::map<std::string, json_value>
+    std::vector<rva::self_t>>;          ///< array, type is std::vector<json_value>
+
 }; // namespace edgelink
