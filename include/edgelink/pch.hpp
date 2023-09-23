@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstdlib>
+#include <cmath>
+#include <cstdlib>
 
 #include <chrono>
 #include <fstream>
@@ -15,18 +17,15 @@
 #include <vector>
 #include <filesystem>
 
-#include <rva/variant.hpp>
 #include <boost/asio.hpp>
+#include <boost/static_string.hpp>
 #include <boost/container/static_vector.hpp>
 #include <boost/url.hpp>
 #include <boost/json.hpp>
 #include <boost/signals2.hpp>
 #include <boost/lexical_cast.hpp>
-#include <boost/static_string.hpp>
-#include <boost/ptr_container/ptr_vector.hpp>
-#include <boost/ptr_container/ptr_map.hpp>
 
-
+#include <rva/variant.hpp>
 
 #include <fmt/chrono.h>
 #include <fmt/core.h>

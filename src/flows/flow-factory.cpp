@@ -71,7 +71,7 @@ std::unique_ptr<IFlow> FlowFactory::create_flow(const boost::json::array& flows_
     auto flow = std::make_unique<Flow>(flow_node, engine);
 
     // 提取属于指定流节点的下级节点
-    std::map<const std::string_view, const boost::json::object*> json_nodes;
+    std::unordered_map<std::string, const boost::json::object*> json_nodes;
     for (const auto& elem_value : flows_config) {
         const auto& elem = elem_value.as_object();
         const auto& elem_type = elem.at("type").as_string();
@@ -83,7 +83,7 @@ std::unique_ptr<IFlow> FlowFactory::create_flow(const boost::json::array& flows_
         const auto& z = elem.at("z").as_string();
         if (z == flow_node_id) {
             const auto& node_id = elem.at("id").as_string();
-            json_nodes[node_id] = &elem;
+            json_nodes[std::string(node_id)] = &elem;
             for (const auto& port : elem.at("wires").as_array()) {
                 for (const auto& endpoint : port.as_array()) {
                     std::string_view from = node_id;
@@ -106,18 +106,18 @@ std::unique_ptr<IFlow> FlowFactory::create_flow(const boost::json::array& flows_
 
     auto sorted_ids = sorter.sort();
 
-    std::map<const std::string_view, IFlowNode*> node_map;
+    std::unordered_map<std::string, IFlowNode*> node_map;
 
     for (size_t i = 0; i < sorted_ids.size(); i++) {
         const std::string_view elem_id = sorted_ids[i];
-        const JsonObject& elem = *json_nodes.at(elem_id);
+        const JsonObject& elem = *json_nodes.at(std::string(elem_id));
         const auto& elem_type = elem.at("type").as_string();
 
         _logger->info("创建流程节点：[type='{0}', json_id='{1}']", elem_type, elem_id);
         auto const& provider_iter = _registry.get_flow_node_provider(elem_type);
         try {
             auto node = provider_iter->create(elem_id, elem, flow.get());
-            node_map[elem_id] = node.get();
+            node_map[std::string(elem_id)] = node.get();
             flow->emplace_node(std::move(node));
         } catch (std::exception& ex) {
             _logger->error("创建流程节点：[type='{0}', id='{1}'] 发生错误：{2}", elem_type, elem_id, ex.what());

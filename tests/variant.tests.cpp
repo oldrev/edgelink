@@ -18,6 +18,14 @@ TEST_CASE("Variant Class Tests") {
         REQUIRE(fabs(v.get<double>() - 42.0) <= 0.000001);
     }
 
+    SECTION("Constructor with simple object") {
+        Variant vobj({{"x", 123LL}, {"y", 333LL}, {"z", 444LL}});
+        REQUIRE(vobj.kind() == Variant::Kind::OBJECT);
+        // REQUIRE(v.is<double>());
+        // REQUIRE(v.is<double>());
+        // REQUIRE(fabs(v.get<double>() - 42.0) <= 0.000001);
+    }
+
     SECTION("Copy and move operations") {
         Variant original(42LL);
 
@@ -72,25 +80,33 @@ TEST_CASE("Variant Class Tests") {
 
         SECTION("Accessing VariantObject works as expected") {
             REQUIRE(v.is<VariantObject>());
-            REQUIRE(v.get_object().size() == 2);
-            REQUIRE(v.get_object()["key1"].is<int64_t>());
-            REQUIRE(v.get_object()["key1"].get<int64_t>() == 42LL);
-            REQUIRE(v.get_object()["key2"].is<std::string>());
-            REQUIRE(v.get_object()["key2"].get<std::string>() == "Hello");
+            REQUIRE(v.as_object().size() == 2);
+            REQUIRE(v.as_object()["key1"].is<int64_t>());
+            REQUIRE(v.as_object()["key1"].get<int64_t>() == 42LL);
+            REQUIRE(v.as_object()["key2"].is<std::string>());
+            REQUIRE(v.as_object()["key2"].get<std::string>() == "Hello");
+        }
+
+        SECTION("Accessing VariantObject via Propex works as expected") {
+            REQUIRE(v.at_propex("key1").is<int64_t>());
+            REQUIRE(v.at_propex("key1").get<int64_t>() == 42LL);
+            REQUIRE(v.at_propex("key2").is<std::string>());
+            REQUIRE(v.at_propex("key2").get<std::string>() == "Hello");
         }
 
         VariantArray arr = {1, 2, 3};
         v.set(arr);
 
         SECTION("Accessing VariantArray works as expected") {
+            REQUIRE(arr.size() == 3);
             REQUIRE(v.is<VariantArray>());
-            REQUIRE(v.get_array().size() == 3);
-            REQUIRE(v.get_array()[0].is<int64_t>());
-            REQUIRE(v.get_array()[0].get<int64_t>() == 1);
-            REQUIRE(v.get_array()[1].is<int64_t>());
-            REQUIRE(v.get_array()[1].get<int64_t>() == 2);
-            REQUIRE(v.get_array()[2].is<int64_t>());
-            REQUIRE(v.get_array()[2].get<int64_t>() == 3);
+            REQUIRE(v.as_array().size() == 3);
+            REQUIRE(v.as_array().at(0).is<int64_t>());
+            REQUIRE(v.as_array().at(0).get<int64_t>() == 1);
+            REQUIRE(v.as_array().at(1).is<int64_t>());
+            REQUIRE(v.as_array().at(1).get<int64_t>() == 2);
+            REQUIRE(v.as_array().at(2).is<int64_t>());
+            REQUIRE(v.as_array().at(2).get<int64_t>() == 3);
         }
     }
 }

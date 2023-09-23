@@ -4,26 +4,6 @@ namespace edgelink {
 
 using MsgID = uint32_t;
 
-enum class MsgValueKindIndex {
-    NULLPTR = 0,
-    BOOL = 0,
-    DOUBLE = 0,
-    STRING = 0,
-    BYTES = 0,
-    OBJECT = 0,
-    ARRAY = 0,
-};
-
-/// @brief 消息值
-using MsgValue = rva::variant<          ///
-    std::nullptr_t,                     ///< null
-    bool,                               ///< boolean
-    double,                             ///< number
-    std::string,                        ///< string
-    Bytes,                              ///< bytes buffer
-    std::map<std::string, rva::self_t>, ///< object, type is std::map<std::string, json_value>
-    std::vector<rva::self_t>>;          ///< array, type is std::vector<json_value>
-
 struct FlowNode;
 
 using JsonPointerExpression = boost::static_string<256>;

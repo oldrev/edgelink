@@ -8,7 +8,7 @@ template <typename T> class DependencySorter {
     void clear() { this->adjacency_list.clear(); }
 
     std::vector<T> sort() {
-        std::map<T, int> in_degree;
+        std::unordered_map<T, int> in_degree;
         for (const auto& pair : adjacency_list) {
             in_degree[pair.first] = 0;
         }
@@ -46,7 +46,7 @@ template <typename T> class DependencySorter {
     }
 
   private:
-    std::map<T, std::unordered_set<T>> adjacency_list;
+    std::unordered_map<T, std::unordered_set<T>> adjacency_list;
 };
 
 }; // namespace edgelink
