@@ -1,6 +1,6 @@
 #pragma once
 
-namespace edgelink::flows::propex {
+namespace edgelink::propex {
 
 const size_t PROPERTY_SEGMENT_MAX = 16;
 

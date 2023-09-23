@@ -1,5 +1,5 @@
 #include <edgelink/edgelink.hpp>
-#include <edgelink/flows/propex.hpp>
+#include <edgelink/propex.hpp>
 
 using namespace edgelink;
 

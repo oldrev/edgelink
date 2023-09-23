@@ -1,12 +1,12 @@
 #include <tao/pegtl.hpp>
 
 #include "edgelink/edgelink.hpp"
-#include "edgelink/flows/propex.hpp"
+#include "edgelink/propex.hpp"
 
 namespace json = boost::json;
 namespace pegtl = tao::pegtl;
 
-namespace edgelink::flows::propex {
+namespace edgelink::propex {
 
 struct HexDigit : pegtl::xdigit {};
 struct UnicodeChar : pegtl::list<pegtl::seq<pegtl::one<'u'>, pegtl::rep<4, HexDigit>>, pegtl::one<'\\'>> {};
@@ -182,4 +182,4 @@ std::optional<JsonValue> evaluate_property_value(const JsonValue& value, const s
     return result;
 }
 
-}; // namespace edgelink::flows::propex
+}; // namespace edgelink::propex

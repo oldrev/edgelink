@@ -1,9 +1,9 @@
 #include <edgelink/edgelink.hpp>
-#include <edgelink/flows/propex.hpp>
+#include <edgelink/propex.hpp>
 
 using namespace edgelink;
 
-namespace pe = edgelink::flows::propex;
+namespace pe = edgelink::propex;
 
 TEST_CASE("Test Property Expression") {
 
