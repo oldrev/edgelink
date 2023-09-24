@@ -67,6 +67,59 @@ static const JsonValue variant_to_json(const Variant& obj) {
     return jvalue;
 }
 
+Variant Variant::from_json(const JsonValue& jvalue) {
+
+    Variant v;
+    switch (jvalue.kind()) {
+    case boost::json::kind::null: {
+        v = nullptr;
+    } break;
+
+    case boost::json::kind::bool_: {
+        v = jvalue.as_bool();
+    } break;
+
+    case boost::json::kind::int64: {
+        v = jvalue.to_number<int64_t>();
+    } break;
+
+        case boost::json::kind::uint64: {
+        v = jvalue.to_number<int64_t>();
+    } break;
+
+    case boost::json::kind::double_: {
+        v = jvalue.to_number<double>();
+    } break;
+
+    case boost::json::kind::string: {
+        v = std::move(std::string(jvalue.as_string()));
+    } break;
+
+    case boost::json::kind::array: {
+        VariantArray va;
+        for (const auto& child : jvalue.as_array()) {
+            auto ve = from_json(child);
+            va.emplace_back(std::move(ve));
+        }
+        v = va;
+    } break;
+
+    case boost::json::kind::object: {
+        VariantObject vo;
+        for (const auto& [key, child] : jvalue.as_object()) {
+            auto var_key = std::string(key);
+            auto ve = from_json(child);
+            vo.emplace(std::move(var_key), std::move(ve));
+        }
+        v = vo;
+    } break;
+
+    default:
+        throw std::runtime_error("Invalid JSON value kind");
+    }
+    return v;
+}
+
 Variant const& Variant::at_propex(const std::string_view propex) const& {
     auto prop_segs = propex::parse(propex);
     const Variant* presult = this;

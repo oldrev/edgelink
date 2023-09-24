@@ -41,6 +41,7 @@ class EDGELINK_EXPORT Variant {
 
     Variant(VariantArray&& other) noexcept : _data(std::forward<VariantType>(other)) {}
 
+
     template <typename TValue> Variant& operator=(const TValue& other) {
         _data = other;
         return *this;
@@ -128,6 +129,7 @@ class EDGELINK_EXPORT Variant {
 
     std::string json_dump() const { return boost::json::serialize(this->to_json()); }
 
+    static Variant from_json(const JsonValue& jvalue);
     /*
     Variant& set_at_propex(const std::string_view sv) ;
     Variant* set_at_propex(string_view sv);
