@@ -104,8 +104,7 @@ std::optional<JsonValue> evaluate_property_value(const JsonValue& value, const s
     } else if (type == "num") {
         if (value.is_string()) {
             try {
-                result = boost::lexical_cast<double>(value.as_string());
-
+                result = json::parse(value.as_string());
             } catch (const std::exception&) {
                 throw std::runtime_error("Invalid number format");
                 return result;
@@ -142,23 +141,27 @@ std::optional<JsonValue> evaluate_property_value(const JsonValue& value, const s
     } else if (type == "date") {
         // Your date conversion logic here
         auto now = std::chrono::system_clock::now();
-        time_t time = std::chrono::system_clock::to_time_t(now);
-        result = double(time);
+        auto time_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+        result = double(time_ms);
     } else if (type == "bin") {
-        /*
         try {
-            JsonValue data = json::parse(value.as_string());
-            if (data.is_array() || data.is_string()) {
+            JsonValue data = boost::json::parse(value.as_string());
+            if(data.is_array()) {
+                result = data.as_array();
+            }
+            else if(data.is_string()) {
                 const auto& bin_str = data.as_string();
-                result = JsonArray(std::vector<uint8_t>(bin_str.begin(), bin_str.end()));
+                auto ja = JsonArray();
+                for(auto c: bin_str) {
+                    ja.emplace_back(JsonValue(c));
+                }
+                result = ja;
             } else {
                 throw std::runtime_error("Invalid buffer data");
             }
         } catch (const std::exception&) {
             throw std::runtime_error("Invalid JSON format");
         }
-        */
-        TODO("暂时没实现");
     } else if (type == "msg" && msg) {
         result = JsonValue(msg->get_navigation_property_value(value.as_string()));
     } else if ((type == "flow" || type == "global") && node != nullptr) {
