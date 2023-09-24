@@ -75,23 +75,41 @@ TEST_CASE("Variant Class Tests") {
     }
 
     SECTION("Accessing VariantObject and VariantArray") {
-        VariantObject obj = {{"key1", 42}, {"key2", "Hello"}};
+        VariantObject obj = {
+            {"key1", 42},
+            {"key2", "Hello"},
+            {"key3", VariantArray({
+                         "AA",
+                         "BB",
+                         "CC",
+                     })},
+        };
         Variant v(obj);
 
         SECTION("Accessing VariantObject works as expected") {
             REQUIRE(v.is<VariantObject>());
-            REQUIRE(v.as_object().size() == 2);
+            REQUIRE(v.as_object().size() == 3);
             REQUIRE(v.as_object()["key1"].is<int64_t>());
             REQUIRE(v.as_object()["key1"].get<int64_t>() == 42LL);
             REQUIRE(v.as_object()["key2"].is<std::string>());
             REQUIRE(v.as_object()["key2"].get<std::string>() == "Hello");
+            REQUIRE(v.as_object()["key3"].is<VariantArray>());
+            REQUIRE(v.as_object()["key3"].get<VariantArray>() == VariantArray({"AA", "BB", "CC"}));
         }
 
         SECTION("Accessing VariantObject via Propex works as expected") {
             REQUIRE(v.at_propex("key1").is<int64_t>());
             REQUIRE(v.at_propex("key1").get<int64_t>() == 42LL);
-            REQUIRE(v.at_propex("key2").is<std::string>());
-            REQUIRE(v.at_propex("key2").get<std::string>() == "Hello");
+
+            REQUIRE(v.at_propex("key3[1]").is<std::string>());
+            REQUIRE(v.at_propex("key3[1]").get<std::string>() == "BB");
+
+            v.at_propex("key2") = "World";
+            REQUIRE(v.at_propex("key2").get<std::string>() == "World");
+
+            v.at_propex("key3") = std::move(std::string("Test1"));
+            const std::string_view sv = v.at_propex("key3").get<std::string>();
+            REQUIRE(sv == "Test1");
         }
 
         VariantArray arr = {1, 2, 3};
@@ -108,5 +126,17 @@ TEST_CASE("Variant Class Tests") {
             REQUIRE(v.as_array().at(2).is<int64_t>());
             REQUIRE(v.as_array().at(2).get<int64_t>() == 3);
         }
+
+        v = arr;
+        auto json = v.to_json();
+        SECTION("Export to JSON works as expected") {
+            auto jarr = json.as_array();
+            REQUIRE(jarr.at(0) == 1);
+            REQUIRE(jarr.at(1) == 2);
+            REQUIRE(jarr.at(2) == 3);
+            fmt::print("JSON: {}\n", v.json_dump());
+        }
+
+
     }
 }

@@ -5,7 +5,7 @@
 #include "edgelink/errors.hpp"
 #include "edgelink/utils.hpp"
 #include "edgelink/json.hpp"
-#include "edgelink/dynamic-object.hpp"
+#include "edgelink/variant.hpp"
 #include "edgelink/settings.hpp"
 
 #include "edgelink/flows/common.hpp"

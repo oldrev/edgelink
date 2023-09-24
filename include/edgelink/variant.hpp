@@ -85,7 +85,7 @@ class EDGELINK_EXPORT Variant {
         if (this->kind() == Kind::ARRAY) {
             return std::get<VariantArray>(_data);
         }
-        throw std::runtime_error("不是 Array");
+        throw std::runtime_error("Wrong type: Array required");
     }
 
     VariantObject& as_object() & {
@@ -99,7 +99,7 @@ class EDGELINK_EXPORT Variant {
         if (this->kind() == Kind::OBJECT) {
             return std::get<VariantObject>(_data);
         }
-        throw std::runtime_error("不是 Obj");
+        throw std::runtime_error("Wrong type: Object required");
         // detail::throw_system_error( error::not_object, &loc );
     }
 
@@ -115,20 +115,7 @@ class EDGELINK_EXPORT Variant {
 
     Variant const& at(std::size_t pos) const& { return this->as_array().at(pos); }
 
-    Variant const& at_propex(const std::string_view propex) const& {
-        auto prop_segs = propex::parse(propex);
-        const Variant* presult = this;
-        for (auto const& ps : prop_segs) {
-            if (ps.index() == static_cast<size_t>(propex::PropertySegmentKindIndex::IDENTIFIER)) {
-                std::string key(std::get<std::string_view>(ps));
-                presult = &(presult->at(key));
-            } else {
-                auto index = std::get<size_t>(ps);
-                presult = &(presult->at(index));
-            }
-        }
-        return *presult;
-    }
+    Variant const& at_propex(const std::string_view propex) const&;
 
     Variant& at_propex(const std::string_view propex) & {
         auto const& self = *this;
@@ -136,6 +123,16 @@ class EDGELINK_EXPORT Variant {
     }
 
     Variant&& at_propex(const std::string_view propex) && { return std::move(this->at_propex(propex)); }
+
+    JsonValue to_json() const;
+
+    std::string json_dump() const { return boost::json::serialize(this->to_json()); }
+
+    /*
+    Variant& set_at_propex(const std::string_view sv) ;
+    Variant* set_at_propex(string_view sv);
+    Variant* set_at_propex(string_view sv);
+    */
 
   private:
     VariantType _data;
