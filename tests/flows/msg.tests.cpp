@@ -23,7 +23,7 @@ TEST_CASE("Test Msg class") {
         auto MSG_JSON_VALUE = boost::json::parse(MSG_JSON).as_object();
         auto msg1 = Msg(MSG_JSON_VALUE);
 
-        msg1.set_navigation_property_value("payload.hostInfo.memoryUsage", 100);
-        REQUIRE(msg1.get_navigation_property_value("payload.hostInfo.memoryUsage") == 100);
+        msg1.at_propex("payload.hostInfo.memoryUsage") = 100;
+        REQUIRE(msg1.at_propex("payload.hostInfo.memoryUsage") == 100);
     }
 }

@@ -153,9 +153,9 @@ class InjectNode : public SourceNode {
         auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(sinceEpoch);
 
         for (auto const& prop : _props) {
-            auto parsed_value = propex::evaluate_property_value(prop.v.value(), prop.vt.value(), this, msg);
+            auto parsed_value = propex::evaluate_property_value(prop.v.value(), prop.vt.value(), this, *msg);
             if(parsed_value) {
-                msg->set_property_json_value(prop.p, parsed_value.value());
+                msg->insert_or_assign(prop.p, std::move(parsed_value.value()));
             }
         }
 

@@ -4,6 +4,6 @@
         "conan": {}
     },
     "include": [
-        "/home/oldrev/dev/edgelink/build/CMakePresets.json"
+        "/home/oldrev/dev/edgelink-linux-device-side/build/CMakePresets.json"
     ]
 }

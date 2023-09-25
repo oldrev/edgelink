@@ -95,7 +95,7 @@ const PropertySegments parse(const std::string_view input) {
 // and other required functions declared and defined.
 
 std::optional<JsonValue> evaluate_property_value(const JsonValue& value, const std::string_view type, const INode* node,
-                                                 const std::shared_ptr<Msg>& msg) {
+                                                 const Msg& msg) {
 
     auto result = std::optional<JsonValue>();
 
@@ -162,8 +162,8 @@ std::optional<JsonValue> evaluate_property_value(const JsonValue& value, const s
         } catch (const std::exception&) {
             throw std::runtime_error("Invalid JSON format");
         }
-    } else if (type == "msg" && msg) {
-        result = JsonValue(msg->get_navigation_property_value(value.as_string()));
+    } else if (type == "msg") {
+        result = JsonValue(msg.at_propex(value.as_string()));
     } else if ((type == "flow" || type == "global") && node != nullptr) {
         /*
         ContextKey contextKey = parseContextStore(value.as_string().c_str());

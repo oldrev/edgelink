@@ -1,5 +1,13 @@
 #pragma once
 
+namespace edgelink {
+
+struct INode;
+class Msg;
+
+};
+
+
 namespace edgelink::propex {
 
 const size_t PROPERTY_SEGMENT_MAX = 16;
@@ -27,6 +35,6 @@ EDGELINK_EXPORT bool try_parse(const std::string_view input, PropertySegments& r
 EDGELINK_EXPORT const PropertySegments parse(const std::string_view input);
 
 EDGELINK_EXPORT std::optional<JsonValue> evaluate_property_value(const JsonValue& value, const std::string_view type,
-                                                                 const INode* node, const std::shared_ptr<Msg>& msg);
+                                                                 const INode* node, const Msg& msg);
 
 }; // namespace edgelink::flows::propex

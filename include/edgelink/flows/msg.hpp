@@ -29,29 +29,32 @@ class EDGELINK_EXPORT Msg final : private boost::noncopyable {
         return id;
     }
 
-    inline void set_id(MsgID new_id) { this->set_property_value("_msgid", new_id); }
+    void set_id(MsgID new_id);
 
     std::shared_ptr<Msg> clone() const;
 
     inline const JsonString to_json_string() const { return JsonString(std::move(boost::json::serialize(_data))); }
     inline const std::string to_string() const { return boost::json::serialize(_data); }
 
-    JsonValue const& get_navigation_property_value(const std::string_view red_prop) const;
+    JsonValue const& at_propex(const std::string_view propex) const&;
 
-    const JsonValue& get_property_value(const std::string_view prop_expr) const { return _data.at(prop_expr); }
+    JsonValue& at_propex(const std::string_view propex) & {
+        auto const& self = *this;
+        return const_cast<JsonValue&>(self.at_propex(propex));
+    }
+    JsonValue&& at_propex(const std::string_view propex) && { return std::move(this->at_propex(propex)); }
 
-    template <typename TValue> void set_property_value(const std::string_view prop_expr, const TValue& value) {
-        this->data().insert_or_assign(prop_expr, value);
+    JsonValue const& at(const std::string_view prop) const& { return _data.at(prop); }
+
+    JsonValue& at(const std::string_view prop) & {
+        auto const& self = *this;
+        return const_cast<JsonValue&>(self.at(prop));
     }
 
-    void set_property_json_value(const std::string_view prop_expr, const JsonValue& value) {
-        this->data().insert_or_assign(prop_expr, value);
-    }
+    JsonValue&& at(const std::string_view prop) && { return std::move(this->at(prop)); }
 
-    template <typename TValue>
-    void set_navigation_property_value(const std::string_view red_prop, const TValue& value) {
-        auto jpath = Msg::convert_red_property_to_json_path(red_prop);
-        _data.set_at_pointer(jpath, value, {});
+    void insert_or_assign(const std::string_view prop_expr, JsonValue&& value) {
+        this->data().insert_or_assign(prop_expr, std::move(value));
     }
 
     static MsgID generate_msg_id();

@@ -56,7 +56,7 @@ class RangeNode : public FlowNode {
             co_return;
         }
 
-        auto value = msg->get_navigation_property_value(_property);
+        auto value = msg->at_propex(_property);
         if (value.is_number()) {
             double n = value.to_number<double>();
             if (_action == "clamp") {
@@ -75,7 +75,7 @@ class RangeNode : public FlowNode {
             if (_round) {
                 n = static_cast<int64_t>(std::round(n));
             }
-            msg->set_property_value(_property, n);
+            msg->at_propex(_property) = n;
             co_await this->async_send_to_one_port(msg);
         }
         co_return;

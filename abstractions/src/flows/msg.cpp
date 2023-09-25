@@ -8,9 +8,27 @@ std::shared_ptr<Msg> Msg::clone() const {
     return std::make_shared<Msg>(std::move(new_json));
 }
 
-JsonValue const& Msg::get_navigation_property_value(const std::string_view red_prop) const {
-    auto jpath = Msg::convert_red_property_to_json_path(red_prop);
-    return _data.at_pointer(std::string_view(jpath));
+void Msg::set_id(MsgID new_id) {
+    if (!_data.is_object()) {
+        _data = JsonObject{{"_msgid", new_id}};
+    } else {
+        this->insert_or_assign("_msgid", new_id);
+    }
+}
+
+JsonValue const& Msg::at_propex(const std::string_view propex) const& {
+    auto prop_segs = propex::parse(propex);
+    const JsonValue* presult = &this->_data;
+    for (auto const& ps : prop_segs) {
+        if (ps.index() == static_cast<size_t>(propex::PropertySegmentKindIndex::IDENTIFIER)) {
+            std::string key(std::get<std::string_view>(ps));
+            presult = &(presult->at(key));
+        } else {
+            auto index = std::get<size_t>(ps);
+            presult = &(presult->at(index));
+        }
+    }
+    return *presult;
 }
 
 MsgID Msg::generate_msg_id() {

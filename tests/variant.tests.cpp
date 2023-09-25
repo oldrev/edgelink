@@ -134,9 +134,8 @@ TEST_CASE("Variant Class Tests") {
             REQUIRE(jarr.at(0) == 1);
             REQUIRE(jarr.at(1) == 2);
             REQUIRE(jarr.at(2) == 3);
-            fmt::print("JSON: {}\n", v.json_dump());
+            REQUIRE(v.json_dump() == "[1,2,3]");
         }
-
 
     }
 }
