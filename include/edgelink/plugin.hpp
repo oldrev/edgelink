@@ -12,18 +12,19 @@
 #include "edgelink/flows/msg.hpp"
 #include "edgelink/flows/abstractions.hpp"
 
+
+
 namespace edgelink {
 
-struct IPlugin {};
+struct BOOST_SYMBOL_VISIBLE IPlugin {
+    virtual std::string_view name() const = 0;
+    virtual const std::unordered_map<std::string, std::unique_ptr<INodeDescriptor>>& node_descriptors() const = 0;
 
-struct MyPluginClass {
-    MyPluginClass() {}
-    void perform_calculation() { value += 12; }
-    void perform_calculation(int new_value) { value += new_value; }
-    int value = 0;
-
-  private:
-    RTTR_ENABLE()
+    virtual ~IPlugin() = default;
 };
+
+#define EDGELINK_PLUGIN_DEFINE(class_)                                                                                 \
+    extern "C" BOOST_SYMBOL_EXPORT class_ __edgelink_plugin_object;                                                    \
+    class_ __edgelink_plugin_object
 
 }; // namespace edgelink

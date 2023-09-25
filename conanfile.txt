@@ -38,4 +38,5 @@ boost/*:without_math=True
 boost/*:without_iostreams=True
 boost/*:without_graph=True
 boost/*:without_context=True
+boost/*:without_dll=False
 
