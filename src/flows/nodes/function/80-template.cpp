@@ -20,7 +20,7 @@ class TemplateNode : public FlowNode {
 
     Awaitable<void> async_stop() override { co_return; }
 
-    Awaitable<void> receive_async(std::shared_ptr<Msg> msg) override {
+    Awaitable<void> receive_async(MsgPtr msg) override {
 
         JsonValue wrapped_msg = JsonObject({
             {_field, JsonValue(msg->data().at(_field))},

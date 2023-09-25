@@ -4,7 +4,6 @@ namespace edgelink {
 
 struct INode;
 class Msg;
-
 };
 
 
@@ -34,7 +33,7 @@ EDGELINK_EXPORT bool try_parse(const std::string_view input, PropertySegments& r
 
 EDGELINK_EXPORT const PropertySegments parse(const std::string_view input);
 
-EDGELINK_EXPORT std::optional<JsonValue> evaluate_property_value(const JsonValue& value, const std::string_view type,
-                                                                 const INode* node, const Msg& msg);
+EDGELINK_EXPORT JsonValue evaluate_property_value(const JsonValue& value, const std::string_view type,
+                                                  const INode& node, const std::shared_ptr<Msg>& msg);
 
 }; // namespace edgelink::flows::propex

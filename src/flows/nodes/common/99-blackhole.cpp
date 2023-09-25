@@ -12,7 +12,7 @@ class BlackholeNode : public SinkNode {
 
     Awaitable<void> async_stop() override { co_return; }
 
-    Awaitable<void> receive_async(std::shared_ptr<Msg> msg) override {
+    Awaitable<void> receive_async(MsgPtr msg) override {
         //
         MsgID msg_id = msg->data().at("id").to_number<MsgID>();
         spdlog::info("BlackholeNode > 吃掉了消息：[msg.id={0}]", msg_id);

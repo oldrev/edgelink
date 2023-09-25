@@ -14,7 +14,7 @@ class ModbusLogNode : public SinkNode {
 
     Awaitable<void> async_stop() override { co_return; }
 
-    Awaitable<void> receive_async(std::shared_ptr<Msg> msg) override {
+    Awaitable<void> receive_async(MsgPtr msg) override {
         //
         spdlog::info("ModBusLogNode > 收到了消息：\n{0}", msg->to_string());
         co_return;

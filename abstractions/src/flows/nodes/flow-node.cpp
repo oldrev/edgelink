@@ -3,25 +3,25 @@
 
 namespace edgelink {
 
-Awaitable<void> FlowNode::receive_async(std::shared_ptr<Msg> msg) {
+Awaitable<void> FlowNode::receive_async(MsgPtr msg) {
     // 默认就是什么都不干
     co_return;
 }
 
-Awaitable<void> FlowNode::async_send_to_one_port(std::shared_ptr<Msg> msg) {
+Awaitable<void> FlowNode::async_send_to_one_port(MsgPtr msg) {
     if (this->output_ports().size() != 1) {
         this->logger()->warn("节点 (id={}, name={}) 必须只有一个端口才能调用本方法", this->id(), this->name());
         co_return;
     }
 
-    std::vector<std::shared_ptr<Msg>> envelopes;
+    std::vector<MsgPtr> envelopes;
     envelopes.emplace_back(msg);
 
     co_await this->async_send_to_many_port(std::move(envelopes));
     co_return;
 }
 
-Awaitable<void> FlowNode::async_send_to_many_port(std::vector<std::shared_ptr<Msg>>&& msgs) {
+Awaitable<void> FlowNode::async_send_to_many_port(std::vector<MsgPtr>&& msgs) {
     auto&& ports = this->output_ports();
     if (msgs.size() > ports.size()) {
         auto error_msg = "发送的消息超出端口数量";

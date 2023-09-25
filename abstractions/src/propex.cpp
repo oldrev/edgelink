@@ -93,11 +93,10 @@ const PropertySegments parse(const std::string_view input) {
 
 // Assuming you have a getMessageProperty function
 // and other required functions declared and defined.
+JsonValue evaluate_property_value(const JsonValue& value, const std::string_view type, const INode& node,
+                                                 const std::shared_ptr<Msg>& msg) {
 
-std::optional<JsonValue> evaluate_property_value(const JsonValue& value, const std::string_view type, const INode* node,
-                                                 const Msg& msg) {
-
-    auto result = std::optional<JsonValue>();
+    JsonValue result = value;
 
     if (type == "str") {
         result = value;
@@ -163,8 +162,8 @@ std::optional<JsonValue> evaluate_property_value(const JsonValue& value, const s
             throw std::runtime_error("Invalid JSON format");
         }
     } else if (type == "msg") {
-        result = JsonValue(msg.at_propex(value.as_string()));
-    } else if ((type == "flow" || type == "global") && node != nullptr) {
+        result = JsonValue(msg->at_propex(value.as_string()));
+    } else if ((type == "flow" || type == "global")) {
         /*
         ContextKey contextKey = parseContextStore(value.as_string().c_str());
         if (std::regex_search(contextKey.key, std::regex("\\[msg"))) {
@@ -180,6 +179,9 @@ std::optional<JsonValue> evaluate_property_value(const JsonValue& value, const s
         TODO("暂时不知支持 jsonata");
     } else if (type == "env") {
         TODO("暂时不知支持 env");
+    }
+    else {
+        // do nothing
     }
 
     return result;

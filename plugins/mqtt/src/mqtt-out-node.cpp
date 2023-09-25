@@ -78,7 +78,7 @@ class MqttOutNode : public SinkNode, public std::enable_shared_from_this<MqttOut
 
     Awaitable<void> async_stop() override { co_return; }
 
-    Awaitable<void> receive_async(std::shared_ptr<Msg> msg) override {
+    Awaitable<void> receive_async(MsgPtr msg) override {
 
         if (!msg->data().contains("payload")) {
             co_return;

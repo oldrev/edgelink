@@ -4,7 +4,17 @@ namespace edgelink {
 
 class Variant;
 
-using VariantObject = std::unordered_map<std::string, Variant>;
+struct VariantObjectStringHash 
+{
+    using hash_type = std::hash<std::string_view>;
+    using is_transparent = void;
+
+    size_t operator()(const char* str) const { return hash_type{}(str); }
+    size_t operator()(std::string_view str) const { return hash_type{}(str); }
+    size_t operator()(std::string const& str) const { return hash_type{}(str); }
+};
+
+using VariantObject = std::unordered_map<std::string, Variant, VariantObjectStringHash, std::equal_to<>>;
 
 using VariantArray = std::vector<Variant>;
 
@@ -75,6 +85,12 @@ class EDGELINK_EXPORT Variant {
 
     template <typename T> bool is() const { return std::holds_alternative<T>(_data); }
 
+    inline bool is_array() const { return this->kind() == Kind::ARRAY; }
+
+    inline bool is_object() const { return this->kind() == Kind::OBJECT; }
+
+    inline bool is_null() const { return this->kind() == Kind::NULLPTR; }
+
     VariantArray& as_array() & {
         auto const& self = *this;
         return const_cast<VariantArray&>(self.as_array());
@@ -104,11 +120,11 @@ class EDGELINK_EXPORT Variant {
         // detail::throw_system_error( error::not_object, &loc );
     }
 
-    Variant& at(const std::string& key) & { return this->as_object().at(key); }
+    Variant& at(const std::string_view key) & { return this->as_object().at(key); }
 
-    Variant&& at(const std::string& key) && { return std::move(std::move(this->as_object()).at(key)); }
+    Variant&& at(const std::string_view key) && { return std::move(this->as_object()[key]); }
 
-    Variant const& at(const std::string& key) const& { return this->as_object().at(key); }
+    Variant const& at(const std::string_view key) const& { return this->as_object().at(key); }
 
     Variant& at(std::size_t pos) & { return this->as_array().at(pos); }
 

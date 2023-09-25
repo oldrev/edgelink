@@ -27,5 +27,8 @@
                 }
             }
         }
+    ],
+    "include": [
+        "${sourceDir}/build/CMakePresets.json"
     ]
 }

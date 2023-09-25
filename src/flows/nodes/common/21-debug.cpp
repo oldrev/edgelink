@@ -31,7 +31,7 @@ class DebugNode : public SinkNode {
 
     Awaitable<void> async_stop() override { co_return; }
 
-    Awaitable<void> receive_async(std::shared_ptr<Msg> msg) override {
+    Awaitable<void> receive_async(MsgPtr msg) override {
         //
         fmt::print("node {0}\n{0}\n", this->name(), msg->to_string());
         co_return;

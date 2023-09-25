@@ -51,7 +51,7 @@ class RangeNode : public FlowNode {
 
     Awaitable<void> async_stop() override { co_return; }
 
-    Awaitable<void> receive_async(std::shared_ptr<Msg> msg) override {
+    Awaitable<void> receive_async(MsgPtr msg) override {
         if (std::isnan(_minin) || std::isnan(_maxin) || std::isnan(_minout) || std::isnan(_maxout)) {
             co_return;
         }

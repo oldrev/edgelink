@@ -11,7 +11,7 @@ class JunctionNode : public FlowNode {
 
     Awaitable<void> async_stop() override { co_return; }
 
-    Awaitable<void> receive_async(std::shared_ptr<Msg> msg) override {
+    Awaitable<void> receive_async(MsgPtr msg) override {
         // 直接分发消息
         co_await this->async_send_to_one_port(msg);
     }
