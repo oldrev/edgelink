@@ -33,3 +33,4 @@ conaninfo.txt
 graph_info.json
 
 .vscode/c_cpp_properties.json
+CMakeUserPresets.json
