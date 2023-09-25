@@ -1,10 +1,9 @@
 #include "edgelink/edgelink.hpp"
 #include "edgelink/flows/dependency-sorter.hpp"
+#include "./engine.hpp"
 
 using namespace boost;
 namespace this_coro = boost::asio::this_coro;
-
-using CloneMsgStaticVector = boost::container::static_vector<std::shared_ptr<edgelink::Msg>, 32>;
 
 namespace edgelink {
 
@@ -90,14 +89,5 @@ Awaitable<void> Engine::async_stop() {
     _logger->info("流程引擎已停止");
     co_return;
 }
-
-#if EL_TEST
-
-RTTR_REGISTRATION {
-    rttr::registration::class_<edgelink::IEngine>("edgelink::IEngine");
-    rttr::registration::class_<edgelink::Engine>("edgelink::Engine");
-}
-
-#endif
 
 }; // namespace edgelink

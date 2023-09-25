@@ -9,6 +9,8 @@
 
 #include "flows/flow.hpp"
 #include "flows/flow-factory.hpp"
+#include "flows/engine.hpp"
+#include "flows/registry.hpp"
 
 using namespace boost;
 namespace fs = std::filesystem;

@@ -106,11 +106,4 @@ IFlowNode* Flow::get_node(const std::string_view id) const {
     throw std::runtime_error(fmt::format("找不到节点 ID：{0}", id));
 }
 
-#if EL_TEST
-RTTR_REGISTRATION {
-    rttr::registration::class_<edgelink::IFlow>("edgelink::IFlow");
-    rttr::registration::class_<edgelink::flows::Flow>("edgelink::flows::Flow");
-}
-#endif
-
 }; // namespace edgelink::flows

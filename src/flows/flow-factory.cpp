@@ -127,11 +127,4 @@ std::unique_ptr<IFlow> FlowFactory::create_flow(const boost::json::array& flows_
     return std::move(flow);
 }
 
-#if EL_TEST
-RTTR_REGISTRATION {
-    rttr::registration::class_<edgelink::IFlowFactory>("edgelink::flow::IFlowFactory");
-    rttr::registration::class_<edgelink::flows::FlowFactory>("edgelink::flows::FlowFactory");
-}
-#endif
-
 }; // namespace edgelink::flows

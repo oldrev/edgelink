@@ -4,9 +4,4 @@
 namespace edgelink {
 
 //
-
 }; // namespace edgelink
-
-RTTR_REGISTRATION // remark the different registration macro!
-{
-}

@@ -1,4 +1,5 @@
 #include "edgelink/edgelink.hpp"
+#include "./registry.hpp"
 
 namespace edgelink {
 
@@ -95,12 +96,5 @@ void Registry::register_node_provider(const rttr::type& provider_type) {
         _logger->error("未知的节点提供器: '{}'", std::string(provider_type.get_name()));
     }
 }
-
-#if EL_TEST
-RTTR_REGISTRATION {
-    rttr::registration::class_<edgelink::IRegistry>("edgelink::IRegistry");
-    rttr::registration::class_<edgelink::Registry>("edgelink::Registry");
-}
-#endif
 
 }; // namespace edgelink

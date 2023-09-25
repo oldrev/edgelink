@@ -12,6 +12,7 @@
 #include "flows/common.hpp"
 #include "flows/msg.hpp"
 #include "flows/abstractions.hpp"
+#include "flows/engine.hpp"
 #include "flows/registry.hpp"
 #include "flows/engine.hpp"
 

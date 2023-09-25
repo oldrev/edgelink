@@ -27,10 +27,6 @@ class FlowFactory : public edgelink::IFlowFactory, private Noncopyable {
     std::shared_ptr<spdlog::logger> _logger;
     const IRegistry& _registry;
 
-#if EL_TEST
-private:
-    RTTR_ENABLE(IFlowFactory)
-#endif
 };
 
 }; // namespace edgelink::flows

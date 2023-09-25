@@ -11,7 +11,7 @@
 #include "edgelink/flows/common.hpp"
 #include "edgelink/flows/msg.hpp"
 #include "edgelink/flows/abstractions.hpp"
-
+#include "edgelink/flows/engine.hpp"
 
 
 namespace edgelink {
