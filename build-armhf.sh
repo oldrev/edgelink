@@ -8,7 +8,7 @@ pushd "$BASEDIR"
 
 mkdir -p build
 
-conan install . --output-folder=build --build=missing  --settings=build_type=Release -pr profiles/armhf
+conan install . --output-folder=build --build=missing  --settings=build_type=Release -pr profiles/armhf.ini
 source ./build/conanbuild.sh
 cmake -B build -G Ninja -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release
 cmake --build build
