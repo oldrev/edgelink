@@ -146,17 +146,9 @@ class InjectNode : public SourceNode {
     std::shared_ptr<Msg> create_msg() {
         auto msg = std::make_shared<Msg>();
 
-        auto currentTime = std::chrono::system_clock::now();
-
-        // 将当前时间点转换为毫秒
-        auto sinceEpoch = currentTime.time_since_epoch();
-        auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(sinceEpoch);
-
         for (auto const& prop : _props) {
-            auto parsed_value = propex::evaluate_property_value(prop.v.value(), prop.vt.value(), this, *msg);
-            if(parsed_value) {
-                msg->insert_or_assign(prop.p, std::move(parsed_value.value()));
-            }
+            auto parsed_value = propex::evaluate_property_value(prop.v.value(), prop.vt.value(), *this, *msg);
+            msg->data()[prop.p] = std::move(parsed_value);
         }
 
         return msg;

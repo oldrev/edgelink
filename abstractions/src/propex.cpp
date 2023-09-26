@@ -94,10 +94,10 @@ const PropertySegments parse(const std::string_view input) {
 // Assuming you have a getMessageProperty function
 // and other required functions declared and defined.
 
-std::optional<JsonValue> evaluate_property_value(const JsonValue& value, const std::string_view type, const INode* node,
-                                                 const Msg& msg) {
+JsonValue evaluate_property_value(const JsonValue& value, const std::string_view type, const INode& node,
+                                  const Msg& msg) {
 
-    auto result = std::optional<JsonValue>();
+    auto result = value;
 
     if (type == "str") {
         result = value;
@@ -142,7 +142,7 @@ std::optional<JsonValue> evaluate_property_value(const JsonValue& value, const s
         // Your date conversion logic here
         auto now = std::chrono::system_clock::now();
         auto time_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
-        result = double(time_ms);
+        result = int64_t(time_ms);
     } else if (type == "bin") {
         try {
             JsonValue data = boost::json::parse(value.as_string());
@@ -164,7 +164,7 @@ std::optional<JsonValue> evaluate_property_value(const JsonValue& value, const s
         }
     } else if (type == "msg") {
         result = JsonValue(msg.at_propex(value.as_string()));
-    } else if ((type == "flow" || type == "global") && node != nullptr) {
+    } else if ((type == "flow" || type == "global")) {
         /*
         ContextKey contextKey = parseContextStore(value.as_string().c_str());
         if (std::regex_search(contextKey.key, std::regex("\\[msg"))) {
