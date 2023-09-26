@@ -1,34 +1,34 @@
 {
-    "version": 3,
-    "configurePresets": [
-        {
-            "name": "x86-64-linux-debug",
-            "displayName": "X86-64 Linux Debug",
-            "generator": "Ninja",
-            "binaryDir": "${sourceDir}/build/${presetName}",
-            "installDir": "${sourceDir}/build/install/${presetName}",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug",
-                "CMAKE_INSTALL_PREFIX": "${sourceDir}/build/install/${presetName}"
-
-            },
-            "condition": {
-                "type": "equals",
-                "lhs": "${hostSystemName}",
-                "rhs": "Linux"
-            },
-            "vendor": {
-                "microsoft.com/VisualStudioSettings/CMake/1.0": {
-                    "hostOS": [ "Linux" ],
-                    "intelliSenseMode": "linux-gcc-x64"
-                },
-                "microsoft.com/VisualStudioRemoteSettings/CMake/1.0": {
-                    "sourceDir": "$env{HOME}/.vs/$ms{projectDirName}"
-                }
-            }
+  "version": 3,
+  "configurePresets": [
+    {
+      "name": "x86-64-linux-debug",
+      "displayName": "X86-64 Linux Debug",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build",
+      "installDir": "${sourceDir}/build/install/${presetName}",
+      "toolchainFile": "${sourceDir}/build/conan_toolchain.cmake",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      },
+      "vendor": {
+        "microsoft.com/VisualStudioSettings/CMake/1.0": {
+          "hostOS": [ "Linux" ],
+          "intelliSenseMode": "linux-gcc-x64"
+        },
+        "microsoft.com/VisualStudioRemoteSettings/CMake/1.0": {
+          "sourceDir": "$env{HOME}/.vs/$ms{projectDirName}"
         }
-    ],
-    "include": [
-        "${sourceDir}/build/CMakePresets.json"
-    ]
+      }
+    }
+  ],
+
+  "include": [
+    "${sourceDir}/build/CMakePresets.json"
+  ]
 }
