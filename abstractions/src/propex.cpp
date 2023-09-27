@@ -164,7 +164,10 @@ JsonValue evaluate_property_value(const JsonValue& value, const std::string_view
         }
     } else if (type == "msg") {
         result = JsonValue(msg.at_propex(value.as_string()));
-    } else if ((type == "flow" || type == "global")) {
+    } else if (type == "flow") {
+        //
+        TODO("暂时不知支持");
+    } else if (type == "global")) {
         /*
         ContextKey contextKey = parseContextStore(value.as_string().c_str());
         if (std::regex_search(contextKey.key, std::regex("\\[msg"))) {
@@ -174,7 +177,8 @@ JsonValue evaluate_property_value(const JsonValue& value, const std::string_view
         result = node->context()[type]->get(contextKey.key, contextKey.store, callback);
         */
         TODO("暂时不知支持");
-    } else if (type == "bool") {
+        }
+    else if (type == "bool") {
         result = json::parse(value.as_string());
     } else if (type == "jsonata") {
         TODO("暂时不知支持 jsonata");

@@ -23,3 +23,6 @@
 [submodule "libs/rttr"]
 	path = libs/rttr
 	url = git@github.com:rttrorg/rttr.git
+[submodule "libs/meta.hpp"]
+	path = libs/meta.hpp
+	url = git@github.com:BlackMATov/meta.hpp.git
