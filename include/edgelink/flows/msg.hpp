@@ -4,9 +4,27 @@ namespace edgelink {
 
 using MsgID = uint32_t;
 
-struct FlowNode;
+enum class MsgValueKind : unsigned char {
+    NULLPTR,
+    DOUBLE,
+    INT64,
+    BOOL,
+    STRING,
+    BUFFER,
+};
 
-using JsonPointerExpression = boost::static_string<256>;
+using MsgValue = boost::variant< //
+    std::nullptr_t,              //
+    double,                      //
+    int64_t,                     //
+    bool,                        //
+    std::string,                 //
+    std::vector<uint8_t>         //
+    >;
+
+inline MsgValueKind kind(const MsgValue& value) { return static_cast<MsgValueKind>(value.which()); }
+
+struct FlowNode;
 
 class EDGELINK_EXPORT Msg final : private boost::noncopyable {
   public:
@@ -58,19 +76,6 @@ class EDGELINK_EXPORT Msg final : private boost::noncopyable {
     }
 
     static MsgID generate_msg_id();
-
-    static JsonPointerExpression convert_red_property_to_json_path(const std::string_view prop) {
-        // TODO 检查参数长度
-        auto path_to_replace = JsonPointerExpression(prop.begin(), prop.end());
-        for (auto it = path_to_replace.begin(); it != path_to_replace.end(); ++it) {
-            if (*it == '.') {
-                *it = '/';
-            }
-        }
-        auto ret = JsonPointerExpression("/");
-        ret.append(path_to_replace);
-        return ret;
-    }
 
   private:
     JsonValue _data;
