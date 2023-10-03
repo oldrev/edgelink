@@ -57,6 +57,7 @@ endif()
 add_subdirectory(./libs/async_mqtt EXCLUDE_FROM_ALL)
 add_subdirectory(./libs/quickjspp/quickjs EXCLUDE_FROM_ALL)
 add_subdirectory(./libs/rttr EXCLUDE_FROM_ALL)
+add_subdirectory(./libs/meta.hpp EXCLUDE_FROM_ALL)
 
 set(BUILD_TESTING _TMP_BUILD_TESTING)
 
@@ -69,6 +70,7 @@ include_directories(
     "${CMAKE_CURRENT_SOURCE_DIR}/libs/boost-di/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/libs/croncpp/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/libs/quickjspp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/libs/meta.hpp/headers"
 )
 
 file(GLOB_RECURSE EL_SOURCES 
