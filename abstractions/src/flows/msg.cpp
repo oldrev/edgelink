@@ -4,21 +4,21 @@ namespace edgelink {
 
 std::shared_ptr<Msg> Msg::clone() const {
     //? 是否要重新生成消息 ID?
-    auto new_json = JsonObject(_data.as_object());
+    auto new_json = Variant(_data.as_object());
     return std::make_shared<Msg>(std::move(new_json));
 }
 
 void Msg::set_id(MsgID new_id) {
     if (!_data.is_object()) {
-        _data = JsonObject{{"_msgid", new_id}};
+        _data = Variant{{"_msgid", new_id}};
     } else {
         this->insert_or_assign("_msgid", new_id);
     }
 }
 
-JsonValue const& Msg::at_propex(const std::string_view propex) const& {
+Variant const& Msg::at_propex(const std::string_view propex) const& {
     auto prop_segs = propex::parse(propex);
-    const JsonValue* presult = &this->_data;
+    const Variant* presult = &this->_data;
     for (auto const& ps : prop_segs) {
         if (ps.index() == static_cast<size_t>(propex::PropertySegmentKindIndex::IDENTIFIER)) {
             std::string key(std::get<std::string_view>(ps));

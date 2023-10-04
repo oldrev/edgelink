@@ -17,7 +17,6 @@
 #include <vector>
 #include <filesystem>
 
-#include <boost/variant.hpp>
 #include <boost/asio.hpp>
 #include <boost/static_string.hpp>
 #include <boost/container/static_vector.hpp>
@@ -25,8 +24,8 @@
 #include <boost/json.hpp>
 #include <boost/signals2.hpp>
 #include <boost/lexical_cast.hpp>
-#include <boost/property_tree/ptree.hpp>
 
+#include <rva/variant.hpp>
 
 #include <fmt/chrono.h>
 #include <fmt/core.h>
