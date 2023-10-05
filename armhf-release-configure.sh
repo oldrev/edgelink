@@ -8,4 +8,4 @@ pushd "$BASEDIR"
 
 mkdir -p build
 
-cmake -B build --preset "linux-release" -DVCPKG_TARGET_TRIPLET=arm-linux-dynamic
+cmake -B build --preset "arm-linux-release" -DVCPKG_TARGET_TRIPLET=arm-linux-dynamic

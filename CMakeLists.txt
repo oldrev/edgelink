@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.22)
 
+# You can access the compiler variables set by Vcpkg.
+
+
 #set(VCPKG_OVERLAY_TRIPLETS ./custom-triplets)
 
 option(EL_WITH_MQTT "Include MQTT support" YES)
@@ -33,13 +36,9 @@ add_custom_target(git_versioning
                    -P ${CMAKE_SOURCE_DIR}/cmake/GenerateGitVersionHeader.cmake
 )
 
-if(HOST_TRIPLET STREQUAL TARGET_TRIPLET)
-    # Native compilation, set build flags to build and install the code generator 
-    # We do nothing
-else() # Workaround for 32-bit cross compiliation
+# Workaround for 32-bit cross compiliation
+if(TARGET_TRIPLET STREQUAL "arm-linux-dynamic")
     set(CMAKE_SIZEOF_VOID_P 4)
-    # Cross compilation, set build flags to consume the prebuilt code generator
-    # from ${CURRENT_HOST_INSTALLED_DIR}
 endif()
 
 
