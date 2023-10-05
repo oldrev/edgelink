@@ -63,6 +63,28 @@
         "CMAKE_BUILD_TYPE": "Release"
       }
     },
+   {
+      "name": "armhf-debug",
+      "displayName": "ARM 32-Bit Debug ",
+      "description": "Sets debug build type and ARMHF arch",
+      "inherits": "base",
+      "architecture": {
+        "value": "arm",
+        "strategy": "external"
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "armhf-release",
+      "displayName": "ARM 32-Bit Release",
+      "description": "Sets release build type",
+      "inherits": "armhf-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
     {
       "name": "linux-debug",
       "displayName": "Linux Debug",
