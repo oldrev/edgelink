@@ -1,7 +1,6 @@
 #include <boost/asio/experimental/channel.hpp>
 
 #include <edgelink/plugin.hpp>
-#include <edgelink/async/async-lock.hpp>
 #include "mqtt.hpp"
 
 using namespace edgelink;

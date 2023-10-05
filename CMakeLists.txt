@@ -1,13 +1,9 @@
 cmake_minimum_required(VERSION 3.22)
 
-#set(CMAKE_TOOLCHAIN_FILE conan_toolchain.cmake)
-
-include(FetchContent)
+#set(VCPKG_OVERLAY_TRIPLETS ./custom-triplets)
 
 option(EL_WITH_MQTT "Include MQTT support" YES)
 #option(EL_WITH_MODBUS "Include ModBus support" YES)
-
-set(CMAKE_GENERATOR "Ninja")
 
 # 按代码尺寸优化
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
@@ -37,16 +33,23 @@ add_custom_target(git_versioning
                    -P ${CMAKE_SOURCE_DIR}/cmake/GenerateGitVersionHeader.cmake
 )
 
+find_package(spdlog REQUIRED)
+find_package(fmt REQUIRED)
+find_package(pegtl REQUIRED)
+
 # 查找Boost库
-find_package(Boost REQUIRED COMPONENTS url json program_options)
+
+#set(Boost_DIR ${_VCPKG_INSTALLED_DIR}) # don't set this one. 
+#set(Boost_NO_SYSTEM_PATHS ON)
+#set(Boost_NO_BOOST_CMAKE  ON) # additional set this one
+#set(Boost_USE_STATIC_LIBS OFF)
+#set(Boost_USE_STATIC_RUNTIME OFF)
+find_package(Boost REQUIRED COMPONENTS system url json program_options)
 set(Boost_MINIMUM_REQUIRED 1.83.0)
 if(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
 endif()
 
-find_package(spdlog REQUIRED)
-find_package(fmt REQUIRED)
-find_package(pegtl REQUIRED)
 
 # 通过 cmake 引入 ASYNC_MQTT 库
 set(_TMP_BUILD_TESTING BUILD_TESTING)
