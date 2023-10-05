@@ -40,10 +40,10 @@ find_package(pegtl REQUIRED)
 # 查找Boost库
 
 #set(Boost_DIR ${_VCPKG_INSTALLED_DIR}) # don't set this one. 
-#set(Boost_NO_SYSTEM_PATHS ON)
+set(Boost_NO_SYSTEM_PATHS ON)
 #set(Boost_NO_BOOST_CMAKE  ON) # additional set this one
-#set(Boost_USE_STATIC_LIBS OFF)
-#set(Boost_USE_STATIC_RUNTIME OFF)
+set(Boost_USE_STATIC_LIBS OFF)
+set(Boost_USE_STATIC_RUNTIME OFF)
 find_package(Boost REQUIRED COMPONENTS system url json program_options)
 set(Boost_MINIMUM_REQUIRED 1.83.0)
 if(Boost_FOUND)
@@ -53,7 +53,7 @@ endif()
 
 # 通过 cmake 引入 ASYNC_MQTT 库
 set(_TMP_BUILD_TESTING BUILD_TESTING)
-if(BUILD_TESTING) 
+if(BUILD_TESTING)
 	set(BUILD_TESTING OFF)
 endif()
 
