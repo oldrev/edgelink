@@ -3,16 +3,13 @@
 	"tasks": [
         {
             "type": "cmake",
-            "label": "CMake: build",
+            "label": "CMake: build (Linux/Debug)",
             "command": "build",
             "targets": [
                 "all"
             ],
             "preset": "${command:cmake.activeBuildPresetName}",
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
+            "group": "build",
             "problemMatcher": [],
             "detail": "CMake template build task"
         }
