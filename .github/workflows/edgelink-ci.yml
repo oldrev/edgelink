@@ -52,7 +52,7 @@ jobs:
 
     - name: Run tests
       run:
-        y/build/EdgeLinkTests
+        ${{github.workspace}}/build/EdgeLinkTests
 
     #- name: Package
       # Execute tests defined by the CMake configuration.
