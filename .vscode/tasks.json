@@ -1,15 +1,25 @@
 {
-	"version": "2.0.0",
-	"tasks": [
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "cmake",
+            "label": "CMake: configure",
+            "command": "configure",
+            "preset": "linux-debug",
+            "detail": "CMake template configure task"
+        },
         {
             "type": "cmake",
             "label": "CMake: build (Linux/Debug)",
             "command": "build",
             "targets": [
-                "all"
+                "EdgeLink"
             ],
-            "preset": "${command:cmake.activeBuildPresetName}",
-            "group": "build",
+            "preset": "default-build-linux",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
             "problemMatcher": [],
             "detail": "CMake template build task"
         }

@@ -104,5 +104,10 @@
             "comments": "off",
             "strings": "off"
         }
-    }
+    },
+    "cmake.configureSettings": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": true
+    },
+    "cmake.useCMakePresets": "always",
+    "C_Cpp.default.configurationProvider": "vector-of-bool.cmake-tools",
 }
