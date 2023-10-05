@@ -32,6 +32,9 @@ jobs:
 
     - name: Setup vcpkg (it does not install any package yet)
       uses: lukka/run-vcpkg@v11
+      env:
+        VCPKG_DEFAULT_TRIPLET: linux-release
+        VCPKG_OVERLAY_TRIPLETS: ${{github.workspace}}/custom-triplets
       with:
         vcpkgGitCommitId: '3b7578831da081ba164be30da8d9382a64841059'
         runVcpkgInstall: true
@@ -49,7 +52,7 @@ jobs:
 
     - name: Run tests
       run:
-        ${{github.workspace}}/build/EdgeLinkTests
+        y/build/EdgeLinkTests
 
     #- name: Package
       # Execute tests defined by the CMake configuration.
