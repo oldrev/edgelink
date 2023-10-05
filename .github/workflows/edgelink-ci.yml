@@ -26,10 +26,8 @@ jobs:
       with:
         submodules: recursive
 
-    - uses: lukka/get-cmake@latest
-
     - name: Install dependencies
-      run: sudo apt-get install git build-essential crossbuild-essential-armhf libsqlite3-dev libmodbus-dev ninja-build -y
+      run: sudo apt-get install git build-essential crossbuild-essential-armhf libsqlite3-dev cmake libmodbus-dev ninja-build -y
 
     - name: Setup vcpkg (it does not install any package yet)
       uses: lukka/run-vcpkg@v11
