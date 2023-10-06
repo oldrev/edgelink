@@ -46,8 +46,6 @@ std::string get_home_dir() {
 int main(int argc, char* argv[]) {
     show_banner();
 
-    fmt::print("size={0}\n", sizeof(JsonValue));
-
     auto exec_path = fs::canonical(std::filesystem::path(argv[0]));
 
     try {
