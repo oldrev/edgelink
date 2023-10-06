@@ -2,7 +2,10 @@
 
 namespace edgelink {
 
+struct IFlowNode;
+
 using MsgID = uint32_t;
+
 
 enum class MsgValueKind : unsigned char {
     NULLPTR,
@@ -28,28 +31,39 @@ struct FlowNode;
 
 class EDGELINK_EXPORT Msg final : private boost::noncopyable {
   public:
-    Msg() : Msg(Msg::generate_msg_id()) {}
+    Msg(IFlowNode* birth_place = nullptr) : Msg(Msg::generate_msg_id(), birth_place) {}
 
-    Msg(MsgID id) : _data(std::move(JsonObject({{"_msgid", id}, {"payload", nullptr}}))) {}
+    Msg(MsgID id, IFlowNode* birth_place = nullptr)
+        : _birth_place(birth_place), _data(std::move(JsonObject({{"_msgid", id}, {"payload", nullptr}}))) {}
 
-    Msg(Msg&& other) : _data(std::move(other._data)) {}
+    Msg(Msg&& other) : _birth_place(other._birth_place), _data(std::move(other._data)) {}
 
-    explicit Msg(JsonObject const& data) : _data(data) {}
+    Msg(JsonObject const& data, IFlowNode* birth_place = nullptr) : _birth_place(birth_place), _data(data) {}
 
-    explicit Msg(JsonObject&& data) : _data(std::move(data)) {}
+    Msg(JsonObject&& data, IFlowNode* birth_place) : _birth_place(birth_place), _data(std::move(data)) {}
 
-    inline JsonObject& data() { return _data.as_object(); }
+    JsonObject& data() { return _data; }
 
-    inline JsonObject const& data() const { return _data.as_object(); }
+    JsonObject const& data() const { return _data; }
 
-    inline MsgID id() const {
+    MsgID id() const {
         MsgID id = _data.at("_msgid").to_number<MsgID>();
         return id;
     }
 
+    IFlowNode* birth_place() { return _birth_place; }
+    const IFlowNode* birth_place() const { return _birth_place; }
+
+    /*
+    const std::optional<std::string_view> topic() const {
+        auto iter = _data.find("topic");
+        return iter = _data.end() ? std::optional<std::string_view>((*iter).as_string()) : std::optional<std::string_view>();
+    }
+    */
+
     void set_id(MsgID new_id);
 
-    std::shared_ptr<Msg> clone() const;
+    std::shared_ptr<Msg> clone(bool new_id = true) const;
 
     inline const JsonString to_json_string() const { return JsonString(std::move(boost::json::serialize(_data))); }
     inline const std::string to_string() const { return boost::json::serialize(_data); }
@@ -78,7 +92,8 @@ class EDGELINK_EXPORT Msg final : private boost::noncopyable {
     static MsgID generate_msg_id();
 
   private:
-    JsonValue _data;
+    IFlowNode* _birth_place;
+    JsonObject _data;
 };
 
 using MsgPtr = std::shared_ptr<Msg>;

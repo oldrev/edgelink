@@ -144,7 +144,7 @@ class InjectNode : public SourceNode {
 
   private:
     std::shared_ptr<Msg> create_msg() {
-        auto msg = std::make_shared<Msg>();
+        auto msg = std::make_shared<Msg>(this);
 
         for (auto const& prop : _props) {
             auto parsed_value = propex::evaluate_property_value(prop.v.value(), prop.vt.value(), *this, *msg);

@@ -8,6 +8,41 @@ using JsonObject = boost::json::object;
 using JsonArray = boost::json::array;
 using JsonKind = boost::json::kind;
 
+class JsonProxy {
+
+  public:
+    explicit JsonProxy(JsonValue& jv) noexcept : jv_(jv) {}
+
+    JsonProxy operator[](const std::string_view key) {
+        JsonObject* obj;
+        if (jv_.is_null())
+            obj = &jv_.emplace_object();
+        else
+            obj = &jv_.as_object();
+        return JsonProxy((*obj)[key]);
+    }
+
+    JsonProxy operator[](size_t index) {
+        JsonArray* arr;
+        if (jv_.is_null()) {
+
+            arr = &jv_.emplace_array();
+        } else {
+
+            arr = &jv_.as_array();
+        }
+        if (arr->size() <= index) {
+            arr->resize(index + 1);
+        }
+        return JsonProxy((*arr)[index]);
+    }
+
+    JsonValue& operator*() noexcept { return jv_; }
+
+  private:
+    JsonValue& jv_;
+};
+
 inline const std::string_view value_or(const JsonObject& json_obj, const std::string_view key,
                                        const std::string_view default_value) {
     if (auto val = json_obj.if_contains(key)) {
