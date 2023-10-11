@@ -93,10 +93,11 @@ const PropertySegments parse(const std::string_view input) {
 
 // Assuming you have a getMessageProperty function
 // and other required functions declared and defined.
-JsonValue evaluate_property_value(const JsonValue& value, const std::string_view type, const INode& node,
-                                                 const std::shared_ptr<Msg>& msg) {
 
-    JsonValue result = value;
+JsonValue evaluate_property_value(const JsonValue& value, const std::string_view type, const INode& node,
+                                  const Msg& msg) {
+
+    auto result = value;
 
     if (type == "str") {
         result = value;
@@ -141,7 +142,7 @@ JsonValue evaluate_property_value(const JsonValue& value, const std::string_view
         // Your date conversion logic here
         auto now = std::chrono::system_clock::now();
         auto time_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
-        result = double(time_ms);
+        result = int64_t(time_ms);
     } else if (type == "bin") {
         try {
             JsonValue data = boost::json::parse(value.as_string());
@@ -162,8 +163,11 @@ JsonValue evaluate_property_value(const JsonValue& value, const std::string_view
             throw std::runtime_error("Invalid JSON format");
         }
     } else if (type == "msg") {
-        result = JsonValue(msg->at_propex(value.as_string()));
-    } else if ((type == "flow" || type == "global")) {
+        result = JsonValue(msg.at_propex(value.as_string()));
+    } else if (type == "flow") {
+        //
+        TODO("暂时不知支持");
+    } else if (type == "global") {
         /*
         ContextKey contextKey = parseContextStore(value.as_string().c_str());
         if (std::regex_search(contextKey.key, std::regex("\\[msg"))) {
@@ -179,9 +183,6 @@ JsonValue evaluate_property_value(const JsonValue& value, const std::string_view
         TODO("暂时不知支持 jsonata");
     } else if (type == "env") {
         TODO("暂时不知支持 env");
-    }
-    else {
-        // do nothing
     }
 
     return result;

@@ -2,31 +2,37 @@
 
 namespace edgelink {
 
-MsgPtr Msg::clone() const {
+std::shared_ptr<Msg> Msg::clone(bool new_id) const {
     //? 是否要重新生成消息 ID?
-    // TODO FIXME
-    auto new_data = Variant::from_json(_data.to_json());
-    return std::make_shared<Msg>(std::move(new_data));
-}
-
-void Msg::set_id(MsgID new_id) {
-    if (!_data.is_object()) {
-        _data = JsonObject{{"_msgid", new_id}};
-    } else {
-        this->insert_or_assign("_msgid", new_id);
+    auto new_json = JsonObject(_data);
+    auto msg = std::make_shared<Msg>(std::move(new_json), _birth_place);
+    if (new_id) {
+        msg->set_id(generate_msg_id());
     }
+    return msg;
 }
 
-Variant const& Msg::at_propex(const std::string_view propex) const& {
+void Msg::set_id(MsgID new_id) { this->insert_or_assign("_msgid", new_id); }
+
+JsonValue const& Msg::at_propex(const std::string_view propex) const& {
     auto prop_segs = propex::parse(propex);
-    const Variant* presult = &this->_data;
-    for (auto const& ps : prop_segs) {
-        if (ps.index() == static_cast<size_t>(propex::PropertySegmentKindIndex::IDENTIFIER)) {
+    const JsonValue* presult = nullptr;
+    for (size_t i = 0; i < prop_segs.size(); i++) {
+        const auto& ps = prop_segs[i];
+        if (i == 0) {
+            if (propex::kind(ps) != propex::PropertySegmentKind::IDENTIFIER) {
+                throw InvalidDataException("Bad propex");
+            }
             std::string key(std::get<std::string_view>(ps));
-            presult = &(presult->at(key));
+            presult = &_data.at(std::get<std::string_view>(ps));
         } else {
-            auto index = std::get<size_t>(ps);
-            presult = &(presult->at(index));
+            if (propex::kind(ps) == propex::PropertySegmentKind::IDENTIFIER) {
+                std::string key(std::get<std::string_view>(ps));
+                presult = &(presult->at(key));
+            } else {
+                auto index = std::get<size_t>(ps);
+                presult = &(presult->at(index));
+            }
         }
     }
     return *presult;

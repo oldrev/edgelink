@@ -23,6 +23,8 @@ Makefile.in
 *.stamp
 /build/
 
+vcpkg_installed
+
 logs/
 logs/*
 

@@ -4,6 +4,7 @@ namespace edgelink {
 
 struct INode;
 class Msg;
+
 };
 
 
@@ -20,7 +21,7 @@ using PropertyValue = std::variant<                     //
     bool                                                //
     >;
 
-enum class PropertySegmentKindIndex : size_t {
+enum class PropertySegmentKind : size_t {
     IDENTIFIER = 0,
     INT_INDEX,
 };
@@ -29,11 +30,13 @@ using PropertySegment = std::variant<std::string_view, size_t>;
 
 using PropertySegments = boost::container::static_vector<PropertySegment, PROPERTY_SEGMENT_MAX>;
 
+inline PropertySegmentKind kind(const PropertySegment& seg) { return static_cast<PropertySegmentKind>(seg.index()); }
+
 EDGELINK_EXPORT bool try_parse(const std::string_view input, PropertySegments& result);
 
 EDGELINK_EXPORT const PropertySegments parse(const std::string_view input);
 
 EDGELINK_EXPORT JsonValue evaluate_property_value(const JsonValue& value, const std::string_view type,
-                                                  const INode& node, const std::shared_ptr<Msg>& msg);
+                                                  const INode& node, const Msg& msg);
 
 }; // namespace edgelink::flows::propex

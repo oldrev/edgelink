@@ -55,7 +55,7 @@ class EvalContext final {
   public:
     EvalContext() {}
 
-    static std::shared_ptr<EvalContext> create(FlowNode* node, MsgPtr msg) {
+    static std::shared_ptr<EvalContext> create(FlowNode* node, std::shared_ptr<Msg> msg) {
         auto ptr = std::make_shared<EvalContext>();
         return ptr;
     }
@@ -174,7 +174,7 @@ class FunctionNode : public FlowNode {
         co_return;
     }
 
-    Awaitable<void> receive_async(MsgPtr msg) override {
+    Awaitable<void> receive_async(std::shared_ptr<Msg> msg) override {
 
         auto eval_ctx = EvalContext::create(this, msg);
 
@@ -193,18 +193,20 @@ class FunctionNode : public FlowNode {
                     this->logger()->error(error_msg);
                     throw std::out_of_range(error_msg);
                 }
-                std::vector<MsgPtr> msgs;
+                std::vector<std::shared_ptr<Msg>> msgs;
 
                 for (auto& msg_json_value : array) {
                     // 直接分发消息，只有是对象的才分发
                     if (msg_json_value.kind() == JsonKind::object) {
-                        auto evaled_msg = std::make_shared<Msg>(Variant::from_json(msg_json_value));
+                        auto msg_json = msg_json_value.as_object();
+                        auto evaled_msg = std::make_shared<Msg>(msg_json, msg->birth_place());
                         msgs.emplace_back(std::move(evaled_msg));
                     }
                 }
-                co_await this->async_send_to_many_port(std::move(msgs));
+                co_await this->async_send_to_many_port(std::forward<std::vector<std::shared_ptr<Msg>>>(msgs));
             } else if (js_result.kind() == JsonKind::object) { // 单个端口消息的情况
-                auto evaled_msg = std::make_shared<Msg>(std::move(Variant::from_json(js_result)));
+                auto object_result = js_result.as_object();
+                auto evaled_msg = std::make_shared<Msg>(std::move(object_result), msg->birth_place());
                 co_await this->async_send_to_one_port(std::move(evaled_msg));
             } else { // 其他类型不支持
                 this->logger()->error("不支持的消息格式：{0}", result_json);
