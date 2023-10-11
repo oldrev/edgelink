@@ -28,6 +28,7 @@
 #include <boost/signals2.hpp>
 #include <boost/lexical_cast.hpp>
 
+#include <rva/variant.hpp>
 
 #include <fmt/chrono.h>
 #include <fmt/core.h>

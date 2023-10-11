@@ -4,6 +4,7 @@
 #include "common.hpp"
 #include "errors.hpp"
 #include "utils.hpp"
+#include "var.hpp"
 #include "json.hpp"
 #include "propex.hpp"
 #include "settings.hpp"
