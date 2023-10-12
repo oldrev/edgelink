@@ -120,6 +120,7 @@ name = "edgelink_abstractions"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "tokio",
 ]
 
 [[package]]

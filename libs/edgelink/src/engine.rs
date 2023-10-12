@@ -11,6 +11,8 @@ use tokio::{spawn, task, time};
 use ciborium::Value;
 
 use crate::nodes::*;
+use edgelink_abstractions::nodes::*;
+use edgelink_abstractions::engine::*;
 use edgelink_abstractions::Variant;
 
 pub struct Flow {
@@ -56,13 +58,17 @@ impl Flow {
     }
 }
 
-#[derive(Clone)]
-pub struct Engine {
-    nodes: Arc<Mutex<Vec<Box<Flow>>>>,
-}
-
 #[async_trait]
-pub trait FlowEngineBehavior {
-    async fn start(&self);
-    async fn stop(&self);
+impl FlowBehavior for Flow {
+
+    fn id(&self) -> u64 {
+        self.id
+    }
+
+    fn name(&self) -> &str {
+        &self.name
+    }
+
+    async fn start(&self) {}
+    async fn stop(&self) {}
 }
