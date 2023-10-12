@@ -1,5 +1,5 @@
-use edgelink_core::engine::*;
-use edgelink_core::nodes::*;
+use edgelink::engine::*;
+use edgelink::nodes::*;
 
 #[test]
 fn test1() {
