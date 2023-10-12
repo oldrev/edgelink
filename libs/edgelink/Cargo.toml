@@ -1,5 +1,5 @@
 [package]
-name = "edgelink_core"
+name = "edgelink"
 version = "0.1.0"
 authors = ["Li Wei <oldrev@gmail.com>"]
 edition = "2018"

@@ -11,7 +11,7 @@ strip = true
 
 [dependencies]
 edgelink_abstractions = { path = "./libs/abstractions" }
-edgelink_core = { path = "./libs/core" }
+edgelink = { path = "./libs/edgelink" }
 async-trait = "0.1.73"
 libloading = "0.5.2"
 more-di = "2.1.2"
@@ -21,7 +21,6 @@ log = "0.4.20"
 
 [workspace]
 members = [
-    "./libs/core",
     #"./plugins/plugin_a",
     #"./plugins/plugin_b"
 ]
