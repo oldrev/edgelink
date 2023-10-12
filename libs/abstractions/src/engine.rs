@@ -16,7 +16,7 @@ pub trait FlowBehavior : Send + Sync {
 pub type Flows = Vec<Arc<Mutex<Box<dyn FlowBehavior>>>>;
 
 #[async_trait]
-pub trait FlowEngine: Send + Sync {
+pub trait FlowEngineBehavior: Send + Sync {
     fn get_flows(&self) -> &Flows;
     fn get_flows_mut(&mut self) -> &mut Flows;
 

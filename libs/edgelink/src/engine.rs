@@ -98,11 +98,11 @@ impl FlowBehavior for Flow {
     }
 }
 
-pub struct FlowEngineState {
+pub struct FlowEngine {
     pub flows: edgelink_abstractions::engine::Flows,
 }
 
-impl FlowEngineState {
+impl FlowEngine {
     pub fn new(flows_json_path: &str) -> Result<Self> {
         let mut file = File::open(flows_json_path)?;
         let mut contents = String::new();
@@ -122,12 +122,12 @@ impl FlowEngineState {
             }
         }
 
-        Ok(FlowEngineState { flows: flows })
+        Ok(FlowEngine { flows: flows })
     }
 }
 
 #[async_trait]
-impl FlowEngine for FlowEngineState {
+impl FlowEngineBehavior for FlowEngine {
     fn get_flows(&self) -> &Flows {
         &self.flows
     }
