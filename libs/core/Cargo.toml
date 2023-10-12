@@ -13,6 +13,7 @@ strip = true
 
 
 [dependencies]
+edgelink_abstractions = { path = "../abstractions" }
 tokio = { version = "1.33.0", features = ["full"] }
 async-trait = "0.1.73"
 ciborium = "0.2.1"

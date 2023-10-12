@@ -104,11 +104,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "edgelink_abstractions"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+]
+
+[[package]]
 name = "edgelink_core"
 version = "0.1.0"
 dependencies = [
  "async-trait",
  "ciborium",
+ "edgelink_abstractions",
  "log",
  "tokio",
 ]
@@ -118,6 +126,7 @@ name = "edgelinkd"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "edgelink_abstractions",
  "edgelink_core",
  "libloading",
  "log",

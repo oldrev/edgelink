@@ -1,3 +1,9 @@
+
+pub mod variant;
+
+pub use crate::variant::Variant;
+
+
 /// The `PluginRegistrar` is defined by the application and passed to `plugin_entry`. It's used
 /// for a plugin module to register itself with the application.
 pub trait PluginRegistrar {
@@ -14,6 +20,3 @@ pub trait Plugin {
     /// Callbacks can take arguments and return values
     fn callback2(&self, i: i32) -> i32;
 }
-
-pub mod engine;
-pub mod nodes;

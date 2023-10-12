@@ -13,4 +13,4 @@ strip = true
 crate-type = ["dylib"]
 
 [dependencies]
-edgelink_core = { path = "../../libs/core" }
+edgelink_abstractions = { path = "../../libs/abstractions" }

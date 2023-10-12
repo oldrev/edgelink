@@ -52,5 +52,7 @@ async fn main() {
     // m.run().await;
     println!("EdgeLink 1.0");
 
-    time::sleep(tokio::time::Duration::from_secs(1)).await;
+    loop {
+        time::sleep(tokio::time::Duration::from_secs(1)).await;
+    }
 }

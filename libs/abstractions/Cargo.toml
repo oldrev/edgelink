@@ -1,16 +1,16 @@
 [package]
-name = "plugin_a"
+name = "edgelink_abstractions"
 version = "0.1.0"
 authors = ["Li Wei <oldrev@gmail.com>"]
 edition = "2018"
+
+[lib]
+crate-type = ["dylib", "rlib"]
 
 [profile.release]
 opt-level = "z"  # Optimize for size.
 strip = true
 
 
-[lib]
-crate-type = ["dylib"]
-
 [dependencies]
-edgelink_abstractions = { path = "../../libs/abstractions" }
+async-trait = "0.1.73"

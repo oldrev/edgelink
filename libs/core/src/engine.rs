@@ -6,11 +6,12 @@ use std::sync::Arc;
 use tokio::sync::{Mutex, MutexGuard};
 use tokio::task::yield_now;
 use tokio::{spawn, task, time};
+use log;
 
 use ciborium::Value;
 
 use crate::nodes::*;
-use crate::Variant;
+use edgelink_abstractions::Variant;
 
 pub struct Flow {
     id: u64,
@@ -21,6 +22,8 @@ pub struct Flow {
 
 impl Flow {
     pub fn new(id: u64, name: String) -> Self {
+        log::info!("Loading flow (id={0}, name='{1}'):", id, name);
+
         let mut ctx_map = BTreeMap::new();
         let hex_id = format!("{:016x}", id);
         ctx_map.insert("id".to_string(), Variant::String(hex_id));
