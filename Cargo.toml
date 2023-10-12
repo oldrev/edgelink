@@ -1,5 +1,5 @@
 [package]
-name = "edgelink"
+name = "edgelinkd"
 version = "0.1.0"
 authors = ["Li Wei <oldrev@gmail.com>"]
 edition = "2021"
@@ -15,11 +15,12 @@ async-trait = "0.1.73"
 libloading = "0.5.2"
 more-di = "2.1.2"
 tokio = { version = "1.33.0", features = ["full"] }
+log = "0.4.20"
 
 
 [workspace]
 members = [
     "./libs/core",
-    "./plugins/plugin_a",
-    "./plugins/plugin_b"
+    #"./plugins/plugin_a",
+    #"./plugins/plugin_b"
 ]

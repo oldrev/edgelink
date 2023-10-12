@@ -1,13 +1,11 @@
-use libloading::Library;
 use async_trait::async_trait;
+use libloading::Library;
 use std::cell::{Cell, RefCell};
 use std::future::Future;
 use std::sync::Arc;
 use tokio::sync::{Mutex, MutexGuard};
 use tokio::task::yield_now;
 use tokio::{spawn, task, time};
-
-mod engine;
 
 /*
 use core::{Plugin, PluginRegistrar};
@@ -48,8 +46,6 @@ fn main() {
 
 */
 
-
-
 #[tokio::main]
 async fn main() {
     // let m = Modal {};
@@ -57,7 +53,4 @@ async fn main() {
     println!("EdgeLink 1.0");
 
     time::sleep(tokio::time::Duration::from_secs(1)).await;
-
-
-
 }

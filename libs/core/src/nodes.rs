@@ -6,19 +6,21 @@ use tokio::sync::{Mutex, MutexGuard};
 use tokio::task::yield_now;
 use tokio::{spawn, task, time};
 
+use crate::engine::*;
+
 #[derive(Debug, Clone)]
 pub enum NodeKind {
     Flow = 0,
     Global = 1,
 }
 
-#[derive(Debug, Clone)]
-pub struct NodeDescriptor  {
+#[derive(Debug)]
+pub struct NodeDescriptor {
     kind: NodeKind,
     node_type: String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct BaseNode {
     id: u64,
     name: String,
@@ -26,36 +28,33 @@ pub struct BaseNode {
 }
 
 #[async_trait]
-pub trait NodeBehavior : Send {
+pub trait NodeBehavior: Send {
     async fn start(&self);
     async fn stop(&self);
 }
 
-#[derive(Debug, Clone)]
-struct FlowNode {
+#[derive(Debug)]
+pub struct FlowNode {
     base: BaseNode,
 }
 
 #[async_trait]
-pub trait FlowNodeBehavior : NodeBehavior {
-}
+pub trait FlowNodeBehavior: NodeBehavior {}
 
-#[derive(Debug, Clone)]
-struct GlobalNode {
+#[derive(Debug)]
+pub struct GlobalNode {
     base: BaseNode,
 }
 
 #[async_trait]
-pub trait GlobalNodeBehavior : NodeBehavior {
-}
+pub trait GlobalNodeBehavior: NodeBehavior {}
 
-
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 struct InjectNode {
     base: FlowNode,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 struct DebugNode {
     base: FlowNode,
 }
@@ -65,13 +64,10 @@ struct TestGlobalNode {
 }
 
 #[async_trait]
-impl GlobalNodeBehavior for TestGlobalNode {
-}
+impl GlobalNodeBehavior for TestGlobalNode {}
 
 #[async_trait]
 impl NodeBehavior for TestGlobalNode {
     async fn start(&self) {}
     async fn stop(&self) {}
-
 }
-

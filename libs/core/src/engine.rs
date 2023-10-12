@@ -1,31 +1,48 @@
-use libloading::Library;
 use async_trait::async_trait;
 use std::cell::{Cell, RefCell};
+use std::collections::BTreeMap;
 use std::future::Future;
 use std::sync::Arc;
 use tokio::sync::{Mutex, MutexGuard};
 use tokio::task::yield_now;
 use tokio::{spawn, task, time};
 
-use edgelink_core::nodes::*;
+use ciborium::Value;
 
-#[derive(Clone)]
-struct Flow {
+use crate::nodes::*;
+use crate::Variant;
+
+pub struct Flow {
     id: u64,
     name: String,
     nodes: Arc<Mutex<Vec<Box<dyn FlowNodeBehavior>>>>,
+    context: Mutex<RefCell<Variant>>,
 }
 
 impl Flow {
-    fn get_id(&self) -> u64 {
+    pub fn new(id: u64, name: String) -> Self {
+        let mut ctx_map = BTreeMap::new();
+        let hex_id = format!("{:016x}", id);
+        ctx_map.insert("id".to_string(), Variant::String(hex_id));
+        ctx_map.insert("name".to_string(), Variant::String(name.clone()));
+
+        Flow {
+            id,
+            name,
+            nodes: Arc::new(Mutex::new(Vec::new())),
+            context: Mutex::new(RefCell::new(Variant::Object(ctx_map))),
+        }
+    }
+
+    fn id(&self) -> u64 {
         self.id
     }
 
-    fn get_name(&self) -> &str {
+    fn name(&self) -> &str {
         &self.name
     }
 
-    fn get_nodes(&self) -> Arc<Mutex<Vec<Box<dyn FlowNodeBehavior>>>> {
+    fn nodes(&self) -> Arc<Mutex<Vec<Box<dyn FlowNodeBehavior>>>> {
         self.nodes.clone()
     }
 
@@ -34,14 +51,11 @@ impl Flow {
         time::sleep(tokio::time::Duration::from_millis(100)).await;
     }
 
-    async fn stop(&self)
-    {
+    async fn stop(&self) {
         time::sleep(tokio::time::Duration::from_millis(100)).await;
         println!("Stopping Flow (id={0})...", self.id);
     }
 }
-
-
 
 #[derive(Clone)]
 pub struct Engine {

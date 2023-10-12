@@ -15,4 +15,8 @@ pub trait Plugin {
     fn callback2(&self, i: i32) -> i32;
 }
 
+pub mod engine;
 pub mod nodes;
+pub mod variant;
+
+pub use crate::variant::Variant;
