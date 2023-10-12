@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use log;
 use std::cell::{Cell, RefCell};
 use std::collections::BTreeMap;
 use std::future::Future;
@@ -6,7 +7,6 @@ use std::sync::Arc;
 use tokio::sync::{Mutex, MutexGuard};
 use tokio::task::yield_now;
 use tokio::{spawn, task, time};
-use log;
 
 use ciborium::Value;
 
@@ -14,10 +14,10 @@ use crate::nodes::*;
 use edgelink_abstractions::Variant;
 
 pub struct Flow {
-    id: u64,
-    name: String,
-    nodes: Arc<Mutex<Vec<Box<dyn FlowNodeBehavior>>>>,
-    context: Mutex<RefCell<Variant>>,
+    pub id: u64,
+    pub name: String,
+    pub nodes: Arc<Mutex<Vec<Box<dyn FlowNodeBehavior>>>>,
+    pub context: Mutex<RefCell<Variant>>,
 }
 
 impl Flow {
@@ -29,20 +29,16 @@ impl Flow {
         ctx_map.insert("id".to_string(), Variant::String(hex_id));
         ctx_map.insert("name".to_string(), Variant::String(name.clone()));
 
+        for bnd in inventory::iter::<BuiltinNodeDescriptor> {
+            println!("-- kind={}, type-name={}", bnd.kind, bnd.type_name);
+        }
+
         Flow {
             id,
             name,
             nodes: Arc::new(Mutex::new(Vec::new())),
             context: Mutex::new(RefCell::new(Variant::Object(ctx_map))),
         }
-    }
-
-    fn id(&self) -> u64 {
-        self.id
-    }
-
-    fn name(&self) -> &str {
-        &self.name
     }
 
     fn nodes(&self) -> Arc<Mutex<Vec<Box<dyn FlowNodeBehavior>>>> {

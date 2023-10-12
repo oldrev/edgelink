@@ -1,8 +1,7 @@
-
+pub mod nodes;
 pub mod variant;
 
 pub use crate::variant::Variant;
-
 
 /// The `PluginRegistrar` is defined by the application and passed to `plugin_entry`. It's used
 /// for a plugin module to register itself with the application.
