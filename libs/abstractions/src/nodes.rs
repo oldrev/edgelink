@@ -30,8 +30,8 @@ pub struct BaseNode {
 
 #[async_trait]
 pub trait NodeBehavior: Send {
-    async fn start(&self);
-    async fn stop(&self);
+    async fn start(&mut self);
+    async fn stop(&mut self);
 }
 
 pub struct FlowNode {

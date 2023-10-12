@@ -1,31 +1,25 @@
-use std::{sync::Arc, cell::RefCell};
-use tokio::sync::{Mutex};
-use async_trait::async_trait;
 use crate::nodes::*;
 use crate::Variant;
-
+use async_trait::async_trait;
+use std::cell::RefCell;
+use std::sync::{Arc, Mutex};
 
 #[async_trait]
-pub trait FlowBehavior {
+pub trait FlowBehavior : Send + Sync {
     fn id(&self) -> u64;
-    fn name(&self) -> &str;
-    async fn start(&self);
-    async fn stop(&self);
+    fn label(&self) -> &str;
+
+    async fn start(&mut self);
+    async fn stop(&mut self);
 }
+
+pub type Flows = Vec<Arc<Mutex<Box<dyn FlowBehavior>>>>;
 
 #[async_trait]
-pub trait FlowEngine {
-    async fn start(&self);
-    async fn stop(&self);
-}
+pub trait FlowEngine: Send + Sync {
+    fn get_flows(&self) -> &Flows;
+    fn get_flows_mut(&mut self) -> &mut Flows;
 
-#[derive(Clone)]
-pub struct Engine {
-    pub nodes: Arc<Mutex<Vec<Box<dyn FlowBehavior>>>>,
-}
-
-#[async_trait]
-pub trait FlowEngineBehavior {
-    async fn start(&self);
-    async fn stop(&self);
+    async fn start(&mut self);
+    async fn stop(&mut self);
 }

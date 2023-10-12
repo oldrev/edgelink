@@ -1,5 +1,7 @@
-pub mod nodes;
+use thiserror::Error;
+
 pub mod engine;
+pub mod nodes;
 pub mod variant;
 
 pub use crate::variant::Variant;
@@ -20,3 +22,18 @@ pub trait Plugin {
     /// Callbacks can take arguments and return values
     fn callback2(&self, i: i32) -> i32;
 }
+
+#[derive(Error, Debug)]
+pub enum EdgeLinkError {
+
+    #[error("Invalid 'flows.json': {0}")]
+    BadFlowsJson(String),
+
+    #[error("Missing attribute: {0}")]
+    MissingAttribute(String),
+
+}
+
+pub type Error = Box<dyn std::error::Error + Send + Sync>;
+
+pub type Result<T> = std::result::Result<T, Error>;

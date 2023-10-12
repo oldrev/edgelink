@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use edgelink::engine::Flow;
+use edgelink::engine::{Flow, FlowEngine};
 use libloading::Library;
 use std::cell::{Cell, RefCell};
 use std::future::Future;
@@ -53,7 +53,7 @@ async fn main() {
     // m.run().await;
     println!("EdgeLink 1.0");
 
-    let flow = Flow::new(123, "test flow".to_string());
+    let engine = FlowEngineState::new("./flows.json").unwrap();
 
     loop {
         time::sleep(tokio::time::Duration::from_secs(1)).await;
