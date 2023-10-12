@@ -1,0 +1,16 @@
+[package]
+name = "plugin_b"
+version = "0.1.0"
+authors = ["Li Wei <oldrev@gmail.com>"]
+edition = "2018"
+
+[profile.release]
+opt-level = "z"  # Optimize for size.
+strip = true
+
+
+[lib]
+crate-type = ["dylib"]
+
+[dependencies]
+edgelink_core = { path = "../../libs/core" }

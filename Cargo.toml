@@ -1,0 +1,25 @@
+[package]
+name = "edgelink"
+version = "0.1.0"
+authors = ["Li Wei <oldrev@gmail.com>"]
+edition = "2021"
+
+[profile.release]
+opt-level = "z"  # Optimize for size.
+strip = true
+
+
+[dependencies]
+edgelink_core = { path = "./libs/core" }
+async-trait = "0.1.73"
+libloading = "0.5.2"
+more-di = "2.1.2"
+tokio = { version = "1.33.0", features = ["full"] }
+
+
+[workspace]
+members = [
+    "./libs/core",
+    "./plugins/plugin_a",
+    "./plugins/plugin_b"
+]
