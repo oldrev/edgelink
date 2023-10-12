@@ -53,7 +53,7 @@ async fn main() {
     // m.run().await;
     println!("EdgeLink 1.0");
 
-    let engine = FlowEngineState::new("./flows.json").unwrap();
+    let engine = FlowEngine::new("./flows.json").unwrap();
 
     loop {
         time::sleep(tokio::time::Duration::from_secs(1)).await;
