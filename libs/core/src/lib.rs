@@ -14,3 +14,5 @@ pub trait Plugin {
     /// Callbacks can take arguments and return values
     fn callback2(&self, i: i32) -> i32;
 }
+
+pub mod nodes;

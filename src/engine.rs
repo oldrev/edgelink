@@ -7,13 +7,13 @@ use tokio::sync::{Mutex, MutexGuard};
 use tokio::task::yield_now;
 use tokio::{spawn, task, time};
 
-use crate::nodes;
+use edgelink_core::nodes::*;
 
 #[derive(Clone)]
 struct Flow {
     id: u64,
     name: String,
-    nodes: Arc<Mutex<Vec<Box<dyn nodes::FlowNodeBehavior>>>>,
+    nodes: Arc<Mutex<Vec<Box<dyn FlowNodeBehavior>>>>,
 }
 
 impl Flow {
@@ -25,7 +25,7 @@ impl Flow {
         &self.name
     }
 
-    fn get_nodes(&self) -> Arc<Mutex<Vec<Box<dyn nodes::FlowNodeBehavior>>>> {
+    fn get_nodes(&self) -> Arc<Mutex<Vec<Box<dyn FlowNodeBehavior>>>> {
         self.nodes.clone()
     }
 

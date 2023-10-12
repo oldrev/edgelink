@@ -13,3 +13,5 @@ strip = true
 
 
 [dependencies]
+tokio = { version = "1.33.0", features = ["full"] }
+async-trait = "0.1.73"

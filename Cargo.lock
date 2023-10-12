@@ -90,6 +90,10 @@ dependencies = [
 [[package]]
 name = "edgelink_core"
 version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "tokio",
+]
 
 [[package]]
 name = "gimli"
