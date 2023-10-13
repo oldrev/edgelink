@@ -1,5 +1,7 @@
 use async_trait::async_trait;
-use edgelink::engine::{Flow, FlowEngine};
+use edgelink::engine::FlowEngine;
+use edgelink::registry::RegistryImpl;
+use edgelink_abstractions::Registry;
 use libloading::Library;
 use std::cell::{Cell, RefCell};
 use std::future::Future;
@@ -53,7 +55,9 @@ async fn main() {
     // m.run().await;
     println!("EdgeLink 1.0");
 
-    let engine = FlowEngine::new("./flows.json").unwrap();
+    let reg = RegistryImpl::new().unwrap();
+    let mut engine = FlowEngine::new(&reg, "./flows.json").unwrap();
+    engine.start().await;
 
     loop {
         time::sleep(tokio::time::Duration::from_secs(1)).await;

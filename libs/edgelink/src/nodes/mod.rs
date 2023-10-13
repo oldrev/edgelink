@@ -9,34 +9,23 @@ use tokio::{spawn, task, time};
 use crate::engine::*;
 use edgelink_abstractions::nodes::*;
 
-struct DebugNode {
-    pub base: FlowNode,
-}
-
-#[derive(Debug)]
-pub struct BuiltinNodeDescriptor {
-    pub kind: NodeKind,
-    pub type_name: &'static str,
+pub(crate) struct BuiltinNodeDescriptor {
+    pub(crate) meta: MetaNode,
 }
 
 impl BuiltinNodeDescriptor {
-    pub const fn new(kind: NodeKind, type_name: &'static str) -> Self {
+    pub(crate) const fn new(kind: NodeKind, type_name: &'static str, factory: NodeFactory) -> Self {
         BuiltinNodeDescriptor {
-            kind: kind,
-            type_name: type_name,
+            meta: MetaNode {
+                kind: kind,
+                type_name: type_name,
+                factory: factory,
+            },
         }
-    }
-}
-
-impl MetaNode for BuiltinNodeDescriptor {
-    fn kind(&self) -> NodeKind {
-        self.kind
-    }
-    fn type_name(&self) -> &'static str {
-        self.type_name
     }
 }
 
 inventory::collect!(BuiltinNodeDescriptor);
 
+mod debug_node;
 mod inject_node;

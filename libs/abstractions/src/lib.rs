@@ -2,8 +2,10 @@ use thiserror::Error;
 
 pub mod engine;
 pub mod nodes;
+pub mod registry;
 pub mod variant;
 
+pub use crate::registry::Registry;
 pub use crate::variant::Variant;
 
 /// The `PluginRegistrar` is defined by the application and passed to `plugin_entry`. It's used
@@ -25,13 +27,11 @@ pub trait Plugin {
 
 #[derive(Error, Debug)]
 pub enum EdgeLinkError {
-
     #[error("Invalid 'flows.json': {0}")]
     BadFlowsJson(String),
 
-    #[error("Missing attribute: {0}")]
-    MissingAttribute(String),
-
+    #[error("Not supported: {0}")]
+    NotSupported(String),
 }
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;

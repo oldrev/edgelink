@@ -119,6 +119,7 @@ dependencies = [
  "edgelink_abstractions",
  "inventory",
  "log",
+ "more-di",
  "serde",
  "serde_json",
  "tokio",
@@ -129,6 +130,7 @@ name = "edgelink_abstractions"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "serde_json",
  "thiserror",
  "tokio",
 ]
