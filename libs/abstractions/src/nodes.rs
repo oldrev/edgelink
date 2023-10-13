@@ -2,7 +2,7 @@ use std::fmt;
 
 use async_trait::async_trait;
 
-use crate::{Registry, engine::FlowBehavior};
+use crate::{engine::FlowBehavior, Registry};
 
 #[derive(Debug, Clone, Copy)]
 pub enum NodeKind {
@@ -18,6 +18,7 @@ impl fmt::Display for NodeKind {
         }
     }
 }
+
 #[derive(Clone, Copy)]
 pub enum NodeFactory {
     Global(fn(serde_json::Value) -> Box<dyn NodeBehavior>),
@@ -46,11 +47,11 @@ pub trait NodeBehavior: Send {
 
 #[async_trait]
 pub trait FlowNodeBehavior: NodeBehavior {
-    fn flow(&self) -> &Box<dyn FlowBehavior>; 
+    fn flow(&self) -> &Box<dyn FlowBehavior>;
     fn flow_mut(&self) -> &mut Box<dyn FlowBehavior>;
 }
 
-/* 
+/*
 impl BaseNode {
     pub fn from_json_value(
         reg: &dyn Registry,

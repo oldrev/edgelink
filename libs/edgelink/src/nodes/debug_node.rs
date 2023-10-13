@@ -1,7 +1,7 @@
 use crate::nodes::*;
 use edgelink_abstractions::nodes::*;
 
-/* 
+/*
 struct DebugNode {
     base: BaseNode,
 }

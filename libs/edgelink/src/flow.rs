@@ -10,8 +10,8 @@ use tokio::task::yield_now;
 use tokio::{spawn, task, time};
 
 use crate::nodes::*;
-use crate::red::FlowConfig;
 use edgelink_abstractions::nodes::*;
+use edgelink_abstractions::red::FlowConfig;
 use edgelink_abstractions::Variant;
 use edgelink_abstractions::{engine::*, EdgeLinkError, Error, Result};
 

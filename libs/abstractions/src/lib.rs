@@ -2,6 +2,7 @@ use thiserror::Error;
 
 pub mod engine;
 pub mod nodes;
+pub mod red;
 pub mod registry;
 pub mod variant;
 

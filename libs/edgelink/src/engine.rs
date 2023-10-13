@@ -8,10 +8,11 @@ use std::io::Read;
 use std::sync::{Arc, Mutex};
 use tokio::task::yield_now;
 use tokio::{spawn, task, time};
+use topo_sort::{SortResults, TopoSort};
 
 use crate::flow::Flow;
 use crate::nodes::*;
-use crate::red::FlowConfig;
+use edgelink_abstractions::red::{FlowConfig, RedNodeJsonValue};
 use edgelink_abstractions::Variant;
 use edgelink_abstractions::{engine::*, EdgeLinkError, Error, Result};
 use edgelink_abstractions::{nodes::*, Registry};
@@ -35,16 +36,21 @@ impl FlowEngine {
         let mut contents = String::new();
         file.read_to_string(&mut contents)?;
 
-        let mut flows = Vec::new();
         let json_value: serde_json::Value = serde_json::from_str(&contents)?;
-        if let Some(elements) = json_value.as_array() {
-            for e in elements.iter() {
+
+        let mut topo_sort = TopoSort::new();
+        let mut flow_values = Vec::new();
+        let mut node_values = Vec::new();
+        if let Some(all_values) = json_value.as_array() {
+            for e in all_values.iter() {
                 if let Some(item_type) = e["type"].as_str() {
                     if item_type == "tab" {
-                        // let flow = &Flow::new(&e, &elements)? as &dyn FlowBehavior;
-                        let flow = Flow::new(&e, &elements)?;
-                        flows.push(Box::new(flow));
+                        flow_values.push(e.clone());
                     } else {
+                        node_values.push(e);
+                        let id = e["id"].as_str().unwrap();
+                        let deps = e.get_flow_node_dependencies();
+                        topo_sort.insert_from_set(id, deps);
                         if let Some(meta_node) = reg.get(item_type) {
                             println!("Available node: type={0}", meta_node.type_name);
                         } else {
@@ -56,6 +62,22 @@ impl FlowEngine {
                     }
                 }
             }
+
+            /* 
+            match topo_sort.into_vec_nodes() {
+                SortResults::Full(nodes) => assert_eq!(vec!["A", "B", "C", "E", "D"], nodes),
+                SortResults::Partial(_) => panic!("unexpected cycle!"),
+            }
+            */
+
+            // load flows
+            let mut flows = Vec::new();
+            for e in flow_values.iter() {
+                let flow = Flow::new(&e, &all_values)?;
+                flows.push(Box::new(flow));
+            }
+        } else {
+            return Err(EdgeLinkError::BadFlowsJson("Bad flows.json".to_string()).into());
         }
 
         Ok(FlowEngine {
