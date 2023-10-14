@@ -1,8 +1,8 @@
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 use crate::nodes::MetaNode;
 
 pub trait Registry {
-    fn all(&self) -> &HashMap<&'static str, MetaNode>;
+    fn all(&self) -> &BTreeMap<&'static str, MetaNode>;
     fn get(&self, type_name: &str) -> Option<&MetaNode>;
 }

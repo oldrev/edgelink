@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::sync::Arc;
 
 use edgelink_abstractions::Result;
@@ -9,12 +9,12 @@ use crate::nodes::BuiltinNodeDescriptor;
 
 #[derive(Default)]
 pub struct RegistryImpl {
-    meta_nodes: Arc<HashMap<&'static str, MetaNode>>,
+    meta_nodes: Arc<BTreeMap<&'static str, MetaNode>>,
 }
 
 impl RegistryImpl {
     pub fn new() -> Result<Self> {
-        let mut nodes = HashMap::new();
+        let mut nodes = BTreeMap::new();
         for bnd in inventory::iter::<BuiltinNodeDescriptor> {
             nodes.insert(bnd.meta.type_name, bnd.meta);
         }
@@ -25,7 +25,7 @@ impl RegistryImpl {
 }
 
 impl Registry for RegistryImpl {
-    fn all(&self) -> &HashMap<&'static str, MetaNode> {
+    fn all(&self) -> &BTreeMap<&'static str, MetaNode> {
         &self.meta_nodes
     }
 

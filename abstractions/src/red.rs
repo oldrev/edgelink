@@ -1,7 +1,5 @@
-use std::{collections::HashSet, hash::Hash};
-
 use serde::{de::Error, Deserialize, Deserializer};
-use serde_json::{Value as JsonValue, Map as JsonMap};
+use serde_json::{Value as JsonValue};
 
 use crate::{EdgeLinkError, Result};
 
@@ -26,29 +24,6 @@ pub struct JsonValues {
     pub flow_nodes: Vec<JsonValue>,
 }
 
-pub trait RedNodeJsonObject {
-    fn get_flow_node_dependencies(&self) -> HashSet<&str>;
-}
-
-impl RedNodeJsonObject for JsonMap<String, JsonValue> {
-    fn get_flow_node_dependencies(&self) -> HashSet<&str> {
-        match self
-            .get("wires")
-            .and_then(|wires_value| wires_value.as_array())
-        {
-            Some(wires) => {
-                let dependencies: HashSet<&str> = wires
-                    .iter()
-                    .filter_map(|port| port.as_array())
-                    .flatten()
-                    .filter_map(|id| id.as_str())
-                    .collect();
-                dependencies
-            }
-            None => HashSet::new(),
-        }
-    }
-}
 
 fn from_hex<'de, D>(deserializer: D) -> std::result::Result<u64, D::Error>
 where

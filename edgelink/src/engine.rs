@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use serde_json::Value as JsonValue;
-use std::collections::{BTreeMap, HashMap};
+use std::collections::BTreeMap;
 use std::fs::File;
 use std::io::Read;
 use std::sync::{Arc};
@@ -8,7 +8,7 @@ use tokio::sync::Mutex;
 use topo_sort::TopoSort;
 
 use crate::flow::Flow;
-use edgelink_abstractions::red::{JsonValues, RedNodeJsonObject};
+use edgelink_abstractions::red::{JsonValues};
 use edgelink_abstractions::Variant;
 use edgelink_abstractions::{engine::*, EdgeLinkError, Result, Registry};
 

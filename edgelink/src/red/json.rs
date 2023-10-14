@@ -1,8 +1,10 @@
-use std::{collections::HashMap, fs::File, io::Read};
+use std::collections::{BTreeMap, HashSet};
+use std::{fs::File, io::Read};
 
-use edgelink_abstractions::red::{JsonValues, RedNodeJsonObject};
+use edgelink_abstractions::red::JsonValues;
 use edgelink_abstractions::{EdgeLinkError, Result};
 use serde_json::Value as JsonValue;
+use serde_json::Map as JsonMap;
 use topo_sort::TopoSort;
 
 /// Loading 'flows.js'
@@ -17,7 +19,7 @@ pub(crate) fn load_flows_json(flows_json_path: &str) -> Result<JsonValues> {
 
     // 初始化 JsonValues 结构
     let mut flows = Vec::new();
-    let mut flow_nodes = HashMap::new();
+    let mut flow_nodes = BTreeMap::new();
     let mut global_nodes = Vec::new();
 
     let mut topo_sort = TopoSort::new();
@@ -57,4 +59,27 @@ pub(crate) fn load_flows_json(flows_json_path: &str) -> Result<JsonValues> {
         global_nodes: global_nodes,
         flow_nodes: sorted_flow_nodes,
     })
+}
+pub(crate) trait RedNodeJsonObject {
+    fn get_flow_node_dependencies(&self) -> HashSet<&str>;
+}
+
+impl RedNodeJsonObject for JsonMap<String, JsonValue> {
+    fn get_flow_node_dependencies(&self) -> HashSet<&str> {
+        match self
+            .get("wires")
+            .and_then(|wires_value| wires_value.as_array())
+        {
+            Some(wires) => {
+                let dependencies: HashSet<&str> = wires
+                    .iter()
+                    .filter_map(|port| port.as_array())
+                    .flatten()
+                    .filter_map(|id| id.as_str())
+                    .collect();
+                dependencies
+            }
+            None => HashSet::new(),
+        }
+    }
 }
