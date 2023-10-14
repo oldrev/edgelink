@@ -27,37 +27,38 @@ impl FlowEngine {
 
         // load flows
         let mut flows = Vec::new();
-        for e in json_values.flows.iter() {
-            let flow = Flow::new(&e, &json_values)?;
+        for flow_config in json_values.flows.iter() {
+            let flow = Flow::new(flow_config, reg)?;
             flows.push(Box::new(flow));
         }
 
         Ok(FlowEngine {
             shared: Arc::new(FlowEngineShared {
                 state: Mutex::new(FlowEngineState {
-                    flows: Vec::new(),
+                    flows: flows,
                     context: Variant::Object(BTreeMap::new()),
                 }),
             }),
         })
     }
 
-    pub async fn start(&mut self) -> Result<()> {
+    pub async fn start(&self) -> Result<()> {
         let mut state = self.shared.state.lock().await;
         for flow in state.flows.iter_mut() {
-            flow.start().await;
+            flow.start().await?;
         }
         Ok(())
     }
 
-    pub async fn stop(&mut self) -> Result<()> {
+    pub async fn stop(&self) -> Result<()> {
         let mut state = self.shared.state.lock().await;
         for flow in state.flows.iter_mut() {
-            flow.stop().await;
+            flow.stop().await?;
         }
         Ok(())
     }
 }
 
 #[async_trait(?Send)]
-impl FlowEngineBehavior for FlowEngine {}
+impl FlowEngineBehavior for FlowEngine {
+}

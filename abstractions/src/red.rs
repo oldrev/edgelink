@@ -6,8 +6,8 @@ use crate::{EdgeLinkError, Result};
 // type RedNodeID = [char; 16];
 
 #[derive(Debug, serde::Deserialize)]
-pub struct FlowConfig {
-    pub disabled: bool,
+pub struct RedFlowConfig {
+    pub disabled: Option<bool>,
 
     #[serde(deserialize_with = "from_hex")]
     pub id: u64,
@@ -17,12 +17,61 @@ pub struct FlowConfig {
 
     #[serde(alias = "type")]
     pub type_name: String,
+
+    #[serde(skip)]
+    pub json: serde_json::Map<String, JsonValue>,
+
+    #[serde(skip)]
+    pub nodes: Vec<RedFlowNodeConfig>,
 }
 
+#[derive(Debug, serde::Deserialize)]
+pub struct RedFlowNodeConfig {
+
+    #[serde(deserialize_with = "from_hex")]
+    pub id: u64,
+
+    #[serde(alias = "type")]
+    pub type_name: String,
+
+    pub name: String,
+
+    #[serde(deserialize_with = "from_hex")]
+    pub z: u64,
+
+    pub active: Option<bool>,
+
+    pub disabled: Option<bool>,
+
+   #[serde(skip)]
+    pub json: serde_json::Map<String, JsonValue>,
+}
+
+#[derive(Debug, serde::Deserialize)]
+pub struct RedGlobalNodeConfig {
+
+    #[serde(deserialize_with = "from_hex")]
+    pub id: u64,
+
+    #[serde(alias = "type")]
+    pub type_name: String,
+
+    pub name: String,
+
+    pub active: Option<bool>,
+
+    pub disabled: Option<bool>,
+
+   #[serde(skip)]
+    pub json: serde_json::Map<String, JsonValue>,
+}
+
+
+
+
 pub struct JsonValues {
-    pub flows: Vec<JsonValue>,
-    pub global_nodes: Vec<JsonValue>,
-    pub flow_nodes: Vec<JsonValue>,
+    pub flows: Vec<RedFlowConfig>,
+    pub global_nodes: Vec<RedGlobalNodeConfig>,
 }
 
 fn from_hex<'de, D>(deserializer: D) -> std::result::Result<u64, D::Error>

@@ -1,7 +1,7 @@
 use std::collections::{BTreeMap, HashSet};
 use std::{fs::File, io::Read};
 
-use edgelink_abstractions::red::JsonValues;
+use edgelink_abstractions::red::{JsonValues, RedFlowConfig, RedFlowNodeConfig, RedGlobalNodeConfig};
 use edgelink_abstractions::{EdgeLinkError, Result};
 use serde_json::Map as JsonMap;
 use serde_json::Value as JsonValue;
@@ -13,8 +13,7 @@ pub fn load_flows_json(flows_json_path: &str) -> Result<JsonValues> {
     let mut contents = String::new();
     file.read_to_string(&mut contents)?;
     let root_jv: JsonValue = serde_json::from_str(&contents)?;
-    let values = load_flows_json_value(&root_jv)?;
-    Ok(values)
+    load_flows_json_value(&root_jv)
 }
 
 pub fn load_flows_json_value(root_jv: &JsonValue) -> Result<JsonValues> {
@@ -29,7 +28,7 @@ pub fn load_flows_json_value(root_jv: &JsonValue) -> Result<JsonValues> {
 
     let mut topo_sort = TopoSort::new();
     // 遍历 JSON 数组并分类子元素
-    for item in all_values {
+    for item in all_values.iter() {
         if let Some(obj) = item.as_object() {
             if let Some(value) = obj.get("type") {
                 if let Some(type_str) = value.as_str() {
@@ -42,7 +41,9 @@ pub fn load_flows_json_value(root_jv: &JsonValue) -> Result<JsonValues> {
                             topo_sort.insert_from_set(id, deps);
                             flow_nodes.insert(id, item.clone());
                         } else {
-                            global_nodes.push(item.clone());
+                            let mut global_config: RedGlobalNodeConfig = serde_json::from_value(item.clone())?;
+                            global_config.json = obj.clone();
+                            global_nodes.push(global_config);
                         }
                     }
                 }
@@ -55,14 +56,29 @@ pub fn load_flows_json_value(root_jv: &JsonValue) -> Result<JsonValues> {
         // We check for cycle errors before usage
         match node_id {
             Ok((node_id, _)) => sorted_flow_nodes.push(flow_nodes[node_id].clone()),
-            Err(_) => panic!("Unexpected cycle!"),
+            Err(_) => return Err(EdgeLinkError::BadFlowsJson("Unexpected cycle!".to_string()).into()),
         }
     }
 
+    let mut flow_configs = Vec::new();
+    for flow in flows.iter() {
+        let mut flow_config: RedFlowConfig = serde_json::from_value(flow.clone())?;
+        flow_config.json = flow.as_object().unwrap().clone();
+        let mut flow_node_configs = Vec::new();
+        for flow_node in sorted_flow_nodes.iter() {
+            if flow_node.get("z") == flow.get("id") {
+                let mut node_config: RedFlowNodeConfig = serde_json::from_value(flow_node.clone())?;
+                node_config.json = flow_node.as_object().unwrap().clone();
+                flow_node_configs.push(node_config);
+            }
+        }
+        flow_config.nodes = flow_node_configs;
+        flow_configs.push(flow_config);
+    }
+
     Ok(JsonValues {
-        flows: flows,
+        flows: flow_configs,
         global_nodes: global_nodes,
-        flow_nodes: sorted_flow_nodes,
     })
 }
 pub trait RedNodeJsonObject {

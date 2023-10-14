@@ -1,8 +1,13 @@
 use std::fmt;
-
 use async_trait::async_trait;
+use tokio::sync::Mutex;
+use std::sync::Arc;
 
-use crate::{engine::FlowBehavior, Registry};
+use crate::{
+    Result,
+    engine::FlowBehavior,
+    red::{RedFlowNodeConfig, RedGlobalNodeConfig},
+};
 
 #[derive(Debug, Clone, Copy)]
 pub enum NodeKind {
@@ -21,8 +26,8 @@ impl fmt::Display for NodeKind {
 
 #[derive(Clone, Copy)]
 pub enum NodeFactory {
-    Global(fn(serde_json::Value) -> Box<dyn NodeBehavior>),
-    Flow(fn(serde_json::Value) -> Box<dyn FlowNodeBehavior>),
+    Global(fn(&RedGlobalNodeConfig) -> Box<dyn NodeBehavior>),
+    Flow(fn(&RedFlowNodeConfig) -> Box<dyn FlowNodeBehavior>),
 }
 
 #[derive(Clone, Copy)]
@@ -36,17 +41,17 @@ pub struct MetaNode {
 pub struct BaseNode {
     pub id: u64,
     pub name: String,
-    pub descriptor: &'static MetaNode,
+    //pub descriptor: &'static MetaNode,
 }
 
 #[async_trait]
-pub trait NodeBehavior: Send {
-    async fn start(&mut self);
-    async fn stop(&mut self);
+pub trait NodeBehavior: Send + Sync {
+    async fn start(&self) -> Result<()>;
+    async fn stop(&self) -> Result<()>;
 }
 
 #[async_trait]
-pub trait FlowNodeBehavior: NodeBehavior {
+pub trait FlowNodeBehavior: NodeBehavior + Send + Sync {
     fn flow(&self) -> &Box<dyn FlowBehavior>;
     fn flow_mut(&self) -> &mut Box<dyn FlowBehavior>;
 }
