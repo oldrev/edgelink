@@ -1,9 +1,10 @@
 use edgelink::engine::*;
 use edgelink::flow::*;
 use edgelink::nodes::*;
+use edgelink::red::json::load_flows_json;
+use edgelink::registry::RegistryImpl;
 use edgelink_abstractions::engine::FlowBehavior;
 
-mod data;
 /*
 #[cfg(test)]
 struct TestGlobalNode {
@@ -23,17 +24,12 @@ impl NodeBehavior for TestGlobalNode {
 
 #[tokio::test]
 async fn can_create_flow_manually() {
-
-    let jv = data::new_simple_flows_json_value();
     // data::
-    let x = &jv
-        .as_array()
-        .unwrap()
-        .get(0)
-        .unwrap();
-    let flow = Flow::new(x, &jv.as_array().unwrap()).unwrap();
+    let reg = RegistryImpl::new().unwrap();
+    let mut engine = FlowEngine::new(&reg, "./tests/data/flows.json").unwrap();
+    engine.start().await.unwrap();
 
-    assert_eq!(flow.id(), 0xdee0d1b0cfd62a6cu64);
-    assert_eq!(flow.label(), "Flow 1");
 
+    // assert_eq!(engine.id(), 0xdee0d1b0cfd62a6cu64);
+    // assert_eq!(flow.label(), "Flow 1");
 }

@@ -3,16 +3,21 @@ use std::{fs::File, io::Read};
 
 use edgelink_abstractions::red::JsonValues;
 use edgelink_abstractions::{EdgeLinkError, Result};
-use serde_json::Value as JsonValue;
 use serde_json::Map as JsonMap;
+use serde_json::Value as JsonValue;
 use topo_sort::TopoSort;
 
 /// Loading 'flows.js'
-pub(crate) fn load_flows_json(flows_json_path: &str) -> Result<JsonValues> {
+pub fn load_flows_json(flows_json_path: &str) -> Result<JsonValues> {
     let mut file = File::open(flows_json_path)?;
     let mut contents = String::new();
     file.read_to_string(&mut contents)?;
     let root_jv: JsonValue = serde_json::from_str(&contents)?;
+    let values = load_flows_json_value(&root_jv)?;
+    Ok(values)
+}
+
+pub fn load_flows_json_value(root_jv: &JsonValue) -> Result<JsonValues> {
     let all_values = root_jv.as_array().ok_or(EdgeLinkError::BadFlowsJson(
         "The root node must be a Array".to_string(),
     ))?;
@@ -60,7 +65,7 @@ pub(crate) fn load_flows_json(flows_json_path: &str) -> Result<JsonValues> {
         flow_nodes: sorted_flow_nodes,
     })
 }
-pub(crate) trait RedNodeJsonObject {
+pub trait RedNodeJsonObject {
     fn get_flow_node_dependencies(&self) -> HashSet<&str>;
 }
 

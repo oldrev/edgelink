@@ -1,5 +1,5 @@
 use serde::{de::Error, Deserialize, Deserializer};
-use serde_json::{Value as JsonValue};
+use serde_json::Value as JsonValue;
 
 use crate::{EdgeLinkError, Result};
 
@@ -14,6 +14,7 @@ pub struct FlowConfig {
 
     pub info: String,
     pub label: String,
+
     #[serde(alias = "type")]
     pub type_name: String,
 }
@@ -23,7 +24,6 @@ pub struct JsonValues {
     pub global_nodes: Vec<JsonValue>,
     pub flow_nodes: Vec<JsonValue>,
 }
-
 
 fn from_hex<'de, D>(deserializer: D) -> std::result::Result<u64, D::Error>
 where

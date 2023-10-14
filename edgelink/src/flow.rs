@@ -6,13 +6,14 @@ use std::collections::BTreeMap;
 use std::fs::File;
 use std::io::Read;
 use std::sync::Arc;
+use tokio::sync::Mutex;
 use tokio::task::yield_now;
 use tokio::{spawn, task, time};
-use tokio::sync::Mutex;
 
 use crate::nodes::*;
 use edgelink_abstractions::nodes::*;
 use edgelink_abstractions::red::FlowConfig;
+use edgelink_abstractions::red::JsonValues;
 use edgelink_abstractions::Variant;
 use edgelink_abstractions::{engine::*, EdgeLinkError, Error, Result};
 
@@ -31,42 +32,19 @@ pub struct Flow {
 }
 
 impl Flow {
-    pub fn new(
-        flow_elem: &serde_json::Value,
-        elements: &Vec<serde_json::Value>,
-    ) -> anyhow::Result<Self> {
-        println!("Fucking......");
-        let flow_config: FlowConfig = serde_json::from_value(flow_elem.clone())?;
-        println!("Fucked......");
+    pub fn new(flow_elem: &serde_json::Value, json_values: &JsonValues) -> anyhow::Result<Self> {
 
-        println!(
-            "-- Loading flow (id={0}, label='{1}'):",
-            flow_config.id, flow_config.label
-        );
-
-        for bnd in inventory::iter::<BuiltinNodeDescriptor> {
-            println!(
-                "-- kind={}, type-name={}",
-                bnd.meta.kind, bnd.meta.type_name
-            );
-        }
-
-        // let nodes = Vec::new();
-        // nodes.push(Box::new())
-
-        for bnd in inventory::iter::<BuiltinNodeDescriptor> {
-            println!("-{}, --{}", bnd.meta.kind, bnd.meta.type_name);
-        }
-
-        Ok(Flow {
-            config: flow_config,
+        let flow = Flow {
+            config: serde_json::from_value(flow_elem.clone())?,
             shared: Arc::new(FlowShared {
                 state: Mutex::new(FlowState {
                     nodes: Vec::new(), // nodes,
                     context: Variant::Object(BTreeMap::new()),
                 }),
             }),
-        })
+        };
+
+        Ok(flow)
     }
 
     pub(crate) fn id(&self) -> u64 {
@@ -75,7 +53,7 @@ impl Flow {
 
     pub(crate) async fn start(&mut self) {
         let mut state = self.shared.state.lock().await;
-        println!("Starting Flow (id={0})...", self.config.id);
+        dbg!("Starting Flow (id={0})...", self.config.id);
         for node in state.nodes.iter_mut() {
             node.start().await;
         }
@@ -83,7 +61,7 @@ impl Flow {
 
     pub(crate) async fn stop(&mut self) {
         let mut state = self.shared.state.lock().await;
-        println!("Stopping Flow (id={0})...", self.config.id);
+        dbg!("Stopping Flow (id={0})...", self.config.id);
         for node in state.nodes.iter_mut() {
             node.stop().await;
         }

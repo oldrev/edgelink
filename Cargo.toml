@@ -18,6 +18,9 @@ more-di = "2.1.2"
 tokio = "1.33.0"
 log = "0.4.20"
 
+[dev-dependencies]
+serde_json_path = "0.6.3"
+
 
 [workspace]
 members = [

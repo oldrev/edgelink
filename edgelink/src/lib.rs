@@ -18,5 +18,5 @@ pub trait Plugin {
 pub mod engine;
 pub mod flow;
 pub mod nodes;
-pub mod registry;
 pub mod red;
+pub mod registry;

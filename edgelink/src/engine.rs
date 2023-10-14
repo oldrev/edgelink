@@ -1,16 +1,12 @@
 use async_trait::async_trait;
-use serde_json::Value as JsonValue;
 use std::collections::BTreeMap;
-use std::fs::File;
-use std::io::Read;
-use std::sync::{Arc};
+use std::sync::Arc;
 use tokio::sync::Mutex;
-use topo_sort::TopoSort;
 
 use crate::flow::Flow;
-use edgelink_abstractions::red::{JsonValues};
+use edgelink_abstractions::red::JsonValues;
 use edgelink_abstractions::Variant;
-use edgelink_abstractions::{engine::*, EdgeLinkError, Result, Registry};
+use edgelink_abstractions::{engine::*, EdgeLinkError, Registry, Result};
 
 struct FlowEngineState {
     flows: Vec<Box<Flow>>,
@@ -32,7 +28,7 @@ impl FlowEngine {
         // load flows
         let mut flows = Vec::new();
         for e in json_values.flows.iter() {
-            let flow = Flow::new(&e, &json_values.flow_nodes)?;
+            let flow = Flow::new(&e, &json_values)?;
             flows.push(Box::new(flow));
         }
 

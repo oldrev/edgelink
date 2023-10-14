@@ -4,12 +4,9 @@ use edgelink::engine::FlowEngine;
 use edgelink::registry::RegistryImpl;
 use edgelink_abstractions::Registry;
 use edgelink_abstractions::Result;
-use libloading::Library;
+// use libloading::Library;
 use std::cell::{Cell, RefCell};
-use std::future::Future;
-use std::sync::Arc;
 use tokio::sync::{Mutex, MutexGuard};
-use tokio::task::yield_now;
 use tokio::{spawn, task, time};
 
 /*
@@ -63,9 +60,7 @@ async fn main() -> Result<()> {
     // m.run().await;
     println!("EdgeLink 1.0");
 
-    let task = spawn(async {
-        start().await
-    });
+    let task = spawn(async { start().await });
 
     match task.await {
         Ok(_) => {
