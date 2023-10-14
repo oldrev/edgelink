@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::sync::Arc;
 
 use edgelink_abstractions::Result;
 use edgelink_abstractions::{nodes::MetaNode, Registry};
@@ -8,7 +9,7 @@ use crate::nodes::BuiltinNodeDescriptor;
 
 #[derive(Default)]
 pub struct RegistryImpl {
-    meta_nodes: HashMap<&'static str, MetaNode>,
+    meta_nodes: Arc<HashMap<&'static str, MetaNode>>,
 }
 
 impl RegistryImpl {
@@ -17,7 +18,9 @@ impl RegistryImpl {
         for bnd in inventory::iter::<BuiltinNodeDescriptor> {
             nodes.insert(bnd.meta.type_name, bnd.meta);
         }
-        Ok(RegistryImpl { meta_nodes: nodes })
+        Ok(RegistryImpl {
+            meta_nodes: Arc::new(nodes),
+        })
     }
 }
 

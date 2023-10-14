@@ -1,7 +1,9 @@
 use async_trait::async_trait;
+use di::ServiceRef;
 use edgelink::engine::FlowEngine;
 use edgelink::registry::RegistryImpl;
 use edgelink_abstractions::Registry;
+use edgelink_abstractions::Result;
 use libloading::Library;
 use std::cell::{Cell, RefCell};
 use std::future::Future;
@@ -9,8 +11,6 @@ use std::sync::Arc;
 use tokio::sync::{Mutex, MutexGuard};
 use tokio::task::yield_now;
 use tokio::{spawn, task, time};
-use di::ServiceRef;
-
 
 /*
 use core::{Plugin, PluginRegistrar};
@@ -51,17 +51,32 @@ fn main() {
 
 */
 
+async fn start() -> Result<()> {
+    let reg = RegistryImpl::new()?;
+    let mut engine = FlowEngine::new(&reg, "./flows.json")?;
+    engine.start().await
+}
+
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<()> {
     // let m = Modal {};
     // m.run().await;
     println!("EdgeLink 1.0");
 
-    let reg = RegistryImpl::new().unwrap();
-    let mut engine = FlowEngine::new(&reg, "./flows.json").unwrap();
-    engine.start().await;
+    let task = spawn(async {
+        start().await
+    });
 
-    loop {
-        time::sleep(tokio::time::Duration::from_secs(1)).await;
+    match task.await {
+        Ok(_) => {
+            println!("Async task completed successfully.");
+            Ok(())
+        }
+        Err(err) => {
+            eprintln!("Async task failed: {}", err);
+            // 在这里可以采取其他操作
+            Err(err.into())
+        }
     }
+    // loop { time::sleep(tokio::time::Duration::from_secs(1)).await; }
 }

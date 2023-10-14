@@ -5,9 +5,10 @@ use std::cell::RefCell;
 use std::collections::BTreeMap;
 use std::fs::File;
 use std::io::Read;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use tokio::task::yield_now;
 use tokio::{spawn, task, time};
+use tokio::sync::Mutex;
 
 use crate::nodes::*;
 use edgelink_abstractions::nodes::*;
@@ -73,7 +74,7 @@ impl Flow {
     }
 
     pub(crate) async fn start(&mut self) {
-        let mut state = self.shared.state.lock().unwrap();
+        let mut state = self.shared.state.lock().await;
         println!("Starting Flow (id={0})...", self.config.id);
         for node in state.nodes.iter_mut() {
             node.start().await;
@@ -81,7 +82,7 @@ impl Flow {
     }
 
     pub(crate) async fn stop(&mut self) {
-        let mut state = self.shared.state.lock().unwrap();
+        let mut state = self.shared.state.lock().await;
         println!("Stopping Flow (id={0})...", self.config.id);
         for node in state.nodes.iter_mut() {
             node.stop().await;
@@ -97,5 +98,9 @@ impl FlowBehavior for Flow {
 
     fn label(&self) -> &str {
         &self.config.label
+    }
+
+    fn config(&self) -> &FlowConfig {
+        &self.config
     }
 }
