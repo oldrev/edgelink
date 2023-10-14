@@ -30,7 +30,7 @@ pub struct Flow {
 }
 
 impl Flow {
-    pub(crate) fn new(
+    pub fn new(
         flow_elem: &serde_json::Value,
         elements: &Vec<serde_json::Value>,
     ) -> anyhow::Result<Self> {

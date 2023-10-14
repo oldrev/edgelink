@@ -63,7 +63,7 @@ impl FlowEngine {
                 }
             }
 
-            /* 
+            /*
             match topo_sort.into_vec_nodes() {
                 SortResults::Full(nodes) => assert_eq!(vec!["A", "B", "C", "E", "D"], nodes),
                 SortResults::Partial(_) => panic!("unexpected cycle!"),

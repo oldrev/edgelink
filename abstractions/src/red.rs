@@ -3,7 +3,7 @@ use std::{collections::HashSet, hash::Hash};
 use serde::{de::Error, Deserialize, Deserializer};
 use serde_json::Value;
 
-use crate::{Result, EdgeLinkError};
+use crate::{EdgeLinkError, Result};
 
 // type RedNodeID = [char; 16];
 
@@ -24,22 +24,45 @@ pub trait RedNodeJsonValue {
     fn get_flow_node_dependencies(&self) -> HashSet<&str>;
 }
 
-impl RedNodeJsonValue for Value {
+/*
+impl RedNodeJsonValue for serde_json::Value {
     fn get_flow_node_dependencies(&self) -> HashSet<&str> {
         // 我们不检查 JSON，JSON 格式由加载时检查
         let mut deps = HashSet::new();
-        if let Some(wires) = self.as_object().unwrap().get("wires") {
-        for port in wires.as_array().unwrap() {
-            let ids  = port.as_array().unwrap();
-            for id in ids {
-                let id_str = id.as_str().unwrap();
-                deps.insert(id_str);
-            } 
+        if let Some(wires_value) = self.get("wires") {
+            if let Some(wires) = wires_value.as_array() {
+                for port in wires {
+                    if let Some(ids) = port.as_array() {
+                        for id in ids {
+                            if let Some(id_str) = id.as_str() {
+                                deps.insert(id_str);
+                            }
+                        }
+                    }
+                }
+            }
         }
         deps
-        }
-        else {
-            deps
+    }
+}
+*/
+
+impl RedNodeJsonValue for Value {
+    fn get_flow_node_dependencies(&self) -> HashSet<&str> {
+        match self
+            .get("wires")
+            .and_then(|wires_value| wires_value.as_array())
+        {
+            Some(wires) => {
+                let dependencies: HashSet<&str> = wires
+                    .iter()
+                    .filter_map(|port| port.as_array())
+                    .flatten()
+                    .filter_map(|id| id.as_str())
+                    .collect();
+                dependencies
+            }
+            None => HashSet::new(),
         }
     }
 }

@@ -9,6 +9,8 @@ use std::sync::Arc;
 use tokio::sync::{Mutex, MutexGuard};
 use tokio::task::yield_now;
 use tokio::{spawn, task, time};
+use di::ServiceRef;
+
 
 /*
 use core::{Plugin, PluginRegistrar};

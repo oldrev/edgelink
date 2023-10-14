@@ -1,4 +1,7 @@
-[
+use serde_json::{json, Value};
+
+#[cfg(test)]
+pub(crate) const SIMPLE_FLOWS_JSON_VALUE: Value = json!([
     {
         "id": "dee0d1b0cfd62a6c",
         "type": "tab",
@@ -52,4 +55,4 @@
         "y": 180,
         "wires": []
     }
-]
+]);
