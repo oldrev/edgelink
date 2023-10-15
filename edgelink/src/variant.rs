@@ -261,3 +261,16 @@ impl From<&[(&str, Variant)]> for Variant {
         Variant::Object(map)
     }
 }
+
+/*
+pub trait VariantObject {
+    fn get_by_str(&self, key: &str) -> Option<&Variant>;
+}
+
+impl VariantObject for BTreeMap<String, Variant> {
+    fn get_by_str(&self, key: &str) -> Option<&Variant> {
+        self.get(key)
+    }
+}
+
+*/
