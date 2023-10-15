@@ -72,7 +72,7 @@ impl Flow {
 
             for node_config in flow_config.nodes.iter() {
                 if let Some(meta_node) = reg.get(&node_config.type_name) {
-                    dbg!("Found type: {}", meta_node.type_name);
+                    println!("-- Found type: {}", meta_node.type_name);
                     // 创建流节点实例
                     let node = match meta_node.factory {
                         NodeFactory::Flow(factory) => factory(flow.clone(), node_config),
@@ -97,8 +97,9 @@ impl Flow {
 
     pub(crate) async fn start(&self) -> crate::Result<()> {
         let mut state = self.shared.state.lock().await;
-        dbg!("Starting Flow (id={0})...", self.id);
+        println!("-- Starting Flow (id={0:016x})...", self.id);
         for node in state.nodes.iter_mut() {
+            println!("---- Starting Node (id={0:016x}, type='{1}')...", node.id(), node.id());
             node.start().await?;
         }
         Ok(())
@@ -106,7 +107,7 @@ impl Flow {
 
     pub(crate) async fn stop(&self) -> crate::Result<()> {
         let mut state = self.shared.state.lock().await;
-        dbg!("Stopping Flow (id={0})...", self.id);
+        println!("-- Stopping Flow (id={0:016x})...", self.id);
         for node in state.nodes.iter_mut() {
             node.stop().await?;
         }

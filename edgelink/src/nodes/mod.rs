@@ -48,6 +48,7 @@ pub struct BaseNode {
 
 #[async_trait]
 pub trait NodeBehavior: Send + Sync {
+    fn id(&self) -> u64;
     async fn start(&self) -> Result<()>;
     async fn stop(&self) -> Result<()>;
 }

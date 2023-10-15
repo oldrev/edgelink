@@ -1,30 +1,43 @@
+use crate::flow::Flow;
 use crate::nodes::*;
+use crate::{nodes::*, red::json::RedFlowNodeConfig, Result};
+use std::sync::{Arc, Weak};
+use tokio::sync::Mutex;
 
-/*
 struct DebugNode {
     base: BaseNode,
+    flow: Weak<Flow>,
 }
 
 #[async_trait]
 impl NodeBehavior for DebugNode {
-    async fn start(&mut self) {}
+    fn id(&self) -> u64 {
+        self.base.id
+    }
 
-    async fn stop(&mut self) {}
+    async fn start(&self) -> Result<()> {
+        Ok(())
+    }
+
+    async fn stop(&self) -> Result<()> {
+        Ok(())
+    }
 }
 
-impl FlowNodeBehavior for DebugNode {
+impl FlowNodeBehavior for DebugNode {}
 
-}
-
-fn new_node(value: serde_json::Value) -> Box<dyn FlowNodeBehavior> {
+fn new_node(flow: Arc<Flow>, config: &RedFlowNodeConfig) -> Box<dyn FlowNodeBehavior> {
     let node = DebugNode {
-        base: BaseNode::from_json_value(&value),
+        base: BaseNode {
+            id: config.id,
+            name: config.name.clone(),
+        },
+        flow: Arc::downgrade(&flow),
     };
+    println!("我的爹是：{0}", node.flow.upgrade().unwrap().id());
     Box::new(node)
 }
 
 inventory::submit! {
     BuiltinNodeDescriptor::new(NodeKind::Flow, "debug", NodeFactory::Flow(new_node))
 }
-
-*/
