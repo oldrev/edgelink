@@ -99,7 +99,7 @@ impl Flow {
         let mut state = self.shared.state.lock().await;
         println!("-- Starting Flow (id={0:016x})...", self.id);
         for node in state.nodes.iter_mut() {
-            println!("---- Starting Node (id={0:016x}, type='{1}')...", node.id(), node.id());
+            println!("---- Starting Node (id={0:016x}')...", node.id());
             node.start().await?;
         }
         Ok(())

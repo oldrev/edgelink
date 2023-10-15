@@ -34,7 +34,10 @@ pub fn load_flows_json_value(root_jv: &JsonValue) -> Result<JsonValues> {
                 if let Some(type_str) = value.as_str() {
                     if type_str == "tab" {
                         flows.push(item.clone());
-                    } else {
+                    } else if type_str == "comment" {
+                        // skip the  comment
+                    }
+                     else {
                         if obj.get("z").is_some() {
                             let id = obj["id"].as_str().unwrap(); // FIXME TODO
                             let deps = obj.get_flow_node_dependencies();

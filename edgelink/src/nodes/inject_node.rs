@@ -16,6 +16,13 @@ impl NodeBehavior for InjectNode {
     }
 
     async fn start(&self) -> Result<()> {
+        // tokio::spawn(async move { });
+        tokio::spawn(async move {
+            println!("start delay");
+            tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+            println!("end delay");
+        });
+
         Ok(())
     }
 

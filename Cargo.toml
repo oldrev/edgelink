@@ -23,6 +23,6 @@ serde_json_path = "0.6.3"
 
 [workspace]
 members = [
-    #"./plugins/plugin_a",
-    #"./plugins/plugin_b"
+    "./plugins/plugin_a",
+    "./plugins/plugin_b"
 ]

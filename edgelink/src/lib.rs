@@ -6,6 +6,7 @@ pub mod nodes;
 pub mod red;
 pub mod registry;
 pub mod variant;
+pub mod shutdown;
 
 /// The `PluginRegistrar` is defined by the application and passed to `plugin_entry`. It's used
 /// for a plugin module to register itself with the application.
