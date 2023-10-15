@@ -1,20 +1,18 @@
 use async_trait::async_trait;
 use std::collections::BTreeMap;
-use std::sync::Arc;
-use tokio::sync::Mutex;
+use std::sync::{Arc, Weak};
+use tokio::sync::Mutex as TokMutex;
 
 use crate::flow::Flow;
-use edgelink_abstractions::red::JsonValues;
-use edgelink_abstractions::Variant;
-use edgelink_abstractions::{engine::*, EdgeLinkError, Registry, Result};
+use crate::{registry::Registry, variant::Variant, EdgeLinkError, Result};
 
 struct FlowEngineState {
-    flows: Vec<Box<Flow>>,
+    flows: Vec<Arc<Flow>>,
     context: Variant,
 }
 
 struct FlowEngineShared {
-    state: Mutex<FlowEngineState>,
+    state: TokMutex<FlowEngineState>,
 }
 
 pub struct FlowEngine {
@@ -22,24 +20,28 @@ pub struct FlowEngine {
 }
 
 impl FlowEngine {
-    pub fn new(reg: &dyn Registry, flows_json_path: &str) -> Result<Self> {
+    pub async fn new(reg: &Registry, flows_json_path: &str) -> Result<Arc<FlowEngine>> {
         let json_values = crate::red::json::load_flows_json(flows_json_path)?;
 
-        // load flows
-        let mut flows = Vec::new();
-        for flow_config in json_values.flows.iter() {
-            let flow = Flow::new(flow_config, reg)?;
-            flows.push(Box::new(flow));
-        }
-
-        Ok(FlowEngine {
+        let engine = Arc::new(FlowEngine {
             shared: Arc::new(FlowEngineShared {
-                state: Mutex::new(FlowEngineState {
-                    flows: flows,
+                state: TokMutex::new(FlowEngineState {
+                    flows: Vec::new(),
                     context: Variant::Object(BTreeMap::new()),
                 }),
             }),
-        })
+        });
+
+        {
+            let mut state = engine.shared.state.lock().await;
+            // load flows
+            for flow_config in json_values.flows.iter() {
+                let flow = Flow::new(engine.clone(), flow_config, reg).await?;
+                state.flows.push(flow);
+            }
+        }
+
+        Ok(engine)
     }
 
     pub async fn start(&self) -> Result<()> {
@@ -57,8 +59,4 @@ impl FlowEngine {
         }
         Ok(())
     }
-}
-
-#[async_trait(?Send)]
-impl FlowEngineBehavior for FlowEngine {
 }

@@ -1,6 +1,7 @@
+use crate::flow::Flow;
 use crate::nodes::*;
-use edgelink_abstractions::{Result, nodes::*, red::RedFlowNodeConfig, engine::FlowBehavior};
-use std::sync::{Arc};
+use crate::{nodes::*, red::json::RedFlowNodeConfig, Result};
+use std::sync::Arc;
 use tokio::sync::Mutex;
 
 struct InjectNode {
@@ -9,31 +10,23 @@ struct InjectNode {
 
 #[async_trait]
 impl NodeBehavior for InjectNode {
-
     async fn start(&self) -> Result<()> {
         Ok(())
     }
 
     async fn stop(&self) -> Result<()> {
-
         Ok(())
     }
 }
 
-impl FlowNodeBehavior for InjectNode {
+impl FlowNodeBehavior for InjectNode {}
 
-    fn flow(&self) ->  &Box<dyn FlowBehavior>  {
-        todo!()
-    }
-
-    fn flow_mut(&self) ->  &mut Box<dyn FlowBehavior>  {
-        todo!()
-    }
-}
-
-fn new_node(config: &RedFlowNodeConfig) -> Box<dyn FlowNodeBehavior> {
+fn new_node(flow: Arc<Flow>, config: &RedFlowNodeConfig) -> Box<dyn FlowNodeBehavior> {
     let node = InjectNode {
-        base: BaseNode { id: config.id, name: config.name.clone() },
+        base: BaseNode {
+            id: config.id,
+            name: config.name.clone(),
+        },
     };
     Box::new(node)
 }

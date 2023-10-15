@@ -1,3 +1,12 @@
+use thiserror::Error;
+
+pub mod engine;
+pub mod flow;
+pub mod nodes;
+pub mod red;
+pub mod registry;
+pub mod variant;
+
 /// The `PluginRegistrar` is defined by the application and passed to `plugin_entry`. It's used
 /// for a plugin module to register itself with the application.
 pub trait PluginRegistrar {
@@ -15,8 +24,15 @@ pub trait Plugin {
     fn callback2(&self, i: i32) -> i32;
 }
 
-pub mod engine;
-pub mod flow;
-pub mod nodes;
-pub mod red;
-pub mod registry;
+#[derive(Error, Debug)]
+pub enum EdgeLinkError {
+    #[error("Invalid 'flows.json': {0}")]
+    BadFlowsJson(String),
+
+    #[error("Not supported: {0}")]
+    NotSupported(String),
+}
+
+pub type Error = Box<dyn std::error::Error + Send + Sync>;
+
+pub type Result<T> = std::result::Result<T, Error>;

@@ -1,35 +1,32 @@
 use std::collections::BTreeMap;
 use std::sync::Arc;
 
-use edgelink_abstractions::Result;
-use edgelink_abstractions::{nodes::MetaNode, Registry};
+use crate::{nodes::MetaNode, Result};
 use inventory;
 
 use crate::nodes::BuiltinNodeDescriptor;
 
 #[derive(Default)]
-pub struct RegistryImpl {
+pub struct Registry {
     meta_nodes: Arc<BTreeMap<&'static str, MetaNode>>,
 }
 
-impl RegistryImpl {
+impl Registry {
     pub fn new() -> Result<Self> {
         let mut nodes = BTreeMap::new();
         for bnd in inventory::iter::<BuiltinNodeDescriptor> {
             nodes.insert(bnd.meta.type_name, bnd.meta);
         }
-        Ok(RegistryImpl {
+        Ok(Registry {
             meta_nodes: Arc::new(nodes),
         })
     }
-}
 
-impl Registry for RegistryImpl {
-    fn all(&self) -> &BTreeMap<&'static str, MetaNode> {
+    pub fn all(&self) -> &BTreeMap<&'static str, MetaNode> {
         &self.meta_nodes
     }
 
-    fn get(&self, type_name: &str) -> Option<&MetaNode> {
+    pub fn get(&self, type_name: &str) -> Option<&MetaNode> {
         self.meta_nodes.get(type_name)
     }
 }

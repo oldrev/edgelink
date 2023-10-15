@@ -1,11 +1,11 @@
 use async_trait::async_trait;
 use di::ServiceRef;
 use edgelink::engine::FlowEngine;
-use edgelink::registry::RegistryImpl;
-use edgelink_abstractions::Registry;
-use edgelink_abstractions::Result;
+use edgelink::registry::Registry;
 // use libloading::Library;
+use edgelink::Result;
 use std::cell::{Cell, RefCell};
+use std::sync::Arc;
 use tokio::sync::{Mutex, MutexGuard};
 use tokio::{spawn, task, time};
 
@@ -49,9 +49,14 @@ fn main() {
 */
 
 async fn start() -> Result<()> {
-    let reg = RegistryImpl::new()?;
-    let mut engine = FlowEngine::new(&reg, "./flows.json")?;
-    engine.start().await
+    let reg = Registry::new()?;
+    let engine = Arc::new(Mutex::new(FlowEngine::new(&reg, "./flows.json").await?));
+    spawn(async move {
+        //
+        let locked = engine.lock().await;
+        locked.start().await
+    })
+    .await?
 }
 
 #[tokio::main]

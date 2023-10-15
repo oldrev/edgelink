@@ -6,76 +6,96 @@ use std::cell::RefCell;
 use std::collections::{BTreeMap, HashMap};
 use std::fs::File;
 use std::io::Read;
-use std::sync::Arc;
-use tokio::sync::{Mutex, futures};
+use std::sync::{Arc, Mutex, Weak};
+use tokio::sync::{futures, Mutex as TokMutex};
 use tokio::task::yield_now;
 use tokio::{spawn, task, time};
 
+use crate::engine::FlowEngine;
 use crate::nodes::*;
-use edgelink_abstractions::red::JsonValues;
-use edgelink_abstractions::red::{RedFlowConfig, RedFlowNodeConfig};
-use edgelink_abstractions::Variant;
-use edgelink_abstractions::{engine::*, EdgeLinkError, Error, Result};
-use edgelink_abstractions::{nodes::*, Registry};
+use crate::red::json::RedFlowConfig;
+use crate::registry::Registry;
+use crate::variant::Variant;
+use crate::{EdgeLinkError, Result};
 
 struct FlowState {
     nodes: Vec<Box<dyn FlowNodeBehavior>>,
     context: Variant,
+    engine: Weak<FlowEngine>,
 }
 
 struct FlowShared {
-    state: Mutex<FlowState>,
+    state: TokMutex<FlowState>,
 }
 
 pub struct Flow {
-    id: u64,
-    label: String,
-    disabled: bool,
+    pub id: u64,
+    pub label: String,
+    pub disabled: bool,
 
     shared: Arc<FlowShared>,
 }
 
 impl Flow {
-    pub fn new(flow_config: &RedFlowConfig, reg: &dyn Registry) -> anyhow::Result<Self> {
+    pub fn id(&self) -> u64 {
+        self.id
+    }
 
-        let mut nodes = Vec::with_capacity(flow_config.nodes.len());
-        for node_config in flow_config.nodes.iter() {
-            if let Some(meta_node) = reg.get(&node_config.type_name) {
-                dbg!("Found type: {}", meta_node.type_name);
-                // 创建流节点实例
-                let node = match meta_node.factory {
-                    NodeFactory::Flow(factory) => factory(node_config),
-                    _ => {
-                        return Err(EdgeLinkError::NotSupported(
-                            format!(
-                                "Can not found flow node factory for Node(id={0}, type='{1}'",
-                                flow_config.id, flow_config.type_name
-                            )
-                            .to_string(),
-                        )
-                        .into())
-                    }
-                };
-                nodes.push(node);
-            }
-        }
+    pub fn label(&self) -> &str {
+        &self.label
+    }
 
-        let flow = Flow {
+    pub fn disabled(&self) -> bool {
+        self.disabled
+    }
+
+    pub(crate) async fn new(
+        engine: Arc<FlowEngine>,
+        flow_config: &RedFlowConfig,
+        reg: &Registry,
+    ) -> crate::Result<Arc<Self>> {
+        let flow: Arc<Flow> = Arc::new(Flow {
             id: flow_config.id,
             label: flow_config.label.clone(),
             disabled: flow_config.disabled.unwrap_or(false),
             shared: Arc::new(FlowShared {
-                state: Mutex::new(FlowState {
-                    nodes: Vec::new(),
+                state: TokMutex::new(FlowState {
+                    engine: Arc::downgrade(&engine),
+                    nodes: Vec::with_capacity(flow_config.nodes.len()),
                     context: Variant::Object(BTreeMap::new()),
                 }),
             }),
-        };
+        });
+
+        {
+            let mut state = flow.shared.state.lock().await;
+
+            for node_config in flow_config.nodes.iter() {
+                if let Some(meta_node) = reg.get(&node_config.type_name) {
+                    dbg!("Found type: {}", meta_node.type_name);
+                    // 创建流节点实例
+                    let node = match meta_node.factory {
+                        NodeFactory::Flow(factory) => factory(flow.clone(), node_config),
+                        _ => {
+                            return Err(EdgeLinkError::NotSupported(
+                                format!(
+                                    "Can not found flow node factory for Node(id={0}, type='{1}'",
+                                    flow_config.id, flow_config.type_name
+                                )
+                                .to_string(),
+                            )
+                            .into())
+                        }
+                    };
+                    state.nodes.push(node);
+                }
+            }
+        }
 
         Ok(flow)
     }
 
-    pub(crate) async fn start(&self) -> Result<()> {
+    pub(crate) async fn start(&self) -> crate::Result<()> {
         let mut state = self.shared.state.lock().await;
         dbg!("Starting Flow (id={0})...", self.id);
         for node in state.nodes.iter_mut() {
@@ -84,27 +104,12 @@ impl Flow {
         Ok(())
     }
 
-    pub(crate) async fn stop(&self) -> Result<()> {
+    pub(crate) async fn stop(&self) -> crate::Result<()> {
         let mut state = self.shared.state.lock().await;
         dbg!("Stopping Flow (id={0})...", self.id);
         for node in state.nodes.iter_mut() {
             node.stop().await?;
         }
         Ok(())
-    }
-}
-
-#[async_trait]
-impl FlowBehavior for Flow {
-    fn id(&self) -> u64 {
-        self.id
-    }
-
-    fn label(&self) -> &str {
-        &self.label
-    }
-
-    fn disabled(&self) -> bool {
-        self.disabled
     }
 }

@@ -10,7 +10,6 @@ strip = true
 
 
 [dependencies]
-edgelink_abstractions = { path = "./abstractions" }
 edgelink = { path = "./edgelink" }
 async-trait = "0.1.73"
 libloading = "0.5.2"
