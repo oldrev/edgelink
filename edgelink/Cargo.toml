@@ -4,13 +4,16 @@ version = "0.1.0"
 authors = ["Li Wei <oldrev@gmail.com>"]
 edition = "2021"
 
+
 [lib]
 crate-type = ["dylib", "rlib"]
+
+[build]
+rustflags = ["-C perfer-dynamic"]
 
 [profile.release]
 opt-level = "z"  # Optimize for size.
 strip = true
-
 
 [dependencies]
 tokio = { version = "1.33.0", features = ["full"] }
@@ -28,3 +31,4 @@ thiserror = "1.0.49"
 [dev-dependencies]
 # Enable test-utilities in dev mode only. This is mostly for tests.
 tokio = { version = "1", features = ["test-util"] }
+
