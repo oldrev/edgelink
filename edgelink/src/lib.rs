@@ -2,12 +2,12 @@ use thiserror::Error;
 
 pub mod engine;
 pub mod flow;
+pub mod msg;
 pub mod nodes;
 pub mod red;
 pub mod registry;
-pub mod variant;
 pub mod shutdown;
-pub mod msg;
+pub mod variant;
 
 /// The `PluginRegistrar` is defined by the application and passed to `plugin_entry`. It's used
 /// for a plugin module to register itself with the application.

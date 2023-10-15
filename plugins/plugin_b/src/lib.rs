@@ -2,7 +2,6 @@ use edgelink::{Plugin, PluginRegistrar};
 
 struct PluginB;
 
-
 impl Plugin for PluginB {
     fn callback1(&self) {
         println!("PluginB::callback1")

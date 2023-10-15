@@ -36,8 +36,7 @@ pub fn load_flows_json_value(root_jv: &JsonValue) -> Result<JsonValues> {
                         flows.push(item.clone());
                     } else if type_str == "comment" {
                         // skip the  comment
-                    }
-                     else {
+                    } else {
                         if obj.get("z").is_some() {
                             let id = obj["id"].as_str().unwrap(); // FIXME TODO
                             let deps = obj.get_flow_node_dependencies();

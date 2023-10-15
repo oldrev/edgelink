@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use log;
 use std::collections::BTreeMap;
 use std::future::Future;
 use std::sync::Arc;
@@ -6,12 +7,10 @@ use std::thread::spawn;
 use tokio::sync::broadcast;
 use tokio::sync::mpsc;
 use tokio::sync::Mutex as TokMutex;
-use log;
 
 use crate::flow::Flow;
 use crate::nodes::{NodeBehavior, NodeFactory};
 use crate::{registry::Registry, variant::Variant, EdgeLinkError, Result};
-
 
 struct FlowEngineState {
     flows: Vec<Arc<Flow>>,
@@ -29,7 +28,10 @@ pub struct FlowEngine {
 }
 
 impl FlowEngine {
-    pub async fn new(reg: &Registry, flows_json_path: &str) -> crate::Result<Arc<FlowEngine>> {
+    pub async fn new(
+        reg: Arc<dyn Registry>,
+        flows_json_path: &str,
+    ) -> crate::Result<Arc<FlowEngine>> {
         let json_values = crate::red::json::load_flows_json(flows_json_path)?;
 
         let engine = Arc::new(FlowEngine {
@@ -47,7 +49,7 @@ impl FlowEngine {
             let mut state = engine.shared.state.lock().await;
             // load flows
             for flow_config in json_values.flows.iter() {
-                let flow = Flow::new(engine.clone(), flow_config, reg).await?;
+                let flow = Flow::new(engine.clone(), flow_config, reg.clone()).await?;
                 state.flows.push(flow);
             }
 
@@ -82,7 +84,8 @@ impl FlowEngine {
             tokio::spawn(async move {
                 let scoped_flow = flow_lock;
                 scoped_flow.start().await
-            }).await??;
+            })
+            .await??;
         }
         println!("All flows started.");
         Ok(())
@@ -95,7 +98,6 @@ impl FlowEngine {
         }
         Ok(())
     }
-
 }
 
 /*

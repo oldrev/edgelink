@@ -1,10 +1,12 @@
 use async_trait::async_trait;
+use di;
 use di::ServiceRef;
 use edgelink::engine::FlowEngine;
-use edgelink::registry::Registry;
+use edgelink::registry::{Registry, RegistryImpl};
 // use libloading::Library;
 use edgelink::Result;
 use std::cell::{Cell, RefCell};
+use std::rc::Rc;
 use std::sync::Arc;
 use tokio::sync::{Mutex, MutexGuard};
 use tokio::{spawn, task, time};
@@ -48,15 +50,37 @@ fn main() {
 
 */
 
-async fn start() -> Result<()> {
-    let reg = Registry::new()?;
-    let engine = Arc::new(Mutex::new(FlowEngine::new(&reg, "./flows.json").await?));
-    spawn(async move {
-        //
-        let locked = engine.lock().await;
-        locked.start().await
-    })
-    .await?
+struct Runtime {
+    registry: ServiceRef<dyn Registry>,
+}
+
+impl Runtime {
+    fn new(reg: di::ServiceRef<dyn Registry>) -> Self {
+        Runtime { registry: reg }
+    }
+
+    async fn run(&self) -> Result<()> {
+        let engine = Arc::new(Mutex::new(
+            FlowEngine::new(self.registry.clone(), "./flows.json").await?,
+        ));
+        spawn(async move {
+            //
+            let locked = engine.lock().await;
+            locked.start().await
+        })
+        .await?
+    }
+}
+
+fn register_all_di_services() -> di::ServiceCollection {
+    let mut services = di::ServiceCollection::new();
+    services
+        .add(di::singleton::<dyn Registry, RegistryImpl>().from(|_| Arc::new(RegistryImpl::new())))
+        .add(
+            di::singleton_as_self::<Runtime>()
+                .from(|sp| Arc::new(Runtime::new(sp.get_required::<dyn Registry>()))),
+        );
+    services
 }
 
 #[tokio::main]
@@ -65,7 +89,14 @@ async fn main() -> Result<()> {
     // m.run().await;
     println!("EdgeLink 1.0");
 
-    let task = spawn(async { start().await });
+    let services = register_all_di_services();
+    let _provider = services.build_provider()?;
+    let sp = Arc::new(_provider);
+
+    let task = spawn(async move {
+        let rt = sp.get_required::<Runtime>();
+        rt.run().await
+    });
 
     match task.await {
         Ok(_) => {

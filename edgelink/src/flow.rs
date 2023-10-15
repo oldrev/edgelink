@@ -52,7 +52,7 @@ impl Flow {
     pub(crate) async fn new(
         engine: Arc<FlowEngine>,
         flow_config: &RedFlowConfig,
-        reg: &Registry,
+        reg: di::ServiceRef<dyn Registry>,
     ) -> crate::Result<Arc<Self>> {
         let flow: Arc<Flow> = Arc::new(Flow {
             id: flow_config.id,
