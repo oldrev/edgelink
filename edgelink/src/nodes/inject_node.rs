@@ -2,6 +2,7 @@ use crate::flow::Flow;
 use crate::nodes::*;
 use crate::{nodes::*, red::json::RedFlowNodeConfig, Result};
 use std::sync::{Arc, Weak};
+use std::time::{SystemTime, UNIX_EPOCH};
 use tokio::sync::Mutex;
 
 struct InjectNode {
@@ -42,6 +43,19 @@ fn new_node(flow: Arc<Flow>, config: &RedFlowNodeConfig) -> Box<dyn FlowNodeBeha
         flow: Arc::downgrade(&flow),
     };
     Box::new(node)
+}
+
+fn unix_now() -> crate::Result<i64> {
+    let now = SystemTime::now();
+
+    // 获取UNIX Epoch
+    let epoch = UNIX_EPOCH;
+
+    // 计算时间间隔
+    let duration = now.duration_since(epoch)?;
+
+    // 获取毫秒数
+    Ok(duration.as_millis() as i64)
 }
 
 inventory::submit! {

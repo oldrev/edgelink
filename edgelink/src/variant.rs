@@ -1,3 +1,5 @@
+
+
 use std::collections::BTreeMap;
 
 #[non_exhaustive]
@@ -29,8 +31,16 @@ pub enum Variant {
 }
 
 impl Variant {
+
+    pub fn empty_object() -> Variant {
+        Variant::Object(BTreeMap::new())
+    }
+
     pub fn is_integer(&self) -> bool {
-        self.as_integer().is_some()
+        match self {
+            Variant::Integer(_) => true,
+            _ => false,
+        }
     }
 
     pub fn as_integer(&self) -> Option<i64> {
@@ -274,3 +284,23 @@ impl VariantObject for BTreeMap<String, Variant> {
 }
 
 */
+
+#[test]
+fn variant_clone_should_be_ok() {
+    let mut var1 = Variant::Array(vec![
+        Variant::Integer(123),
+        Variant::Integer(333),
+        Variant::Array(vec![Variant::Integer(901), Variant::Integer(902)]),
+    ]);
+    let mut var2 = var1.clone();
+
+    let mut inner_array = var2.as_array_mut().unwrap()[2].as_array_mut().unwrap();
+    inner_array[0] = Variant::Integer(999);
+
+    let value1 = var1.as_array().unwrap()[2].as_array().unwrap()[0].as_integer().unwrap();
+    let value2 = var2.as_array().unwrap()[2].as_array().unwrap()[0].as_integer().unwrap();
+
+    assert_eq!(value1, 901);
+    assert_eq!(value1, 999);
+    assert_eq!(value1, value2);
+}

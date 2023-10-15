@@ -39,7 +39,7 @@ impl FlowEngine {
                 state: TokMutex::new(FlowEngineState {
                     flows: Vec::new(),
                     global_nodes: Vec::new(),
-                    context: Variant::Object(BTreeMap::new()),
+                    context: Variant::empty_object(),
                     shutdown: false,
                 }),
             }),
@@ -92,8 +92,8 @@ impl FlowEngine {
     }
 
     pub async fn stop(&self) -> crate::Result<()> {
-        let mut state = self.shared.state.lock().await;
-        for flow in state.flows.iter_mut() {
+        let state = self.shared.state.lock().await;
+        for flow in state.flows.iter() {
             flow.stop().await?;
         }
         Ok(())

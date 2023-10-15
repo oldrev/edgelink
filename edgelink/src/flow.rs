@@ -1,3 +1,4 @@
+use crate::msg::Msg;
 use async_trait::async_trait;
 use log;
 use serde_json::Value as JsonValue;
@@ -19,7 +20,8 @@ use crate::variant::Variant;
 use crate::{EdgeLinkError, Result};
 
 struct FlowState {
-    nodes: Vec<Box<dyn FlowNodeBehavior>>,
+    nodes: HashMap<u64, Box<dyn FlowNodeBehavior>>,
+    nodes_ordering: Vec<u64>,
     context: Variant,
     engine: Weak<FlowEngine>,
 }
@@ -49,6 +51,10 @@ impl Flow {
         self.disabled
     }
 
+    pub async fn emit(msg: Arc<Msg>) -> crate::Result<()> {
+        Ok(())
+    }
+
     pub(crate) async fn new(
         engine: Arc<FlowEngine>,
         flow_config: &RedFlowConfig,
@@ -61,8 +67,9 @@ impl Flow {
             shared: Arc::new(FlowShared {
                 state: TokMutex::new(FlowState {
                     engine: Arc::downgrade(&engine),
-                    nodes: Vec::with_capacity(flow_config.nodes.len()),
-                    context: Variant::Object(BTreeMap::new()),
+                    nodes: HashMap::with_capacity(flow_config.nodes.len()),
+                    nodes_ordering: Vec::new(),
+                    context: Variant::empty_object(),
                 }),
             }),
         });
@@ -87,7 +94,8 @@ impl Flow {
                             .into())
                         }
                     };
-                    state.nodes.push(node);
+                    state.nodes_ordering.push(node.id());
+                    state.nodes.insert(node_config.id, node);
                 }
             }
         }
@@ -96,9 +104,11 @@ impl Flow {
     }
 
     pub(crate) async fn start(&self) -> crate::Result<()> {
-        let mut state = self.shared.state.lock().await;
+        let state = self.shared.state.lock().await;
         println!("-- Starting Flow (id={0:016x})...", self.id);
-        for node in state.nodes.iter_mut() {
+        // 启动是按照节点依赖顺序的逆序
+        for node_id in state.nodes_ordering.iter().rev() {
+            let node = &state.nodes[node_id];
             println!("---- Starting Node (id={0:016x}')...", node.id());
             node.start().await?;
         }
@@ -106,9 +116,10 @@ impl Flow {
     }
 
     pub(crate) async fn stop(&self) -> crate::Result<()> {
-        let mut state = self.shared.state.lock().await;
+        let state = self.shared.state.lock().await;
         println!("-- Stopping Flow (id={0:016x})...", self.id);
-        for node in state.nodes.iter_mut() {
+        for node_id in state.nodes_ordering.iter() {
+            let node = &state.nodes[node_id];
             node.stop().await?;
         }
         Ok(())

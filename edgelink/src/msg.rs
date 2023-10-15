@@ -4,21 +4,21 @@ use std::collections::BTreeMap;
 use crate::variant::Variant;
 use std::sync::{Arc, Mutex};
 
-struct Msg {
+pub struct Msg {
+    id: u32,
     data: BTreeMap<String, Variant>,
 }
 
 impl Msg {
-    fn id(&self) -> Option<i64> {
-        let id = self.data.get("id")?;
-        id.as_integer()
+    pub fn id(&self) ->u32 {
+        self.id
     }
 
-    fn payload(&self) -> Option<&Variant> {
+    pub fn payload(&self) -> Option<&Variant> {
         self.data.get("payload")
     }
 
-    fn payload_mut(&mut self) -> Option<&mut Variant> {
+    pub fn payload_mut(&mut self) -> Option<&mut Variant> {
         self.data.borrow_mut().get_mut("payload")
     }
 }
@@ -26,6 +26,7 @@ impl Msg {
 impl Clone for Msg {
     fn clone(&self) -> Self {
         Self {
+            id: self.id,
             data: self.data.clone(),
         }
     }

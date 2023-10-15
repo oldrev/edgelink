@@ -61,10 +61,7 @@ impl Runtime {
         }
     }
 
-    async fn main_flow_task(
-        self: Arc<Self>,
-        _cancel: CancellationToken,
-    ) {
+    async fn main_flow_task(self: Arc<Self>, _cancel: CancellationToken) {
         let engine = Arc::new(Mutex::new(
             FlowEngine::new(self.registry.clone(), "./flows.json")
                 .await
@@ -74,10 +71,7 @@ impl Runtime {
         locked.start().await.unwrap();
     }
 
-    async fn idle_task(
-        self: Arc<Self>,
-        cancel: CancellationToken,
-    ) {
+    async fn idle_task(self: Arc<Self>, cancel: CancellationToken) {
         loop {
             time::sleep(tokio::time::Duration::from_secs(1)).await;
             if cancel.is_cancelled() {
@@ -87,10 +81,7 @@ impl Runtime {
         }
     }
 
-    pub async fn run(
-        self: Arc<Self>,
-        cancel: CancellationToken,
-    ) -> crate::Result<()> {
+    pub async fn run(self: Arc<Self>, cancel: CancellationToken) -> crate::Result<()> {
         let task1 = tokio::spawn(self.clone().main_flow_task(cancel.child_token()));
         let task2 = tokio::spawn(self.clone().idle_task(cancel.child_token()));
         _ = tokio::join!(task1, task2);
