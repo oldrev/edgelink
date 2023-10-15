@@ -34,7 +34,6 @@ fn new_node(flow: Arc<Flow>, config: &RedFlowNodeConfig) -> Box<dyn FlowNodeBeha
         },
         flow: Arc::downgrade(&flow),
     };
-    println!("我的爹是：{0}", node.flow.upgrade().unwrap().id());
     Box::new(node)
 }
 
