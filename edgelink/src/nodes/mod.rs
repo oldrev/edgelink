@@ -13,6 +13,14 @@ mod debug_node;
 mod inject_node;
 mod junction_node;
 
+#[derive(Debug, Clone, Copy)]
+pub enum NodeState {
+    Starting = 0,
+    Idle,
+    Busy,
+    Stopping,
+    Stopped,
+}
 
 #[derive(Debug, Clone, Copy)]
 pub enum NodeKind {
@@ -81,4 +89,3 @@ impl BuiltinNodeDescriptor {
 }
 
 inventory::collect!(BuiltinNodeDescriptor);
-
