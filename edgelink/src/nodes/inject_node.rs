@@ -50,7 +50,7 @@ impl FlowNodeBehavior for InjectNode {
         &self.info.ports
     }
 
-    async fn fan_in(&self, msg: Arc<Msg>) -> crate::Result<()> {
+    async fn fan_in(&self, _msg: Arc<Msg>) -> crate::Result<()> {
         Err(EdgeLinkError::NotSupported("This node is a source node".to_string()).into())
     }
 }

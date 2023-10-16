@@ -4,12 +4,12 @@ use crate::{nodes::*, red::json::RedFlowNodeConfig, Result};
 use std::sync::{Arc, Weak};
 use tokio::sync::Mutex;
 
-struct DebugNode {
+struct JunctionNode {
     info: FlowNodeInfo,
 }
 
 #[async_trait]
-impl NodeBehavior for DebugNode {
+impl NodeBehavior for JunctionNode {
     fn id(&self) -> ElementID {
         self.info.id
     }
@@ -28,19 +28,19 @@ impl NodeBehavior for DebugNode {
 }
 
 #[async_trait]
-impl FlowNodeBehavior for DebugNode {
+impl FlowNodeBehavior for JunctionNode {
     fn ports(&self) -> &Vec<Port> {
         &self.info.ports
     }
 
     async fn fan_in(&self, msg: Arc<Msg>) -> crate::Result<()> {
-        println!("收到消息：\n{:#?}", msg.as_ref());
-        Ok(())
+        let flow_ptr = Weak::upgrade(&self.info.flow).unwrap();
+        flow_ptr.fan_out(msg).await
     }
 }
 
 fn new_node(flow: Arc<Flow>, config: &RedFlowNodeConfig) -> Box<dyn FlowNodeBehavior> {
-    let node = DebugNode {
+    let node = JunctionNode {
         info: FlowNodeInfo {
             id: config.id,
             flow: Arc::downgrade(&flow),
@@ -52,5 +52,5 @@ fn new_node(flow: Arc<Flow>, config: &RedFlowNodeConfig) -> Box<dyn FlowNodeBeha
 }
 
 inventory::submit! {
-    BuiltinNodeDescriptor::new(NodeKind::Flow, "debug", NodeFactory::Flow(new_node))
+    BuiltinNodeDescriptor::new(NodeKind::Flow, "junction", NodeFactory::Flow(new_node))
 }
