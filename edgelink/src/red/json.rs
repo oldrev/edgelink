@@ -2,34 +2,13 @@ use std::collections::{BTreeMap, HashSet};
 use std::{fs::File, io::Read};
 
 use serde::Deserializer;
-use serde::{Serialize, Deserialize, de::Error};
+use serde::{de::Error, Deserialize, Serialize};
 use serde_json::Map as JsonMap;
 use serde_json::Value as JsonValue;
 use topo_sort::TopoSort;
 
-use crate::{EdgeLinkError, Result, model::ElementID};
-
-/* 
-pub fn from_hex<'de, D>(deserializer: D) -> std::result::Result<u64, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    let v: JsonValue = Deserialize::deserialize(deserializer)?;
-
-    match v {
-        JsonValue::String(r) => Ok(u64::from_str_radix(r.as_str(), 16).map_err(D::Error::custom)),
-        JsonValue::Number(num) => {
-            if let Some(u64v) = num.as_u64() {
-                return Ok(u64v);
-            } else {
-                Err(num).map_err(D::Error::custom)
-            }
-        }
-        other => Err(other).map_err(D::Error::custom),
-    }?
-}
-*/
-
+use crate::model::*;
+use crate::{EdgeLinkError, Result};
 
 /// Loading 'flows.js'
 pub fn load_flows_json(flows_json_path: &str) -> Result<JsonValues> {
@@ -176,6 +155,8 @@ pub struct RedFlowNodeConfig {
 
     pub disabled: Option<bool>,
 
+    pub wires: Vec<Port>,
+
     #[serde(skip)]
     pub json: serde_json::Map<String, JsonValue>,
 }
@@ -203,3 +184,35 @@ pub struct JsonValues {
     pub global_nodes: Vec<RedGlobalNodeConfig>,
 }
 
+impl<'de> Deserialize<'de> for Port {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let des: Vec<ElementID> = Deserialize::deserialize(deserializer)?;
+        Ok(Port { node_ids: des })
+    }
+}
+
+impl<'de> Deserialize<'de> for ElementID {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let v: JsonValue = Deserialize::deserialize(deserializer)?;
+
+        match v {
+            JsonValue::String(r) => Ok(u64::from_str_radix(r.as_str(), 16)
+                .map(ElementID)
+                .map_err(D::Error::custom)),
+            JsonValue::Number(num) => {
+                if let Some(u64v) = num.as_u64() {
+                    return Ok(ElementID(u64v));
+                } else {
+                    Err(num).map_err(D::Error::custom)
+                }
+            }
+            other => Err(other).map_err(D::Error::custom),
+        }?
+    }
+}

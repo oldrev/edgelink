@@ -1,13 +1,17 @@
 use crate::flow::Flow;
+use crate::model::Port;
+use crate::msg::Msg;
 use crate::nodes::*;
 use crate::{nodes::*, red::json::RedFlowNodeConfig, Result};
+use crate::variant::Variant;
 use std::sync::{Arc, Weak};
 use std::time::{SystemTime, UNIX_EPOCH};
-use tokio::sync::Mutex;
+use tokio::sync::Mutex as TokMutex;
 
 struct InjectNode {
     base: BaseNode,
     flow: Weak<Flow>,
+    ports: Vec<Port>,
 }
 
 #[async_trait]
@@ -16,12 +20,22 @@ impl NodeBehavior for InjectNode {
         self.base.id
     }
 
+    fn name(&self) -> &str {
+        &self.base.name
+    }
+
     async fn start(&self) -> Result<()> {
-        // tokio::spawn(async move { });
+        let flow_ptr = Weak::upgrade(&self.flow).unwrap();
+        let self_id = self.id();
         tokio::spawn(async move {
-            println!("start delay");
-            tokio::time::sleep(std::time::Duration::from_secs(2)).await;
-            println!("end delay");
+            loop {
+                // TODO FIXME
+                tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+                let now = unix_now().unwrap();
+                let payload = Variant::from(now);
+                let msg = Msg::with_payload(self_id,  payload);
+                flow_ptr.fan_out(msg).await.unwrap();
+            }
         });
 
         Ok(())
@@ -32,7 +46,16 @@ impl NodeBehavior for InjectNode {
     }
 }
 
-impl FlowNodeBehavior for InjectNode {}
+#[async_trait]
+impl FlowNodeBehavior for InjectNode {
+    fn ports(&self) -> &Vec<Port> {
+        &self.ports
+    }
+
+    async fn fan_in(&self, msg: Arc<Msg>) -> crate::Result<()> {
+        Err(EdgeLinkError::NotSupported("This node is a source node".to_string()).into())
+    }
+}
 
 fn new_node(flow: Arc<Flow>, config: &RedFlowNodeConfig) -> Box<dyn FlowNodeBehavior> {
     let node = InjectNode {
@@ -41,6 +64,7 @@ fn new_node(flow: Arc<Flow>, config: &RedFlowNodeConfig) -> Box<dyn FlowNodeBeha
             name: config.name.clone(),
         },
         flow: Arc::downgrade(&flow),
+        ports: config.wires.clone(),
     };
     Box::new(node)
 }

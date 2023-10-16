@@ -8,7 +8,8 @@ use tokio::{spawn, task, time};
 
 use crate::engine::FlowEngine;
 use crate::flow::Flow;
-use crate::model::ElementID;
+use crate::model::{ElementID, Port};
+use crate::msg::Msg;
 use crate::red::json::{RedFlowNodeConfig, RedGlobalNodeConfig};
 use crate::{EdgeLinkError, Result};
 
@@ -50,12 +51,16 @@ pub struct BaseNode {
 #[async_trait]
 pub trait NodeBehavior: Send + Sync {
     fn id(&self) -> ElementID;
+    fn name(&self) -> &str;
     async fn start(&self) -> Result<()>;
     async fn stop(&self) -> Result<()>;
 }
 
 #[async_trait]
-pub trait FlowNodeBehavior: NodeBehavior + Send + Sync {}
+pub trait FlowNodeBehavior: NodeBehavior + Send + Sync {
+    fn ports(&self) -> &Vec<Port>;
+    async fn fan_in(&self, msg: Arc<Msg>) -> crate::Result<()>;
+}
 
 pub(crate) struct BuiltinNodeDescriptor {
     pub(crate) meta: MetaNode,

@@ -52,7 +52,27 @@ impl Flow {
         self.disabled
     }
 
-    pub async fn emit(msg: Arc<Msg>) -> crate::Result<()> {
+    pub async fn fan_out(&self, msg: Arc<Msg>) -> crate::Result<()> {
+        let state = self.shared.state.lock().await;
+        let source_node = &state.nodes[&msg.birth_place()];
+        let mut msg_sent = false;
+        for port in source_node.ports().iter() {
+            for nid in port.node_ids.iter() {
+                let dest_node = &state.nodes[nid];
+                let msg_to_send: Arc<Msg> = if !msg_sent {
+                    msg.clone()
+                } else {
+                    Arc::new(msg.as_ref().clone())
+                };
+                let fan_in_result = dest_node.fan_in(msg_to_send).await;
+                match fan_in_result {
+                    Err(err) => return Err(err),
+                    _ => (),
+                }
+                msg_sent = true;
+            }
+        }
+
         Ok(())
     }
 
@@ -110,7 +130,7 @@ impl Flow {
         // 启动是按照节点依赖顺序的逆序
         for node_id in state.nodes_ordering.iter().rev() {
             let node = &state.nodes[node_id];
-            println!("---- Starting Node (id={0}')...", node.id());
+            println!("---- Starting Node (id='{0}')...", node.id());
             node.start().await?;
         }
         Ok(())
