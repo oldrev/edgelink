@@ -2,36 +2,34 @@ use crate::flow::Flow;
 use crate::model::Port;
 use crate::msg::Msg;
 use crate::nodes::*;
-use crate::{nodes::*, red::json::RedFlowNodeConfig, Result};
+use crate::red::json::*;
+use crate::{Result, EdgeLinkError};
 use crate::variant::Variant;
 use std::sync::{Arc, Weak};
-use std::time::{SystemTime, UNIX_EPOCH};
 use tokio::sync::Mutex as TokMutex;
 
 struct InjectNode {
-    base: BaseNode,
-    flow: Weak<Flow>,
-    ports: Vec<Port>,
+    info: FlowNodeInfo,
 }
 
 #[async_trait]
 impl NodeBehavior for InjectNode {
     fn id(&self) -> ElementID {
-        self.base.id
+        self.info.id
     }
 
     fn name(&self) -> &str {
-        &self.base.name
+        &self.info.name
     }
 
     async fn start(&self) -> Result<()> {
-        let flow_ptr = Weak::upgrade(&self.flow).unwrap();
+        let flow_ptr = Weak::upgrade(&self.info.flow).unwrap();
         let self_id = self.id();
         tokio::spawn(async move {
             loop {
                 // TODO FIXME
                 tokio::time::sleep(std::time::Duration::from_secs(2)).await;
-                let now = unix_now().unwrap();
+                let now = crate::utils::time::unix_now().unwrap();
                 let payload = Variant::from(now);
                 let msg = Msg::with_payload(self_id,  payload);
                 flow_ptr.fan_out(msg).await.unwrap();
@@ -49,7 +47,7 @@ impl NodeBehavior for InjectNode {
 #[async_trait]
 impl FlowNodeBehavior for InjectNode {
     fn ports(&self) -> &Vec<Port> {
-        &self.ports
+        &self.info.ports
     }
 
     async fn fan_in(&self, msg: Arc<Msg>) -> crate::Result<()> {
@@ -59,27 +57,14 @@ impl FlowNodeBehavior for InjectNode {
 
 fn new_node(flow: Arc<Flow>, config: &RedFlowNodeConfig) -> Box<dyn FlowNodeBehavior> {
     let node = InjectNode {
-        base: BaseNode {
+        info: FlowNodeInfo {
             id: config.id,
+            flow: Arc::downgrade(&flow),
             name: config.name.clone(),
+            ports: config.wires.clone(),
         },
-        flow: Arc::downgrade(&flow),
-        ports: config.wires.clone(),
     };
     Box::new(node)
-}
-
-fn unix_now() -> crate::Result<i64> {
-    let now = SystemTime::now();
-
-    // 获取UNIX Epoch
-    let epoch = UNIX_EPOCH;
-
-    // 计算时间间隔
-    let duration = now.duration_since(epoch)?;
-
-    // 获取毫秒数
-    Ok(duration.as_millis() as i64)
 }
 
 inventory::submit! {

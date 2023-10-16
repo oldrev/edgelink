@@ -5,19 +5,17 @@ use std::sync::{Arc, Weak};
 use tokio::sync::Mutex;
 
 struct DebugNode {
-    base: BaseNode,
-    flow: Weak<Flow>,
-    ports: Vec<Port>,
+    info: FlowNodeInfo,
 }
 
 #[async_trait]
 impl NodeBehavior for DebugNode {
     fn id(&self) -> ElementID {
-        self.base.id
+        self.info.id
     }
 
     fn name(&self) -> &str {
-        &self.base.name
+        &self.info.name
     }
 
     async fn start(&self) -> Result<()> {
@@ -32,7 +30,7 @@ impl NodeBehavior for DebugNode {
 #[async_trait]
 impl FlowNodeBehavior for DebugNode {
     fn ports(&self) -> &Vec<Port> {
-        &self.ports
+        &self.info.ports
     }
 
     async fn fan_in(&self, msg: Arc<Msg>) -> crate::Result<()> {
@@ -43,12 +41,12 @@ impl FlowNodeBehavior for DebugNode {
 
 fn new_node(flow: Arc<Flow>, config: &RedFlowNodeConfig) -> Box<dyn FlowNodeBehavior> {
     let node = DebugNode {
-        base: BaseNode {
+        info: FlowNodeInfo {
             id: config.id,
+            flow: Arc::downgrade(&flow),
             name: config.name.clone(),
+            ports: config.wires.clone(),
         },
-        flow: Arc::downgrade(&flow),
-        ports: config.wires.clone(),
     };
     Box::new(node)
 }

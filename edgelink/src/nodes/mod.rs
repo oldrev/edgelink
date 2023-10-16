@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use std::cell::{Cell, RefCell};
 use std::fmt;
 use std::future::Future;
-use std::sync::Arc;
+use std::sync::{Arc, Weak};
 use tokio::task::yield_now;
 use tokio::{spawn, task, time};
 
@@ -42,10 +42,11 @@ pub struct MetaNode {
     pub factory: NodeFactory,
 }
 
-pub struct BaseNode {
+pub struct FlowNodeInfo {
     pub id: ElementID,
+    pub flow: Weak<Flow>,
     pub name: String,
-    //pub descriptor: &'static MetaNode,
+    pub ports: Vec<Port>,
 }
 
 #[async_trait]

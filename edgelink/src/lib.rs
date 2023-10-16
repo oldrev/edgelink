@@ -11,6 +11,7 @@ pub mod shutdown;
 pub mod variant;
 
 pub mod model;
+pub mod utils;
 
 /// The `PluginRegistrar` is defined by the application and passed to `plugin_entry`. It's used
 /// for a plugin module to register itself with the application.
