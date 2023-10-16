@@ -9,9 +9,10 @@ use std::collections::{BTreeMap, HashMap};
 use std::fs::File;
 use std::io::Read;
 use std::sync::{Arc, Mutex, Weak};
-use tokio::sync::{futures, Mutex as TokMutex};
+use tokio::sync::{futures, RwLock as TokRwLock};
 use tokio::task::yield_now;
 use tokio::{spawn, task, time};
+use tokio_util::sync::CancellationToken;
 
 use crate::engine::FlowEngine;
 use crate::nodes::*;
@@ -28,7 +29,7 @@ struct FlowState {
 }
 
 struct FlowShared {
-    state: TokMutex<FlowState>,
+    state: TokRwLock<FlowState>,
 }
 
 pub struct Flow {
@@ -52,8 +53,8 @@ impl Flow {
         self.disabled
     }
 
-    pub async fn fan_out(&self, msg: Arc<Msg>) -> crate::Result<()> {
-        let state = self.shared.state.lock().await;
+    pub async fn fan_out(&self, msg: Arc<Msg>, cancel: CancellationToken) -> crate::Result<()> {
+        let state = self.shared.state.read().await;
         let source_node = &state.nodes[&msg.birth_place()];
         let mut msg_sent = false;
         for port in source_node.ports().iter() {
@@ -64,7 +65,7 @@ impl Flow {
                 } else {
                     Arc::new(msg.as_ref().clone())
                 };
-                let fan_in_result = dest_node.fan_in(msg_to_send).await;
+                let fan_in_result = dest_node.fan_in(msg_to_send, cancel.clone()).await;
                 match fan_in_result {
                     Err(err) => return Err(err),
                     _ => (),
@@ -86,7 +87,7 @@ impl Flow {
             label: flow_config.label.clone(),
             disabled: flow_config.disabled.unwrap_or(false),
             shared: Arc::new(FlowShared {
-                state: TokMutex::new(FlowState {
+                state: TokRwLock::new(FlowState {
                     engine: Arc::downgrade(&engine),
                     nodes: HashMap::with_capacity(flow_config.nodes.len()),
                     nodes_ordering: Vec::new(),
@@ -96,7 +97,7 @@ impl Flow {
         });
 
         {
-            let mut state = flow.shared.state.lock().await;
+            let mut state = flow.shared.state.write().await;
 
             for node_config in flow_config.nodes.iter() {
                 if let Some(meta_node) = reg.get(&node_config.type_name) {
@@ -124,24 +125,24 @@ impl Flow {
         Ok(flow)
     }
 
-    pub(crate) async fn start(&self) -> crate::Result<()> {
-        let state = self.shared.state.lock().await;
+    pub(crate) async fn start(&self, cancel: CancellationToken) -> crate::Result<()> {
+        let state = self.shared.state.write().await;
         println!("-- Starting Flow (id={0})...", self.id);
         // 启动是按照节点依赖顺序的逆序
         for node_id in state.nodes_ordering.iter().rev() {
             let node = &state.nodes[node_id];
             println!("---- Starting Node (id='{0}')...", node.id());
-            node.start().await?;
+            node.start(cancel.clone()).await?;
         }
         Ok(())
     }
 
-    pub(crate) async fn stop(&self) -> crate::Result<()> {
-        let state = self.shared.state.lock().await;
+    pub(crate) async fn stop(&self, cancel: CancellationToken) -> crate::Result<()> {
+        let state = self.shared.state.write().await;
         println!("-- Stopping Flow (id={0})...", self.id);
         for node_id in state.nodes_ordering.iter() {
             let node = &state.nodes[node_id];
-            node.stop().await?;
+            node.stop(cancel.clone()).await?;
         }
         Ok(())
     }

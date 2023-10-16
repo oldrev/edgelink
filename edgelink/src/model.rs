@@ -1,4 +1,3 @@
-
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Copy, Clone)]
 pub struct ElementID(pub(crate) u64);
 
@@ -12,4 +11,3 @@ impl std::fmt::Display for ElementID {
 pub struct Port {
     pub node_ids: Vec<ElementID>,
 }
-

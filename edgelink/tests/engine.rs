@@ -1,9 +1,9 @@
-use std::sync::Arc;
 use edgelink::engine::*;
 use edgelink::flow::*;
 use edgelink::nodes::*;
 use edgelink::red::json::load_flows_json;
 use edgelink::registry::RegistryImpl;
+use std::sync::Arc;
 
 /*
 #[cfg(test)]
@@ -26,7 +26,9 @@ impl NodeBehavior for TestGlobalNode {
 async fn can_create_flow_manually() {
     // data::
     let reg = Arc::new(RegistryImpl::new());
-    let engine = FlowEngine::new(reg, "./tests/data/flows.json").await.unwrap();
+    let engine = FlowEngine::new(reg, "./tests/data/flows.json")
+        .await
+        .unwrap();
     engine.start().await.unwrap();
 
     // assert_eq!(engine.id(), 0xdee0d1b0cfd62a6cu64);

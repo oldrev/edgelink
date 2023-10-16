@@ -18,11 +18,11 @@ impl NodeBehavior for DebugNode {
         &self.info.name
     }
 
-    async fn start(&self) -> Result<()> {
+    async fn start(&self, cancel: CancellationToken) -> Result<()> {
         Ok(())
     }
 
-    async fn stop(&self) -> Result<()> {
+    async fn stop(&self, cancel: CancellationToken) -> Result<()> {
         Ok(())
     }
 }
@@ -33,7 +33,7 @@ impl FlowNodeBehavior for DebugNode {
         &self.info.ports
     }
 
-    async fn fan_in(&self, msg: Arc<Msg>) -> crate::Result<()> {
+    async fn fan_in(&self, msg: Arc<Msg>, cancel: CancellationToken) -> crate::Result<()> {
         println!("收到消息：\n{:#?}", msg.as_ref());
         Ok(())
     }

@@ -37,6 +37,9 @@ pub enum EdgeLinkError {
 
     #[error("Not supported: {0}")]
     NotSupported(String),
+
+    #[error("Task cancelled")]
+    TaskCancelled,
 }
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;

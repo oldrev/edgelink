@@ -1,6 +1,5 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 
-
 pub fn unix_now() -> crate::Result<i64> {
     let now = SystemTime::now();
 
@@ -13,4 +12,3 @@ pub fn unix_now() -> crate::Result<i64> {
     // 获取毫秒数
     Ok(duration.as_millis() as i64)
 }
-

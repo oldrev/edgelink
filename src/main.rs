@@ -61,14 +61,14 @@ impl Runtime {
         }
     }
 
-    async fn main_flow_task(self: Arc<Self>, _cancel: CancellationToken) {
+    async fn main_flow_task(self: Arc<Self>, cancel: CancellationToken) {
         let engine = Arc::new(Mutex::new(
             FlowEngine::new(self.registry.clone(), "./flows.json")
                 .await
                 .unwrap(),
         ));
         let locked = engine.lock().await;
-        locked.start().await.unwrap();
+        locked.start(cancel).await.unwrap();
     }
 
     async fn idle_task(self: Arc<Self>, cancel: CancellationToken) {
@@ -110,11 +110,11 @@ async fn main() -> Result<()> {
     let _provider = services.build_provider()?;
     let sp = Arc::new(_provider);
     let cancel = CancellationToken::new();
-    let runtime_cancel_token = cancel.child_token();
 
+    let runtime_cancel_token = cancel.clone();
     let task = spawn(async move {
         let rt = sp.clone().get_required::<Runtime>();
-        rt.run(runtime_cancel_token).await
+        rt.run(runtime_cancel_token.clone()).await
     });
 
     tokio::select! {

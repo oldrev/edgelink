@@ -6,7 +6,8 @@ use std::sync::Arc;
 use std::thread::spawn;
 use tokio::sync::broadcast;
 use tokio::sync::mpsc;
-use tokio::sync::Mutex as TokMutex;
+use tokio::sync::RwLock as TokRwLock;
+use tokio_util::sync::CancellationToken;
 
 use crate::flow::Flow;
 use crate::nodes::{NodeBehavior, NodeFactory};
@@ -20,7 +21,7 @@ struct FlowEngineState {
 }
 
 struct FlowEngineShared {
-    state: TokMutex<FlowEngineState>,
+    state: TokRwLock<FlowEngineState>,
 }
 
 pub struct FlowEngine {
@@ -36,7 +37,7 @@ impl FlowEngine {
 
         let engine = Arc::new(FlowEngine {
             shared: Arc::new(FlowEngineShared {
-                state: TokMutex::new(FlowEngineState {
+                state: TokRwLock::new(FlowEngineState {
                     flows: Vec::new(),
                     global_nodes: Vec::new(),
                     context: Variant::empty_object(),
@@ -46,7 +47,7 @@ impl FlowEngine {
         });
 
         {
-            let mut state = engine.shared.state.lock().await;
+            let mut state = engine.shared.state.write().await;
             // load flows
             for flow_config in json_values.flows.iter() {
                 let flow = Flow::new(engine.clone(), flow_config, reg.clone()).await?;
@@ -76,14 +77,15 @@ impl FlowEngine {
         Ok(engine)
     }
 
-    pub async fn start(&self) -> crate::Result<()> {
-        let state = self.shared.state.lock().await;
+    pub async fn start(&self, cancel: CancellationToken) -> crate::Result<()> {
+        let state = self.shared.state.write().await;
         for flow in state.flows.iter() {
             //let flow_lock = TokMutex::new(flow.clone());
             let flow_lock = flow.clone();
+            let child_cancel = cancel.clone();
             tokio::spawn(async move {
                 let scoped_flow = flow_lock;
-                scoped_flow.start().await
+                scoped_flow.start(child_cancel).await
             })
             .await??;
         }
@@ -91,10 +93,10 @@ impl FlowEngine {
         Ok(())
     }
 
-    pub async fn stop(&self) -> crate::Result<()> {
-        let state = self.shared.state.lock().await;
+    pub async fn stop(&self, cancel: CancellationToken) -> crate::Result<()> {
+        let state = self.shared.state.write().await;
         for flow in state.flows.iter() {
-            flow.stop().await?;
+            flow.stop(cancel.clone()).await?;
         }
         Ok(())
     }

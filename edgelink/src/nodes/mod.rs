@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 use std::fmt;
 use std::sync::{Arc, Weak};
+use tokio_util::sync::CancellationToken;
 
 use crate::engine::FlowEngine;
 use crate::flow::Flow;
@@ -62,14 +63,14 @@ pub struct FlowNodeInfo {
 pub trait NodeBehavior: Send + Sync {
     fn id(&self) -> ElementID;
     fn name(&self) -> &str;
-    async fn start(&self) -> Result<()>;
-    async fn stop(&self) -> Result<()>;
+    async fn start(&self, cancel: CancellationToken) -> Result<()>;
+    async fn stop(&self, cancel: CancellationToken) -> Result<()>;
 }
 
 #[async_trait]
 pub trait FlowNodeBehavior: NodeBehavior + Send + Sync {
     fn ports(&self) -> &Vec<Port>;
-    async fn fan_in(&self, msg: Arc<Msg>) -> crate::Result<()>;
+    async fn fan_in(&self, msg: Arc<Msg>, cancel: CancellationToken) -> crate::Result<()>;
 }
 
 pub(crate) struct BuiltinNodeDescriptor {

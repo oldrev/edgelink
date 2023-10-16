@@ -18,11 +18,11 @@ impl NodeBehavior for JunctionNode {
         &self.info.name
     }
 
-    async fn start(&self) -> Result<()> {
+    async fn start(&self, cancel: CancellationToken) -> Result<()> {
         Ok(())
     }
 
-    async fn stop(&self) -> Result<()> {
+    async fn stop(&self, cancel: CancellationToken) -> Result<()> {
         Ok(())
     }
 }
@@ -33,9 +33,9 @@ impl FlowNodeBehavior for JunctionNode {
         &self.info.ports
     }
 
-    async fn fan_in(&self, msg: Arc<Msg>) -> crate::Result<()> {
+    async fn fan_in(&self, msg: Arc<Msg>, cancel: CancellationToken) -> crate::Result<()> {
         let flow_ptr = Weak::upgrade(&self.info.flow).unwrap();
-        flow_ptr.fan_out(msg).await
+        flow_ptr.fan_out(msg, cancel.clone()).await
     }
 }
 
