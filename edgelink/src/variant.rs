@@ -302,6 +302,6 @@ fn variant_clone_should_be_ok() {
         .unwrap();
 
     assert_eq!(value1, 901);
-    assert_eq!(value1, 999);
-    assert_eq!(value1, value2);
+    assert_eq!(value2, 999);
+    assert_ne!(value1, value2);
 }

@@ -3,6 +3,7 @@ use edgelink::flow::*;
 use edgelink::nodes::*;
 use edgelink::red::json::load_flows_json;
 use edgelink::registry::RegistryImpl;
+use tokio_util::sync::CancellationToken;
 use std::sync::Arc;
 
 /*
@@ -29,7 +30,8 @@ async fn can_create_flow_manually() {
     let engine = FlowEngine::new(reg, "./tests/data/flows.json")
         .await
         .unwrap();
-    engine.start().await.unwrap();
+    let cancel = CancellationToken::new();
+    engine.start(cancel).await.unwrap();
 
     // assert_eq!(engine.id(), 0xdee0d1b0cfd62a6cu64);
     // assert_eq!(flow.label(), "Flow 1");
