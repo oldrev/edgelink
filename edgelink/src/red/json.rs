@@ -2,10 +2,31 @@ use std::collections::{BTreeMap, HashSet};
 use std::{fs::File, io::Read};
 
 use crate::{EdgeLinkError, Result};
-use serde::{de::Error, Deserialize, Deserializer};
+use serde::Deserializer;
+use serde::{Serialize, Deserialize, de::Error};
 use serde_json::Map as JsonMap;
 use serde_json::Value as JsonValue;
 use topo_sort::TopoSort;
+
+pub fn from_hex<'de, D>(deserializer: D) -> std::result::Result<u64, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let v: JsonValue = Deserialize::deserialize(deserializer)?;
+
+    match v {
+        JsonValue::String(r) => Ok(u64::from_str_radix(r.as_str(), 16).map_err(D::Error::custom)),
+        JsonValue::Number(num) => {
+            if let Some(u64v) = num.as_u64() {
+                return Ok(u64v);
+            } else {
+                Err(num).map_err(D::Error::custom)
+            }
+        }
+        other => Err(other).map_err(D::Error::custom),
+    }?
+}
+
 
 /// Loading 'flows.js'
 pub fn load_flows_json(flows_json_path: &str) -> Result<JsonValues> {
@@ -30,27 +51,30 @@ pub fn load_flows_json_value(root_jv: &JsonValue) -> Result<JsonValues> {
     // 遍历 JSON 数组并分类子元素
     for item in all_values.iter() {
         if let Some(obj) = item.as_object() {
-            if let Some(value) = obj.get("type") {
-                if let Some(type_str) = value.as_str() {
-                    if type_str == "tab" {
-                        flows.push(item.clone());
-                    } else if type_str == "comment" {
-                        // skip the  comment
-                    } else {
-                        if obj.get("z").is_some() {
-                            let id = obj["id"].as_str().unwrap(); // FIXME TODO
+            if let (Some(id_str), Some(type_str)) = (
+                obj.get("id").and_then(|x| x.as_str()),
+                obj.get("type").and_then(|x| x.as_str()),
+            ) {
+                match type_str {
+                    "tab" => flows.push(item.clone()),
+                    "comment" => (),
+                    _ => match obj.get("z") {
+                        Some(z) => {
                             let deps = obj.get_flow_node_dependencies();
-                            topo_sort.insert_from_set(id, deps);
-                            flow_nodes.insert(id, item.clone());
-                        } else {
+                            topo_sort.insert_from_set(id_str, deps);
+                            flow_nodes.insert(id_str, item.clone());
+                        }
+                        None => {
                             let mut global_config: RedGlobalNodeConfig =
                                 serde_json::from_value(item.clone())?;
                             global_config.json = obj.clone();
                             global_nodes.push(global_config);
                         }
-                    }
+                    },
                 }
             }
+        } else {
+            return Err(EdgeLinkError::BadFlowsJson("".to_string()).into());
         }
     }
 
@@ -176,21 +200,3 @@ pub struct JsonValues {
     pub global_nodes: Vec<RedGlobalNodeConfig>,
 }
 
-fn from_hex<'de, D>(deserializer: D) -> std::result::Result<u64, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    let v: JsonValue = Deserialize::deserialize(deserializer)?;
-
-    match v {
-        JsonValue::String(r) => Ok(u64::from_str_radix(r.as_str(), 16).map_err(D::Error::custom)),
-        JsonValue::Number(num) => {
-            if let Some(u64v) = num.as_u64() {
-                return Ok(u64v);
-            } else {
-                Err(num).map_err(D::Error::custom)
-            }
-        }
-        other => Err(other).map_err(D::Error::custom),
-    }?
-}

@@ -10,7 +10,7 @@ pub struct Msg {
 }
 
 impl Msg {
-    pub fn id(&self) ->u32 {
+    pub fn id(&self) -> u32 {
         self.id
     }
 
