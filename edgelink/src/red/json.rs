@@ -71,7 +71,7 @@ pub fn load_flows_json_value(root_jv: &JsonValue) -> Result<JsonValues> {
         }
     }
 
-    let mut flow_configs = Vec::new();
+    let mut flow_configs = Vec::with_capacity(flows.len());
     for flow in flows.iter() {
         let mut flow_config: RedFlowConfig = serde_json::from_value(flow.clone())?;
         flow_config.json = flow.as_object().unwrap().clone();
@@ -92,6 +92,7 @@ pub fn load_flows_json_value(root_jv: &JsonValue) -> Result<JsonValues> {
         global_nodes: global_nodes,
     })
 }
+
 pub trait RedNodeJsonObject {
     fn get_flow_node_dependencies(&self) -> HashSet<&str>;
 }
@@ -102,15 +103,12 @@ impl RedNodeJsonObject for JsonMap<String, JsonValue> {
             .get("wires")
             .and_then(|wires_value| wires_value.as_array())
         {
-            Some(wires) => {
-                let dependencies: HashSet<&str> = wires
-                    .iter()
-                    .filter_map(|port| port.as_array())
-                    .flatten()
-                    .filter_map(|id| id.as_str())
-                    .collect();
-                dependencies
-            }
+            Some(wires) => wires
+                .iter()
+                .filter_map(|port| port.as_array())
+                .flatten()
+                .filter_map(|id| id.as_str())
+                .collect(),
             None => HashSet::new(),
         }
     }
