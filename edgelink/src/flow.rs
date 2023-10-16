@@ -1,3 +1,4 @@
+use crate::model::ElementID;
 use crate::msg::Msg;
 use async_trait::async_trait;
 use log;
@@ -20,8 +21,8 @@ use crate::variant::Variant;
 use crate::{EdgeLinkError, Result};
 
 struct FlowState {
-    nodes: HashMap<u64, Box<dyn FlowNodeBehavior>>,
-    nodes_ordering: Vec<u64>,
+    nodes: HashMap<ElementID, Box<dyn FlowNodeBehavior>>,
+    nodes_ordering: Vec<ElementID>,
     context: Variant,
     engine: Weak<FlowEngine>,
 }
@@ -31,7 +32,7 @@ struct FlowShared {
 }
 
 pub struct Flow {
-    pub id: u64,
+    pub id: ElementID,
     pub label: String,
     pub disabled: bool,
 
@@ -39,7 +40,7 @@ pub struct Flow {
 }
 
 impl Flow {
-    pub fn id(&self) -> u64 {
+    pub fn id(&self) -> ElementID {
         self.id
     }
 
@@ -105,11 +106,11 @@ impl Flow {
 
     pub(crate) async fn start(&self) -> crate::Result<()> {
         let state = self.shared.state.lock().await;
-        println!("-- Starting Flow (id={0:016x})...", self.id);
+        println!("-- Starting Flow (id={0})...", self.id);
         // 启动是按照节点依赖顺序的逆序
         for node_id in state.nodes_ordering.iter().rev() {
             let node = &state.nodes[node_id];
-            println!("---- Starting Node (id={0:016x}')...", node.id());
+            println!("---- Starting Node (id={0}')...", node.id());
             node.start().await?;
         }
         Ok(())
@@ -117,7 +118,7 @@ impl Flow {
 
     pub(crate) async fn stop(&self) -> crate::Result<()> {
         let state = self.shared.state.lock().await;
-        println!("-- Stopping Flow (id={0:016x})...", self.id);
+        println!("-- Stopping Flow (id={0})...", self.id);
         for node_id in state.nodes_ordering.iter() {
             let node = &state.nodes[node_id];
             node.stop().await?;

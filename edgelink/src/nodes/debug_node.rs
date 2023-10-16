@@ -11,7 +11,7 @@ struct DebugNode {
 
 #[async_trait]
 impl NodeBehavior for DebugNode {
-    fn id(&self) -> u64 {
+    fn id(&self) -> ElementID {
         self.base.id
     }
 

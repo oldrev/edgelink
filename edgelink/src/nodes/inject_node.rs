@@ -12,7 +12,7 @@ struct InjectNode {
 
 #[async_trait]
 impl NodeBehavior for InjectNode {
-    fn id(&self) -> u64 {
+    fn id(&self) -> ElementID {
         self.base.id
     }
 

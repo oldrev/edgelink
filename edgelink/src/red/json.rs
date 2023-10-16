@@ -1,13 +1,15 @@
 use std::collections::{BTreeMap, HashSet};
 use std::{fs::File, io::Read};
 
-use crate::{EdgeLinkError, Result};
 use serde::Deserializer;
 use serde::{Serialize, Deserialize, de::Error};
 use serde_json::Map as JsonMap;
 use serde_json::Value as JsonValue;
 use topo_sort::TopoSort;
 
+use crate::{EdgeLinkError, Result, model::ElementID};
+
+/* 
 pub fn from_hex<'de, D>(deserializer: D) -> std::result::Result<u64, D::Error>
 where
     D: Deserializer<'de>,
@@ -26,6 +28,7 @@ where
         other => Err(other).map_err(D::Error::custom),
     }?
 }
+*/
 
 
 /// Loading 'flows.js'
@@ -140,8 +143,8 @@ impl RedNodeJsonObject for JsonMap<String, JsonValue> {
 pub struct RedFlowConfig {
     pub disabled: Option<bool>,
 
-    #[serde(deserialize_with = "from_hex")]
-    pub id: u64,
+    // #[serde(deserialize_with = "from_hex")]
+    pub id: ElementID,
 
     pub info: String,
     pub label: String,
@@ -158,16 +161,16 @@ pub struct RedFlowConfig {
 
 #[derive(Debug, serde::Deserialize)]
 pub struct RedFlowNodeConfig {
-    #[serde(deserialize_with = "from_hex")]
-    pub id: u64,
+    //#[serde(deserialize_with = "from_hex")]
+    pub id: ElementID,
 
     #[serde(alias = "type")]
     pub type_name: String,
 
     pub name: String,
 
-    #[serde(deserialize_with = "from_hex")]
-    pub z: u64,
+    //#[serde(deserialize_with = "from_hex")]
+    pub z: ElementID,
 
     pub active: Option<bool>,
 
@@ -179,8 +182,8 @@ pub struct RedFlowNodeConfig {
 
 #[derive(Debug, serde::Deserialize)]
 pub struct RedGlobalNodeConfig {
-    #[serde(deserialize_with = "from_hex")]
-    pub id: u64,
+    //#[serde(deserialize_with = "from_hex")]
+    pub id: ElementID,
 
     #[serde(alias = "type")]
     pub type_name: String,
