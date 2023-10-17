@@ -53,6 +53,31 @@ impl Flow {
         self.disabled
     }
 
+    /// 从指定的端口扇出
+    pub async fn fan_out_port(&self, port_index: usize, msg: Arc<Msg>, cancel: CancellationToken) -> crate::Result<()> {
+        let state = self.shared.state.read().await;
+        let source_node = &state.nodes[&msg.birth_place()];
+        let mut msg_sent = false;
+        let port = source_node.ports().get(port_index).unwrap();
+
+        for nid in port.node_ids.iter() {
+            let dest_node = &state.nodes[nid];
+            let msg_to_send: Arc<Msg> = if !msg_sent {
+                msg.clone()
+            } else {
+                Arc::new(msg.as_ref().clone())
+            };
+            let fan_in_result = dest_node.fan_in(msg_to_send, cancel.clone()).await;
+            match fan_in_result {
+                Err(err) => return Err(err),
+                _ => (),
+            }
+            msg_sent = true;
+        }
+
+        Ok(())
+    }
+
     pub async fn fan_out(&self, msg: Arc<Msg>, cancel: CancellationToken) -> crate::Result<()> {
         let state = self.shared.state.read().await;
         let source_node = &state.nodes[&msg.birth_place()];

@@ -1,3 +1,4 @@
+use thiserror;
 use thiserror::Error;
 
 pub mod async_util;
@@ -9,6 +10,7 @@ pub mod red;
 pub mod registry;
 pub mod shutdown;
 pub mod variant;
+pub mod propex;
 
 pub mod model;
 pub mod utils;

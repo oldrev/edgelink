@@ -41,7 +41,7 @@ pub fn load_flows_json_value(root_jv: &JsonValue) -> Result<JsonValues> {
                     "tab" => flows.push(item.clone()),
                     "comment" => (),
                     _ => match obj.get("z") {
-                        Some(z) => {
+                        Some(_) => {
                             let deps = obj.get_flow_node_dependencies();
                             topo_sort.insert_from_set(id_str, deps);
                             flow_nodes.insert(id_str, item.clone());
