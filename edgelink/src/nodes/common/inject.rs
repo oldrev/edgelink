@@ -65,7 +65,7 @@ impl NodeBehavior for InjectNode {
                         let now = crate::utils::time::unix_now().unwrap();
                         let payload = Variant::from(now);
                         let msg = Msg::with_payload(self_id, payload);
-                        flow_ptr.fan_out(msg, child_cancel.clone()).await.unwrap();
+                        flow_ptr.fan_out_all(msg, child_cancel.clone()).await.unwrap();
                     }
                     Err(_) => break,
                 }

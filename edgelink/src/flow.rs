@@ -78,7 +78,7 @@ impl Flow {
         Ok(())
     }
 
-    pub async fn fan_out(&self, msg: Arc<Msg>, cancel: CancellationToken) -> crate::Result<()> {
+    pub async fn fan_out_all(&self, msg: Arc<Msg>, cancel: CancellationToken) -> crate::Result<()> {
         let state = self.shared.state.read().await;
         let source_node = &state.nodes[&msg.birth_place()];
         let mut msg_sent = false;

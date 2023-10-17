@@ -34,7 +34,7 @@ impl FlowNodeBehavior for JunctionNode {
 
     async fn fan_in(&self, msg: Arc<Msg>, cancel: CancellationToken) -> crate::Result<()> {
         let flow_ptr = Weak::upgrade(&self.info.flow).unwrap();
-        flow_ptr.fan_out(msg, cancel.clone()).await
+        flow_ptr.fan_out_all(msg, cancel.clone()).await
     }
 }
 

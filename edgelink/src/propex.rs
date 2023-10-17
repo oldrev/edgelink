@@ -93,14 +93,14 @@ impl<'a> PropexEval<'a> {
 
     fn forward_when(&self, pred: fn(char) -> bool) -> Result<(), PropexError> {
         while pred(self.peek()?) {
-            self.forward(1);
+            self.forward(1)?;
         }
         Ok(())
     }
 
     fn scan_for(&self, pred: fn(char) -> bool) -> Result<(), PropexError> {
         while pred(self.peek()?) {
-            self.forward(1);
+            self.forward(1)?;
         }
         Ok(())
     }
@@ -120,11 +120,11 @@ impl<'a> PropexEval<'a> {
     }
 
     fn parse_property(&self) -> Result<PropexSegment<'a>, PropexError> {
-        self.forward(1); // skip '\'' or '"'
+        self.forward(1)?; // skip '\'' or '"'
         let start_pos = self.pos.get();
         if self.peek()?.is_ascii_alphabetic() || self.peek()? == '_' {
             let start_pos = self.pos.get();
-            self.forward_when(|c| c.is_ascii_alphanumeric() || c == '_');
+            self.forward_when(|c| c.is_ascii_alphanumeric() || c == '_')?;
         }
 
         Ok(PropexSegment::StringIndex(
@@ -133,7 +133,7 @@ impl<'a> PropexEval<'a> {
     }
 
     fn parse_string_index(&self) -> Result<PropexSegment<'a>, PropexError> {
-        self.forward(1); // skip '\'' or '"'
+        self.forward(1)?; // skip '\'' or '"'
         let start_pos = self.pos.get();
 
         // scan for string content
