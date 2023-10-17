@@ -1,7 +1,7 @@
 use crate::flow::Flow;
 use crate::nodes::*;
-use crate::{nodes::*, red::json::RedFlowNodeConfig, Result};
-use std::sync::{Arc, Weak};
+use crate::{red::json::RedFlowNodeConfig, Result};
+use std::sync::Arc;
 
 struct DebugNode {
     info: FlowNodeInfo,

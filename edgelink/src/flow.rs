@@ -1,17 +1,9 @@
 use crate::model::ElementId;
-use crate::msg::Msg;
-use async_trait::async_trait;
-use log;
-use serde_json::Value as JsonValue;
-use std::borrow::BorrowMut;
-use std::cell::RefCell;
-use std::collections::{BTreeMap, HashMap};
-use std::fs::File;
-use std::io::Read;
+use crate::msg::{Envelope, Msg};
+use std::collections::HashMap;
+use std::env;
 use std::sync::{Arc, Weak};
-use tokio::sync::{futures, RwLock as TokRwLock};
-use tokio::task::yield_now;
-use tokio::{spawn, task, time};
+use tokio::sync::RwLock as TokRwLock;
 use tokio_util::sync::CancellationToken;
 
 use crate::engine::FlowEngine;
@@ -53,8 +45,57 @@ impl Flow {
         self.disabled
     }
 
+    /// 从来源节点的指定单个端口发送多个消息
+    pub async fn fan_out_single_port(
+        &self,
+        src_node_id: ElementId,
+        src_port_index: usize,
+        msgs: Vec<Arc<Msg>>,
+        cancel: CancellationToken,
+    ) -> crate::Result<()> {
+        let state = self.shared.state.read().await;
+        let src_node = &state.nodes[&src_node_id];
+        if src_port_index >= src_node.ports().len() {
+            return Err(
+                crate::EdgeLinkError::InvalidOperation("Invalid port index".to_string()).into(),
+            );
+        }
+        let port = &src_node.ports()[src_port_index];
+
+        let mut msg_sent = false;
+        let mut msgs_to_send = Vec::new();
+        for dest_node_id in port.node_ids.iter() {
+            let dest_node = &state.nodes[dest_node_id];
+            for msg in msgs.iter() {
+                let envelope = Envelope {
+                    src_node_id: src_node.id(),
+                    src_port_index: src_port_index,
+                    dest_node_id: *dest_node_id,
+                    clone_msg: msg_sent,
+                    msg: msg.clone(),
+                };
+                msg_sent = true;
+                msgs_to_send.push(envelope);
+            }
+        }
+        self.deliver_msgs(msgs_to_send, cancel.clone()).await
+    }
+
+    pub async fn fan_out_all(
+        &self,
+        port_msgs: Vec<Option<Vec<Arc<Msg>>>>,
+        _cancel: CancellationToken,
+    ) -> crate::Result<()> {
+        Ok(())
+    }
+
     /// 从指定的端口扇出
-    pub async fn fan_out_port(&self, port_index: usize, msg: Arc<Msg>, cancel: CancellationToken) -> crate::Result<()> {
+    pub async fn fan_out_port(
+        &self,
+        port_index: usize,
+        msg: Arc<Msg>,
+        cancel: CancellationToken,
+    ) -> crate::Result<()> {
         let state = self.shared.state.read().await;
         let source_node = &state.nodes[&msg.birth_place()];
         let mut msg_sent = false;
@@ -62,11 +103,7 @@ impl Flow {
 
         for nid in port.node_ids.iter() {
             let dest_node = &state.nodes[nid];
-            let msg_to_send: Arc<Msg> = if !msg_sent {
-                msg.clone()
-            } else {
-                Arc::new(msg.as_ref().clone())
-            };
+            let msg_to_send = msg.clone();
             let fan_in_result = dest_node.fan_in(msg_to_send, cancel.clone()).await;
             match fan_in_result {
                 Err(err) => return Err(err),
@@ -78,24 +115,26 @@ impl Flow {
         Ok(())
     }
 
-    pub async fn fan_out_all(&self, msg: Arc<Msg>, cancel: CancellationToken) -> crate::Result<()> {
+    /// 这里值传递 Vec 要不要优化下
+    async fn deliver_msgs(
+        &self,
+        envelopes: Vec<crate::msg::Envelope>,
+        cancel: CancellationToken,
+    ) -> crate::Result<()> {
         let state = self.shared.state.read().await;
-        let source_node = &state.nodes[&msg.birth_place()];
-        let mut msg_sent = false;
-        for port in source_node.ports().iter() {
-            for nid in port.node_ids.iter() {
-                let dest_node = &state.nodes[nid];
-                let msg_to_send: Arc<Msg> = if !msg_sent {
-                    msg.clone()
-                } else {
-                    Arc::new(msg.as_ref().clone())
-                };
-                let fan_in_result = dest_node.fan_in(msg_to_send, cancel.clone()).await;
-                match fan_in_result {
-                    Err(err) => return Err(err),
-                    _ => (),
-                }
-                msg_sent = true;
+
+        for envelope in envelopes.iter() {
+            let source_node = &state.nodes[&envelope.src_node_id];
+            let dest_node = &state.nodes[&envelope.dest_node_id];
+            let msg_to_send: Arc<Msg> = if envelope.clone_msg {
+                Arc::new(envelope.msg.as_ref().clone())
+            } else {
+                envelope.msg.clone()
+            };
+            let fan_in_result = dest_node.fan_in(msg_to_send, cancel.clone()).await;
+            match fan_in_result {
+                Err(err) => return Err(err),
+                _ => (),
             }
         }
 

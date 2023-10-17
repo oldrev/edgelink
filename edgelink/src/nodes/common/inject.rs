@@ -5,7 +5,6 @@ use crate::nodes::*;
 use crate::red::json::*;
 use crate::variant::Variant;
 use crate::{EdgeLinkError, Result};
-use std::borrow::BorrowMut;
 use std::sync::{Arc, Weak};
 use std::time::Duration;
 use tokio::sync::RwLock as TokRwLock;
@@ -46,7 +45,7 @@ impl NodeBehavior for InjectNode {
         let self_id = self.id();
 
         cron_task_wrapper.task_handle = Some(tokio::task::spawn(async move {
-            loop {
+            while !child_cancel.is_cancelled() {
                 // TODO FIXME
                 let delay_result =
                     crate::async_util::delay(Duration::from_secs(1), cancel.clone()).await;
@@ -65,7 +64,10 @@ impl NodeBehavior for InjectNode {
                         let now = crate::utils::time::unix_now().unwrap();
                         let payload = Variant::from(now);
                         let msg = Msg::with_payload(self_id, payload);
-                        flow_ptr.fan_out_all(msg, child_cancel.clone()).await.unwrap();
+                        flow_ptr
+                            .fan_out_single_port(self_id, 0, vec![msg], child_cancel.clone())
+                            .await
+                            .unwrap();
                     }
                     Err(_) => break,
                 }
@@ -77,6 +79,16 @@ impl NodeBehavior for InjectNode {
     }
 
     async fn stop(&self, cancel: CancellationToken) -> Result<()> {
+        /*
+            let cron_task_wrapper_ptr = self.cron_task_wrapper.clone();
+            tokio::task::spawn(async move {
+                let mut cron_task_wrapper = cron_task_wrapper_ptr.write().await;
+                if let Some(cron_task) = cron_task_wrapper.task_handle {
+                    cron_task.await;
+                }
+            })
+            .await;
+        */
         Ok(())
     }
 }

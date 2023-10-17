@@ -1,8 +1,5 @@
 use thiserror::Error;
 
-const PROPEX_MAX_EXPRESSION_LENGTH: usize = 256;
-const PROPEX_MAX_LEVELS: usize = 16;
-
 #[derive(Error, Debug)]
 pub enum PropexError {
     #[error("Invalid arguments")]
@@ -37,9 +34,11 @@ pub fn parse<'a>(expr: &'a str) -> Result<Vec<PropexSegment<'a>>, PropexError> {
     eval.skip_whitespace()?;
 
     while eval.pos.get() < eval.expr.len() {
+        /*
         if levels >= PROPEX_MAX_LEVELS {
             return Err(PropexError::BadArguments);
         }
+        */
         eval.skip_whitespace()?;
         if eval.peek()? == '.' {
             eval.forward(1)?;
@@ -110,12 +109,12 @@ impl<'a> PropexEval<'a> {
     }
 
     fn parse_integer_index(&self) -> Result<PropexSegment<'a>, PropexError> {
-        let mut start_pos = self.pos.get();
+        let start_pos = self.pos.get();
         self.forward_when(|c| c.is_ascii_digit())?;
         let digits = &self.expr[start_pos..self.pos.get()];
         match usize::from_str_radix(digits, 10) {
             Ok(index) => Ok(PropexSegment::IntegerIndex(index)),
-            _ => Err(PropexError::InvalidDigit)
+            _ => Err(PropexError::InvalidDigit),
         }
     }
 
@@ -123,8 +122,7 @@ impl<'a> PropexEval<'a> {
         self.forward(1)?; // skip '\'' or '"'
         let start_pos = self.pos.get();
         if self.peek()?.is_ascii_alphabetic() || self.peek()? == '_' {
-            let start_pos = self.pos.get();
-            self.forward_when(|c| c.is_ascii_alphanumeric() || c == '_')?;
+            self.scan_for(|c| c.is_ascii_alphanumeric() || c == '_')?;
         }
 
         Ok(PropexSegment::StringIndex(
@@ -137,7 +135,7 @@ impl<'a> PropexEval<'a> {
         let start_pos = self.pos.get();
 
         // scan for string content
-        self.forward_when(|c| c == '\'' || c == '"')?;
+        self.scan_for(|c| c == '\'' || c == '"')?;
 
         if self.peek()? != '\'' && self.peek()? != '"' {
             return Err(PropexError::BadSyntax);

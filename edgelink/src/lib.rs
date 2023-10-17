@@ -6,11 +6,11 @@ pub mod engine;
 pub mod flow;
 pub mod msg;
 pub mod nodes;
+pub mod propex;
 pub mod red;
 pub mod registry;
 pub mod shutdown;
 pub mod variant;
-pub mod propex;
 
 pub mod model;
 pub mod utils;
@@ -42,6 +42,9 @@ pub enum EdgeLinkError {
 
     #[error("Task cancelled")]
     TaskCancelled,
+
+    #[error("{0}")]
+    InvalidOperation(String),
 }
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;

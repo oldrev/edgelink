@@ -8,6 +8,15 @@ use std::sync::Arc;
 use crate::model::ElementId;
 use crate::variant::Variant;
 
+#[derive(Debug, Clone)]
+pub struct Envelope {
+    pub src_node_id: ElementId,
+    pub src_port_index: usize,
+    pub dest_node_id: ElementId,
+    pub clone_msg: bool,
+    pub msg: Arc<Msg>,
+}
+
 #[derive(Debug)]
 pub struct Msg {
     id: u32,
