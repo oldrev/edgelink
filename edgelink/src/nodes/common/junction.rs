@@ -2,7 +2,6 @@ use crate::flow::Flow;
 use crate::nodes::*;
 use crate::{nodes::*, red::json::RedFlowNodeConfig, Result};
 use std::sync::{Arc, Weak};
-use tokio::sync::Mutex;
 
 struct JunctionNode {
     info: FlowNodeInfo,

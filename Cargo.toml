@@ -17,6 +17,7 @@ more-di = { version = "2.1.2", features = ["builder", "inject", "async", "lazy"]
 tokio = "1.33.0"
 log = "0.4.20"
 tokio-util = "0.7.9"
+cron = "0.12.0"
 
 [dev-dependencies]
 serde_json_path = "0.6.3"

@@ -3,8 +3,8 @@ use edgelink::flow::*;
 use edgelink::nodes::*;
 use edgelink::red::json::load_flows_json;
 use edgelink::registry::RegistryImpl;
-use tokio_util::sync::CancellationToken;
 use std::sync::Arc;
+use tokio_util::sync::CancellationToken;
 
 /*
 #[cfg(test)]

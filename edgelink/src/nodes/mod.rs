@@ -10,9 +10,7 @@ use crate::msg::Msg;
 use crate::red::json::{RedFlowNodeConfig, RedGlobalNodeConfig};
 use crate::Result;
 
-mod debug_node;
-mod inject_node;
-mod junction_node;
+mod common;
 
 #[derive(Debug, Clone, Copy)]
 pub enum NodeState {

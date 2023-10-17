@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 
 use lazy_static::lazy_static;
 use std::sync::atomic::{AtomicU32, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use crate::model::ElementID;
 use crate::variant::Variant;

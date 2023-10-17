@@ -1,7 +1,7 @@
+use crate::EdgeLinkError;
 use std::time::Duration;
 use tokio::time::sleep;
 use tokio_util::sync::CancellationToken;
-use crate::EdgeLinkError;
 
 pub async fn delay(dur: Duration, cancel: CancellationToken) -> crate::Result<()> {
     tokio::select! {

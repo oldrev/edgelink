@@ -8,7 +8,7 @@ use std::cell::RefCell;
 use std::collections::{BTreeMap, HashMap};
 use std::fs::File;
 use std::io::Read;
-use std::sync::{Arc, Mutex, Weak};
+use std::sync::{Arc, Weak};
 use tokio::sync::{futures, RwLock as TokRwLock};
 use tokio::task::yield_now;
 use tokio::{spawn, task, time};

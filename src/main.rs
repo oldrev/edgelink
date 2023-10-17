@@ -1,13 +1,13 @@
 use async_trait::async_trait;
 use di;
-use edgelink::engine::FlowEngine;
+use edgelink::engine::{self, FlowEngine};
 use edgelink::registry::{Registry, RegistryImpl};
 // use libloading::Library;
 use edgelink::Result;
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 use std::sync::Arc;
-use tokio::sync::{broadcast, Mutex, MutexGuard};
+use tokio::sync::{broadcast, RwLock as TokRwLock};
 use tokio::{spawn, task, time};
 use tokio_util::sync::CancellationToken;
 
@@ -52,23 +52,24 @@ fn main() {
 
 struct Runtime {
     registry: Arc<dyn Registry>,
+    engine: TokRwLock<Option<Arc<FlowEngine>>>,
 }
 
 impl Runtime {
     fn new(reg: Arc<dyn Registry>) -> Self {
         Runtime {
             registry: reg.clone(),
+            engine: TokRwLock::new(None),
         }
     }
 
     async fn main_flow_task(self: Arc<Self>, cancel: CancellationToken) {
-        let engine = Arc::new(Mutex::new(
-            FlowEngine::new(self.registry.clone(), "./flows.json")
-                .await
-                .unwrap(),
-        ));
-        let locked = engine.lock().await;
-        locked.start(cancel).await.unwrap();
+        let mut engine_holder = self.engine.write().await;
+        let engine = FlowEngine::new(self.registry.clone(), "./flows.json")
+            .await
+            .unwrap();
+        *engine_holder = Option::Some(engine.clone());
+        engine.start(cancel).await.unwrap();
     }
 
     async fn idle_task(self: Arc<Self>, cancel: CancellationToken) {
@@ -118,7 +119,10 @@ async fn main() -> Result<()> {
     });
 
     tokio::select! {
-        _ = tokio:: signal::ctrl_c() => { cancel.cancel() },
+        _ = tokio:: signal::ctrl_c() => {
+            println!("CTRL-C is pressed, cancelling all tasks...");
+            cancel.cancel()
+        },
         //_ = shutdown_recv.recv() => {},
     }
 

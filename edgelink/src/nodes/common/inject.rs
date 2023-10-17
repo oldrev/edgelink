@@ -53,6 +53,7 @@ impl NodeBehavior for InjectNode {
                 tokio::select! {
                     _ = cancel.cancelled() => {
                         // 取消 sleep_task 任务
+                        println!("Cancelling the CRON task in inject node...");
                         break;
                     }
                     _ = tokio::time::sleep(Duration::from_secs(1)) => {
@@ -69,6 +70,7 @@ impl NodeBehavior for InjectNode {
                     Err(_) => break,
                 }
             }
+            println!("The CRON task has been stopped.");
         }));
 
         Ok(())
