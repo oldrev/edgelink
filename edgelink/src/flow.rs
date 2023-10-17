@@ -1,4 +1,4 @@
-use crate::model::ElementID;
+use crate::model::ElementId;
 use crate::msg::Msg;
 use async_trait::async_trait;
 use log;
@@ -22,8 +22,8 @@ use crate::variant::Variant;
 use crate::{EdgeLinkError, Result};
 
 struct FlowState {
-    nodes: HashMap<ElementID, Box<dyn FlowNodeBehavior>>,
-    nodes_ordering: Vec<ElementID>,
+    nodes: HashMap<ElementId, Box<dyn FlowNodeBehavior>>,
+    nodes_ordering: Vec<ElementId>,
     context: Variant,
     engine: Weak<FlowEngine>,
 }
@@ -33,7 +33,7 @@ struct FlowShared {
 }
 
 pub struct Flow {
-    pub id: ElementID,
+    pub id: ElementId,
     pub label: String,
     pub disabled: bool,
 
@@ -41,7 +41,7 @@ pub struct Flow {
 }
 
 impl Flow {
-    pub fn id(&self) -> ElementID {
+    pub fn id(&self) -> ElementId {
         self.id
     }
 

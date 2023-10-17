@@ -9,7 +9,7 @@ struct JunctionNode {
 
 #[async_trait]
 impl NodeBehavior for JunctionNode {
-    fn id(&self) -> ElementID {
+    fn id(&self) -> ElementId {
         self.info.id
     }
 

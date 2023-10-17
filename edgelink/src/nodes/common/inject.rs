@@ -30,7 +30,7 @@ impl InjectNode {
 
 #[async_trait]
 impl NodeBehavior for InjectNode {
-    fn id(&self) -> ElementID {
+    fn id(&self) -> ElementId {
         self.info.id
     }
 

@@ -9,7 +9,7 @@ struct DebugNode {
 
 #[async_trait]
 impl NodeBehavior for DebugNode {
-    fn id(&self) -> ElementID {
+    fn id(&self) -> ElementId {
         self.info.id
     }
 

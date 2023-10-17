@@ -5,18 +5,18 @@ use lazy_static::lazy_static;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::Arc;
 
-use crate::model::ElementID;
+use crate::model::ElementId;
 use crate::variant::Variant;
 
 #[derive(Debug)]
 pub struct Msg {
     id: u32,
-    birth_place: ElementID,
+    birth_place: ElementId,
     data: BTreeMap<String, Variant>,
 }
 
 impl Msg {
-    pub fn with_payload(birth_place: ElementID, payload: Variant) -> Arc<Self> {
+    pub fn with_payload(birth_place: ElementId, payload: Variant) -> Arc<Self> {
         let mut msg = Msg {
             id: Msg::generate_id(),
             birth_place: birth_place,
@@ -30,7 +30,7 @@ impl Msg {
         self.id
     }
 
-    pub fn birth_place(&self) -> ElementID {
+    pub fn birth_place(&self) -> ElementId {
         self.birth_place
     }
 

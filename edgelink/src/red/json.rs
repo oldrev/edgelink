@@ -121,7 +121,7 @@ pub struct RedFlowConfig {
     pub disabled: Option<bool>,
 
     // #[serde(deserialize_with = "from_hex")]
-    pub id: ElementID,
+    pub id: ElementId,
 
     pub info: String,
     pub label: String,
@@ -139,7 +139,7 @@ pub struct RedFlowConfig {
 #[derive(Debug, serde::Deserialize)]
 pub struct RedFlowNodeConfig {
     //#[serde(deserialize_with = "from_hex")]
-    pub id: ElementID,
+    pub id: ElementId,
 
     #[serde(alias = "type")]
     pub type_name: String,
@@ -147,7 +147,7 @@ pub struct RedFlowNodeConfig {
     pub name: String,
 
     //#[serde(deserialize_with = "from_hex")]
-    pub z: ElementID,
+    pub z: ElementId,
 
     pub active: Option<bool>,
 
@@ -162,7 +162,7 @@ pub struct RedFlowNodeConfig {
 #[derive(Debug, serde::Deserialize)]
 pub struct RedGlobalNodeConfig {
     //#[serde(deserialize_with = "from_hex")]
-    pub id: ElementID,
+    pub id: ElementId,
 
     #[serde(alias = "type")]
     pub type_name: String,
@@ -187,12 +187,12 @@ impl<'de> Deserialize<'de> for Port {
     where
         D: Deserializer<'de>,
     {
-        let des: Vec<ElementID> = Deserialize::deserialize(deserializer)?;
+        let des: Vec<ElementId> = Deserialize::deserialize(deserializer)?;
         Ok(Port { node_ids: des })
     }
 }
 
-impl<'de> Deserialize<'de> for ElementID {
+impl<'de> Deserialize<'de> for ElementId {
     fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
     where
         D: Deserializer<'de>,
@@ -201,11 +201,11 @@ impl<'de> Deserialize<'de> for ElementID {
 
         match v {
             JsonValue::String(r) => Ok(u64::from_str_radix(r.as_str(), 16)
-                .map(ElementID)
+                .map(ElementId)
                 .map_err(D::Error::custom)),
             JsonValue::Number(num) => {
                 if let Some(u64v) = num.as_u64() {
-                    return Ok(ElementID(u64v));
+                    return Ok(ElementId(u64v));
                 } else {
                     Err(num).map_err(D::Error::custom)
                 }
