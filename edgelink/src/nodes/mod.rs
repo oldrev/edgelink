@@ -79,9 +79,9 @@ impl BuiltinNodeDescriptor {
     pub(crate) const fn new(kind: NodeKind, type_name: &'static str, factory: NodeFactory) -> Self {
         BuiltinNodeDescriptor {
             meta: MetaNode {
-                kind: kind,
-                type_name: type_name,
-                factory: factory,
+                kind,
+                type_name,
+                factory,
             },
         }
     }

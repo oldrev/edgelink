@@ -23,7 +23,7 @@ struct PropexEval<'a> {
     pos: std::cell::Cell<usize>,
 }
 
-pub fn parse<'a>(expr: &'a str) -> Result<Vec<PropexSegment<'a>>, PropexError> {
+pub fn parse(expr: &str) -> Result<Vec<PropexSegment<'_>>, PropexError> {
     let eval = PropexEval {
         expr: expr,
         pos: std::cell::Cell::new(0),
@@ -74,19 +74,17 @@ pub fn parse<'a>(expr: &'a str) -> Result<Vec<PropexSegment<'a>>, PropexError> {
 
 impl<'a> PropexEval<'a> {
     fn forward(&self, n: usize) -> Result<char, PropexError> {
-        self.pos.set(self.pos.get() + 1);
+        self.pos.set(self.pos.get() + n);
         self.peek()
     }
 
     fn peek(&self) -> Result<char, PropexError> {
         if self.pos.get() >= self.expr.len() {
             Err(PropexError::BadSyntax)
+        } else if let Some(c) = self.expr.chars().nth(self.pos.get()) {
+            Ok(c)
         } else {
-            if let Some(c) = self.expr.chars().nth(self.pos.get()) {
-                Ok(c)
-            } else {
-                Err(PropexError::BadSyntax)
-            }
+            Err(PropexError::BadSyntax)
         }
     }
 
@@ -112,7 +110,7 @@ impl<'a> PropexEval<'a> {
         let start_pos = self.pos.get();
         self.forward_when(|c| c.is_ascii_digit())?;
         let digits = &self.expr[start_pos..self.pos.get()];
-        match usize::from_str_radix(digits, 10) {
+        match digits.parse::<usize>() {
             Ok(index) => Ok(PropexSegment::IntegerIndex(index)),
             _ => Err(PropexError::InvalidDigit),
         }

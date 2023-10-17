@@ -5,7 +5,7 @@ use tokio_util::sync::CancellationToken;
 
 use crate::flow::Flow;
 use crate::nodes::{NodeBehavior, NodeFactory};
-use crate::{registry::Registry, variant::Variant, EdgeLinkError, Result};
+use crate::{registry::Registry, variant::Variant, EdgeLinkError};
 
 struct FlowEngineState {
     flows: Vec<Arc<Flow>>,

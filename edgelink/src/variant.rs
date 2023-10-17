@@ -34,10 +34,7 @@ impl Variant {
     }
 
     pub fn is_integer(&self) -> bool {
-        match self {
-            Variant::Integer(_) => true,
-            _ => false,
-        }
+        matches!(self, Variant::Integer(_))
     }
 
     pub fn as_integer(&self) -> Option<i64> {
@@ -250,10 +247,8 @@ impl From<char> for Variant {
 impl From<&[(String, Variant)]> for Variant {
     #[inline]
     fn from(value: &[(String, Variant)]) -> Self {
-        let map: BTreeMap<String, Variant> = value
-            .into_iter()
-            .map(|x| (x.0.clone(), x.1.clone()))
-            .collect();
+        let map: BTreeMap<String, Variant> =
+            value.iter().map(|x| (x.0.clone(), x.1.clone())).collect();
         Variant::Object(map)
     }
 }
@@ -262,7 +257,7 @@ impl From<&[(&str, Variant)]> for Variant {
     #[inline]
     fn from(value: &[(&str, Variant)]) -> Self {
         let map: BTreeMap<String, Variant> = value
-            .into_iter()
+            .iter()
             .map(|x| (x.0.to_string(), x.1.clone()))
             .collect();
         Variant::Object(map)

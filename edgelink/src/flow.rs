@@ -1,7 +1,6 @@
 use crate::model::ElementId;
 use crate::msg::{Envelope, Msg};
 use std::collections::HashMap;
-use std::env;
 use std::sync::{Arc, Weak};
 use tokio::sync::RwLock as TokRwLock;
 use tokio_util::sync::CancellationToken;
@@ -69,7 +68,7 @@ impl Flow {
             for msg in msgs.iter() {
                 let envelope = Envelope {
                     src_node_id: src_node.id(),
-                    src_port_index: src_port_index,
+                    src_port_index,
                     dest_node_id: *dest_node_id,
                     clone_msg: msg_sent,
                     msg: msg.clone(),
@@ -104,11 +103,7 @@ impl Flow {
         for nid in port.node_ids.iter() {
             let dest_node = &state.nodes[nid];
             let msg_to_send = msg.clone();
-            let fan_in_result = dest_node.fan_in(msg_to_send, cancel.clone()).await;
-            match fan_in_result {
-                Err(err) => return Err(err),
-                _ => (),
-            }
+            dest_node.fan_in(msg_to_send, cancel.clone()).await?;
             msg_sent = true;
         }
 
@@ -124,18 +119,14 @@ impl Flow {
         let state = self.shared.state.read().await;
 
         for envelope in envelopes.iter() {
-            let source_node = &state.nodes[&envelope.src_node_id];
+            let src_node = &state.nodes[&envelope.src_node_id];
             let dest_node = &state.nodes[&envelope.dest_node_id];
             let msg_to_send: Arc<Msg> = if envelope.clone_msg {
                 Arc::new(envelope.msg.as_ref().clone())
             } else {
                 envelope.msg.clone()
             };
-            let fan_in_result = dest_node.fan_in(msg_to_send, cancel.clone()).await;
-            match fan_in_result {
-                Err(err) => return Err(err),
-                _ => (),
-            }
+            dest_node.fan_in(msg_to_send, cancel.clone()).await?;
         }
 
         Ok(())
