@@ -5,9 +5,9 @@ use tokio_util::sync::CancellationToken;
 
 use crate::engine::FlowEngine;
 use crate::flow::Flow;
-use crate::model::{ElementId, Port};
+use crate::model::ElementId;
 use crate::msg::Msg;
-use crate::red::json::{RedFlowNodeConfig, RedGlobalNodeConfig};
+use crate::red::json::{RedFlowNodeConfig, RedGlobalNodeConfig, PortConfig};
 use crate::Result;
 
 mod common;
@@ -54,7 +54,7 @@ pub struct FlowNodeInfo {
     pub id: ElementId,
     pub flow: Weak<Flow>,
     pub name: String,
-    pub ports: Vec<Port>,
+    pub ports: Vec<PortConfig>,
 }
 
 #[async_trait]
@@ -67,7 +67,7 @@ pub trait NodeBehavior: Send + Sync {
 
 #[async_trait]
 pub trait FlowNodeBehavior: NodeBehavior + Send + Sync {
-    fn ports(&self) -> &Vec<Port>;
+    fn ports(&self) -> &Vec<PortConfig>;
     async fn fan_in(&self, msg: Arc<Msg>, cancel: CancellationToken) -> crate::Result<()>;
 }
 

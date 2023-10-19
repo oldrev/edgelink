@@ -6,8 +6,3 @@ impl std::fmt::Display for ElementId {
         write!(f, "{:016x}", self.0)
     }
 }
-
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
-pub struct Port {
-    pub node_ids: Vec<ElementId>,
-}

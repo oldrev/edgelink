@@ -1,4 +1,3 @@
-use log;
 use std::sync::Arc;
 use tokio::sync::RwLock as TokRwLock;
 use tokio_util::sync::CancellationToken;
@@ -10,8 +9,8 @@ use crate::{registry::Registry, variant::Variant, EdgeLinkError};
 struct FlowEngineState {
     flows: Vec<Arc<Flow>>,
     global_nodes: Vec<Box<dyn NodeBehavior>>,
-    context: Variant,
-    shutdown: bool,
+    _context: Variant,
+    _shutdown: bool,
 }
 
 struct FlowEngineShared {
@@ -34,8 +33,8 @@ impl FlowEngine {
                 state: TokRwLock::new(FlowEngineState {
                     flows: Vec::new(),
                     global_nodes: Vec::new(),
-                    context: Variant::empty_object(),
-                    shutdown: false,
+                    _context: Variant::empty_object(),
+                    _shutdown: false,
                 }),
             }),
         });

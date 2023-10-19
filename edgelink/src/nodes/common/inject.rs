@@ -1,5 +1,4 @@
 use crate::flow::Flow;
-use crate::model::Port;
 use crate::msg::Msg;
 use crate::nodes::*;
 use crate::red::json::*;
@@ -19,13 +18,17 @@ struct CronTaskWrapper {
     task_handle: Option<tokio::task::JoinHandle<()>>,
 }
 
+/* 
 impl InjectNode {
-    async fn cron_task(&self, cancel: CancellationToken) {
+    async fn cron_task(&self, _cancel: CancellationToken) {
+        /*
         let flow_ptr = Weak::upgrade(&self.info.flow).unwrap();
         let self_id = self.info.id;
         let child_cancel = cancel.clone();
+        */
     }
 }
+*/
 
 #[async_trait]
 impl NodeBehavior for InjectNode {
@@ -78,7 +81,7 @@ impl NodeBehavior for InjectNode {
         Ok(())
     }
 
-    async fn stop(&self, cancel: CancellationToken) -> Result<()> {
+    async fn stop(&self, _cancel: CancellationToken) -> Result<()> {
         /*
             let cron_task_wrapper_ptr = self.cron_task_wrapper.clone();
             tokio::task::spawn(async move {
@@ -95,11 +98,11 @@ impl NodeBehavior for InjectNode {
 
 #[async_trait]
 impl FlowNodeBehavior for InjectNode {
-    fn ports(&self) -> &Vec<Port> {
+    fn ports(&self) -> &Vec<PortConfig> {
         &self.info.ports
     }
 
-    async fn fan_in(&self, _msg: Arc<Msg>, cancel: CancellationToken) -> crate::Result<()> {
+    async fn fan_in(&self, _msg: Arc<Msg>, _cancel: CancellationToken) -> crate::Result<()> {
         Err(EdgeLinkError::NotSupported("This node is a source node".to_string()).into())
     }
 }

@@ -1,6 +1,7 @@
 use crate::flow::Flow;
 use crate::nodes::*;
-use crate::{red::json::RedFlowNodeConfig, Result};
+use crate::Result;
+use crate::red::json::{RedFlowNodeConfig, PortConfig};
 use std::sync::Arc;
 
 struct DebugNode {
@@ -17,22 +18,22 @@ impl NodeBehavior for DebugNode {
         &self.info.name
     }
 
-    async fn start(&self, cancel: CancellationToken) -> Result<()> {
+    async fn start(&self, _cancel: CancellationToken) -> Result<()> {
         Ok(())
     }
 
-    async fn stop(&self, cancel: CancellationToken) -> Result<()> {
+    async fn stop(&self, _cancel: CancellationToken) -> Result<()> {
         Ok(())
     }
 }
 
 #[async_trait]
 impl FlowNodeBehavior for DebugNode {
-    fn ports(&self) -> &Vec<Port> {
+    fn ports(&self) -> &Vec<PortConfig> {
         &self.info.ports
     }
 
-    async fn fan_in(&self, msg: Arc<Msg>, cancel: CancellationToken) -> crate::Result<()> {
+    async fn fan_in(&self, msg: Arc<Msg>, _cancel: CancellationToken) -> crate::Result<()> {
         println!("收到消息：\n{:#?}", msg.as_ref());
         Ok(())
     }

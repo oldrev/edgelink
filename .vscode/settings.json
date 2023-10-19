@@ -1,4 +1,7 @@
 {
     "rust-analyzer.checkOnSave": false,
-    "rust-analyzer.typing.continueCommentsOnNewline": false
+    "rust-analyzer.typing.continueCommentsOnNewline": false,
+    "rust-analyzer.linkedProjects": [
+        ".\\edgelink\\Cargo.toml"
+    ]
 }

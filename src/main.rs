@@ -4,7 +4,7 @@ use edgelink::registry::{Registry, RegistryImpl};
 use edgelink::Result;
 use std::sync::Arc;
 use tokio::sync::RwLock as TokRwLock;
-use tokio::{spawn, task, time};
+use tokio::{spawn, time};
 use tokio_util::sync::CancellationToken;
 
 /*

@@ -10,13 +10,13 @@ use crate::nodes::*;
 use crate::red::json::RedFlowConfig;
 use crate::registry::Registry;
 use crate::variant::Variant;
-use crate::{EdgeLinkError, Result};
+use crate::EdgeLinkError;
 
 struct FlowState {
     nodes: HashMap<ElementId, Box<dyn FlowNodeBehavior>>,
     nodes_ordering: Vec<ElementId>,
-    context: Variant,
-    engine: Weak<FlowEngine>,
+    _context: Variant,
+    _engine: Weak<FlowEngine>,
 }
 
 struct FlowShared {
@@ -64,7 +64,7 @@ impl Flow {
         let mut msg_sent = false;
         let mut msgs_to_send = Vec::new();
         for dest_node_id in port.node_ids.iter() {
-            let dest_node = &state.nodes[dest_node_id];
+            //let dest_node = &state.nodes[dest_node_id];
             for msg in msgs.iter() {
                 let envelope = Envelope {
                     src_node_id: src_node.id(),
@@ -82,7 +82,7 @@ impl Flow {
 
     pub async fn fan_out_all(
         &self,
-        port_msgs: Vec<Option<Vec<Arc<Msg>>>>,
+        _port_msgs: Vec<Option<Vec<Arc<Msg>>>>,
         _cancel: CancellationToken,
     ) -> crate::Result<()> {
         Ok(())
@@ -97,14 +97,12 @@ impl Flow {
     ) -> crate::Result<()> {
         let state = self.shared.state.read().await;
         let source_node = &state.nodes[&msg.birth_place()];
-        let mut msg_sent = false;
         let port = source_node.ports().get(port_index).unwrap();
 
         for nid in port.node_ids.iter() {
             let dest_node = &state.nodes[nid];
             let msg_to_send = msg.clone();
             dest_node.fan_in(msg_to_send, cancel.clone()).await?;
-            msg_sent = true;
         }
 
         Ok(())
@@ -119,7 +117,7 @@ impl Flow {
         let state = self.shared.state.read().await;
 
         for envelope in envelopes.iter() {
-            let src_node = &state.nodes[&envelope.src_node_id];
+            //let src_node = &state.nodes[&envelope.src_node_id];
             let dest_node = &state.nodes[&envelope.dest_node_id];
             let msg_to_send: Arc<Msg> = if envelope.clone_msg {
                 Arc::new(envelope.msg.as_ref().clone())
@@ -143,10 +141,10 @@ impl Flow {
             disabled: flow_config.disabled.unwrap_or(false),
             shared: Arc::new(FlowShared {
                 state: TokRwLock::new(FlowState {
-                    engine: Arc::downgrade(&engine),
+                    _engine: Arc::downgrade(&engine),
                     nodes: HashMap::with_capacity(flow_config.nodes.len()),
                     nodes_ordering: Vec::new(),
-                    context: Variant::empty_object(),
+                    _context: Variant::empty_object(),
                 }),
             }),
         });

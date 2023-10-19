@@ -29,7 +29,7 @@ pub fn parse(expr: &str) -> Result<Vec<PropexSegment<'_>>, PropexError> {
         pos: std::cell::Cell::new(0),
     };
     let mut segs = Vec::new();
-    let mut levels: usize = 0;
+    let mut _levels: usize = 0;
 
     eval.skip_whitespace()?;
 
@@ -65,7 +65,7 @@ pub fn parse(expr: &str) -> Result<Vec<PropexSegment<'_>>, PropexError> {
             return Err(PropexError::BadSyntax);
         }
 
-        levels += 1;
+        _levels += 1;
         eval.skip_whitespace()?;
     }
 

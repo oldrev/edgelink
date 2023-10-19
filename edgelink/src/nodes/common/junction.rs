@@ -1,6 +1,7 @@
 use crate::flow::Flow;
 use crate::nodes::*;
-use crate::{nodes::*, red::json::RedFlowNodeConfig, Result};
+use crate::red::json::{PortConfig, RedFlowNodeConfig};
+use crate::Result;
 use std::sync::{Arc, Weak};
 
 struct JunctionNode {
@@ -17,24 +18,26 @@ impl NodeBehavior for JunctionNode {
         &self.info.name
     }
 
-    async fn start(&self, cancel: CancellationToken) -> Result<()> {
+    async fn start(&self, _cancel: CancellationToken) -> Result<()> {
         Ok(())
     }
 
-    async fn stop(&self, cancel: CancellationToken) -> Result<()> {
+    async fn stop(&self, _cancel: CancellationToken) -> Result<()> {
         Ok(())
     }
 }
 
 #[async_trait]
 impl FlowNodeBehavior for JunctionNode {
-    fn ports(&self) -> &Vec<Port> {
+    fn ports(&self) -> &Vec<PortConfig> {
         &self.info.ports
     }
 
     async fn fan_in(&self, msg: Arc<Msg>, cancel: CancellationToken) -> crate::Result<()> {
         let flow_ptr = Weak::upgrade(&self.info.flow).unwrap();
-        flow_ptr.fan_out_single_port(self.id(), 0, vec![msg.clone()],  cancel.clone()).await
+        flow_ptr
+            .fan_out_single_port(self.id(), 0, vec![msg.clone()], cancel.clone())
+            .await
     }
 }
 
