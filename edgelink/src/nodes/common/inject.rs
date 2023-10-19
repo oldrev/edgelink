@@ -3,10 +3,9 @@ use crate::msg::Msg;
 use crate::nodes::*;
 use crate::red::json::*;
 use crate::variant::Variant;
-use crate::{EdgeLinkError, Result};
+use crate::Result;
 use std::sync::{Arc, Weak};
 use std::time::Duration;
-use tokio::sync::RwLock as TokRwLock;
 
 struct InjectNode {
     base: BaseFlowNode,
@@ -17,17 +16,7 @@ impl InjectNode {
         while !cancel.is_cancelled() {
             // TODO FIXME
             let delay_result =
-                crate::async_util::delay(Duration::from_secs(1), cancel.clone()).await;
-            tokio::select! {
-                _ = cancel.cancelled() => {
-                    // 取消 sleep_task 任务
-                    println!("Cancelling the CRON task in inject node...");
-                    break;
-                }
-                _ = tokio::time::sleep(Duration::from_secs(1)) => {
-                    // Long work has completed
-                }
-            }
+                crate::async_util::delay(Duration::from_secs(2), cancel.clone()).await;
             match delay_result {
                 Ok(()) => {
                     let flow_ref = Weak::upgrade(&self.base().flow).unwrap();
@@ -38,6 +27,7 @@ impl InjectNode {
                         .fan_out_single_port(self.base.id, 0, &[msg], cancel.clone())
                         .await
                         .unwrap();
+                    println!("Msg injected");
                 }
                 Err(_) => todo!(),
             }
@@ -56,7 +46,7 @@ impl NodeBehavior for InjectNode {
         &self.base.name
     }
 
-    async fn start(&self, cancel: CancellationToken) -> crate::Result<()> {
+    async fn start(&self, _cancel: CancellationToken) -> crate::Result<()> {
         Ok(())
     }
 
@@ -82,14 +72,14 @@ impl FlowNodeBehavior for InjectNode {
     }
 
     async fn process(&self, cancel: CancellationToken) {
-        self.cron_task(cancel.clone()).await;
+        self.cron_task(cancel).await;
     }
 }
 
 fn new_node(
-    flow: Arc<Flow>,
+    _flow: Arc<Flow>,
     base_node: BaseFlowNode,
-    config: &RedFlowNodeConfig,
+    _config: &RedFlowNodeConfig,
 ) -> Box<dyn FlowNodeBehavior> {
     let node = InjectNode { base: base_node };
     Box::new(node)

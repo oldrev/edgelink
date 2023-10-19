@@ -19,7 +19,7 @@ impl Msg {
     pub fn with_payload(birth_place: ElementId, payload: Variant) -> Arc<Self> {
         let mut msg = Msg {
             id: Msg::generate_id(),
-            birth_place,
+            birth_place: birth_place,
             data: BTreeMap::new(),
         };
         msg.data.insert("payload".to_string(), payload);
@@ -34,8 +34,8 @@ impl Msg {
         self.birth_place
     }
 
-    pub fn payload(&self) -> Option<&Variant> {
-        self.data.get("payload")
+    pub fn payload(&self) -> &Variant {
+        self.data.get("payload").unwrap() // TODO FIXME
     }
 
     pub fn payload_mut(&mut self) -> Option<&mut Variant> {

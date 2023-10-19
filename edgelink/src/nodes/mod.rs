@@ -1,15 +1,13 @@
 use async_trait::async_trait;
 use std::fmt;
 use std::sync::{Arc, Weak};
-use tokio::sync::mpsc;
 use tokio::sync::Mutex as TokMutex;
 use tokio_util::sync::CancellationToken;
 
 use crate::engine::FlowEngine;
 use crate::flow::Flow;
-use crate::model::{ElementId, MsgReceiver, Port, PortWire};
-use crate::msg::Msg;
-use crate::red::json::{RedFlowNodeConfig, RedGlobalNodeConfig, RedPortConfig};
+use crate::model::{ElementId, MsgReceiver, Port};
+use crate::red::json::{RedFlowNodeConfig, RedGlobalNodeConfig};
 use crate::Result;
 
 mod common;
@@ -56,7 +54,7 @@ pub struct BaseFlowNode {
     pub id: ElementId,
     pub flow: Weak<Flow>,
     pub name: String,
-    pub msg_receiver: TokMutex<MsgReceiver>,
+    pub msg_receiver: tokio::sync::Mutex<MsgReceiver>,
     pub ports: Vec<Port>,
 }
 
@@ -69,7 +67,7 @@ pub trait NodeBehavior: Send + Sync {
 }
 
 #[async_trait]
-pub trait FlowNodeBehavior: NodeBehavior + Send + Sync {
+pub trait FlowNodeBehavior: NodeBehavior {
     fn base(&self) -> &BaseFlowNode;
 
     async fn process(&self, cancel: CancellationToken);

@@ -73,7 +73,7 @@ impl FlowEngine {
             //let flow_lock = TokMutex::new(flow.clone());
             let flow_lock = flow.clone();
             let child_cancel = cancel.clone();
-            tokio::spawn(async move {
+            tokio::task::spawn(async move {
                 let scoped_flow = flow_lock;
                 scoped_flow.start(child_cancel).await
             })
@@ -91,39 +91,3 @@ impl FlowEngine {
         Ok(())
     }
 }
-
-/*
-/// Run the working loop, will not return unless a shotdown signal has been sent
-pub async fn run(shutdown: impl Future) -> Result<()> {
-    let (notify_shutdown, _) = broadcast::channel(1);
-    let (shutdown_complete_tx, mut shutdown_complete_rx) = mpsc::channel(1);
-
-    let reg = Registry::new()?;
-    let engine = Arc::new(TokMutex::new(FlowEngine::new(&reg, "./flows.json").await?));
-    tokio::spawn(async move {
-        //
-        let locked = engine.lock().await;
-        locked.start().await
-    })
-    .await?;
-
-    tokio::select! {
-        res = engine.run() => {
-            // If an error is received here, accepting connections from the TCP
-            // listener failed multiple times and the server is giving up and
-            // shutting down.
-            //
-            // Errors encountered when handling individual connections do not
-            // bubble up to this point.
-            if let Err(err) = res {
-                error!(cause = %err, "failed to accept");
-            }
-        }
-        _ = shutdown => {
-            // The shutdown signal has been received.
-            info!("shutting down");
-        }
-    }
-}
-
-*/

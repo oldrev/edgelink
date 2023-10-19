@@ -1,8 +1,7 @@
 use crate::flow::Flow;
 use crate::nodes::*;
-use crate::red::json::{RedFlowNodeConfig, RedPortConfig};
+use crate::red::json::RedFlowNodeConfig;
 use crate::Result;
-use std::borrow::BorrowMut;
 use std::sync::Arc;
 
 struct DebugNode {
@@ -35,22 +34,23 @@ impl FlowNodeBehavior for DebugNode {
     }
 
     async fn process(&self, cancel: CancellationToken) {
-        let mut recv_guard = self.base.msg_receiver.lock().await;
         while !cancel.is_cancelled() {
-            if let Some(msg) = recv_guard.recv().await {
-                println!("收到消息：\n{:#?}", msg.as_ref());
-            } else {
-                //break;
-                println!("咋个会已关闭");
+            let mut recv_guard = self.base.msg_receiver.lock().await;
+            match recv_guard.recv().await {
+                Some(msg) => println!("收到消息：\n{:#?}", msg.as_ref()),
+                _ => {
+                    println!("咋个会已关闭");
+                    break;
+                }
             }
         }
     }
 }
 
 fn new_node(
-    flow: Arc<Flow>,
+    _flow: Arc<Flow>,
     base_node: BaseFlowNode,
-    config: &RedFlowNodeConfig,
+    _config: &RedFlowNodeConfig,
 ) -> Box<dyn FlowNodeBehavior> {
     let node = DebugNode { base: base_node };
     Box::new(node)

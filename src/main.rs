@@ -79,8 +79,8 @@ impl Runtime {
     }
 
     pub async fn run(self: Arc<Self>, cancel: CancellationToken) -> crate::Result<()> {
-        let task1 = tokio::spawn(self.clone().main_flow_task(cancel.child_token()));
-        let task2 = tokio::spawn(self.clone().idle_task(cancel.child_token()));
+        let task1 = tokio::task::spawn(self.clone().main_flow_task(cancel.child_token()));
+        let task2 = tokio::task::spawn(self.clone().idle_task(cancel.child_token()));
         _ = tokio::join!(task1, task2);
         Ok(())
     }

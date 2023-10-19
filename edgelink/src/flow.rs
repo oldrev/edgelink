@@ -71,6 +71,7 @@ impl Flow {
                 } else {
                     msg.clone()
                 };
+                assert!(!wire.msg_sender.is_closed());
                 wire.msg_sender.send(msg_to_send).await?;
                 msg_sent = true;
             }
@@ -91,7 +92,7 @@ impl Flow {
         &self,
         port_index: usize,
         msg: Arc<Msg>,
-        cancel: CancellationToken,
+        _cancel: CancellationToken,
     ) -> crate::Result<()> {
         let state = self.shared.state.read().await;
         let source_node = &state.nodes[&msg.birth_place()];
@@ -102,9 +103,9 @@ impl Flow {
             .ok_or("Failed to get ports")?;
 
         for wire in port.wires.iter() {
-            let dest_node =
+            let _dest_node =
                 Weak::upgrade(&wire.target_node).ok_or("Failed to get node id in port")?;
-            let msg_to_send = msg.clone();
+            let _msg_to_send = msg.clone();
             //dest_node.fan_in(msg_to_send, cancel.clone()).await?;
         }
 
@@ -155,18 +156,17 @@ impl Flow {
             }),
         });
 
+        let scoped_flow = flow.clone();
         {
-            let mut state = flow.shared.state.write().await;
+            let mut state = scoped_flow.shared.state.write().await;
 
             for node_config in flow_config.nodes.iter() {
                 if let Some(meta_node) = reg.get(&node_config.type_name) {
-                    println!("-- Found type: {}", meta_node.type_name);
-                    // create the new node
                     let raw_node = match meta_node.factory {
                         NodeFactory::Flow(factory) => {
                             let base_flow_node =
-                                flow.clone().new_base_flow_node(&state, node_config)?;
-                            factory(flow.clone(), base_flow_node, node_config)
+                                scoped_flow.clone().new_base_flow_node(&state, node_config)?;
+                            factory(scoped_flow.clone(), base_flow_node, node_config)
                         }
                         _ => {
                             return Err(EdgeLinkError::NotSupported(format!(
@@ -198,7 +198,7 @@ impl Flow {
             // Start the async-task of each flow node
             let node_task_cancel = cancel.clone();
             let node_to_run = node.clone();
-            tokio::spawn(async move { node_to_run.process(node_task_cancel).await });
+            tokio::task::spawn(async move { node_to_run.process(node_task_cancel).await });
         }
         Ok(())
     }
@@ -218,8 +218,8 @@ impl Flow {
         state: &FlowState,
         node_config: &RedFlowNodeConfig,
     ) -> crate::Result<BaseFlowNode> {
-        let (tx_root, rx) = mpsc::channel(100);
         let mut ports = Vec::new();
+        let (tx_root, rx) = mpsc::channel(100);
         // Convert the Node-RED wires elements to ours
         for red_port in node_config.wires.iter() {
             let mut wires = Vec::new();
