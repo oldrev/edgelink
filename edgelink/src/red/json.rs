@@ -114,9 +114,8 @@ impl RedNodeJsonObject for JsonMap<String, JsonValue> {
     }
 }
 
-
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
-pub struct PortConfig {
+pub struct RedPortConfig {
     pub node_ids: Vec<ElementId>,
 }
 // type RedNodeID = [char; 16];
@@ -158,7 +157,7 @@ pub struct RedFlowNodeConfig {
 
     pub disabled: Option<bool>,
 
-    pub wires: Vec<PortConfig>,
+    pub wires: Vec<RedPortConfig>,
 
     #[serde(skip)]
     pub json: serde_json::Map<String, JsonValue>,
@@ -187,13 +186,13 @@ pub struct JsonValues {
     pub global_nodes: Vec<RedGlobalNodeConfig>,
 }
 
-impl<'de> Deserialize<'de> for PortConfig {
+impl<'de> Deserialize<'de> for RedPortConfig {
     fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
         let des: Vec<ElementId> = Deserialize::deserialize(deserializer)?;
-        Ok(PortConfig { node_ids: des })
+        Ok(RedPortConfig { node_ids: des })
     }
 }
 

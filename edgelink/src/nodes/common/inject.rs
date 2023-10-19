@@ -9,7 +9,7 @@ use std::time::Duration;
 use tokio::sync::RwLock as TokRwLock;
 
 struct InjectNode {
-    info: FlowNodeInfo,
+    base: BaseFlowNode,
     cron_task_wrapper: Arc<TokRwLock<CronTaskWrapper>>,
 }
 
@@ -18,7 +18,7 @@ struct CronTaskWrapper {
     task_handle: Option<tokio::task::JoinHandle<()>>,
 }
 
-/* 
+/*
 impl InjectNode {
     async fn cron_task(&self, _cancel: CancellationToken) {
         /*
@@ -33,18 +33,18 @@ impl InjectNode {
 #[async_trait]
 impl NodeBehavior for InjectNode {
     fn id(&self) -> ElementId {
-        self.info.id
+        self.base.id
     }
 
     fn name(&self) -> &str {
-        &self.info.name
+        &self.base.name
     }
 
     async fn start(&self, cancel: CancellationToken) -> crate::Result<()> {
         let cron_task_wrapper_ptr = self.cron_task_wrapper.clone();
         let mut cron_task_wrapper = cron_task_wrapper_ptr.write().await;
         let child_cancel = cancel.clone();
-        let flow_ptr = Weak::upgrade(&self.info.flow).unwrap();
+        let flow_ptr = Weak::upgrade(&self.base.flow).unwrap();
         let self_id = self.id();
 
         cron_task_wrapper.task_handle = Some(tokio::task::spawn(async move {
@@ -98,23 +98,26 @@ impl NodeBehavior for InjectNode {
 
 #[async_trait]
 impl FlowNodeBehavior for InjectNode {
-    fn ports(&self) -> &Vec<PortConfig> {
-        &self.info.ports
+    fn ports(&self) -> &Vec<Port> {
+        &self.base.ports
     }
 
-    async fn fan_in(&self, _msg: Arc<Msg>, _cancel: CancellationToken) -> crate::Result<()> {
-        Err(EdgeLinkError::NotSupported("This node is a source node".to_string()).into())
+    async fn process(&mut self, cancel: CancellationToken) -> crate::Result<()> {
+        while !cancel.is_cancelled() {
+            let msg = self.base.msg_receiver.recv().await.unwrap().clone();
+            println!("收到消息：\n{:#?}", msg.as_ref());
+        }
+        Ok(())
     }
 }
 
-fn new_node(flow: Arc<Flow>, config: &RedFlowNodeConfig) -> Box<dyn FlowNodeBehavior> {
+fn new_node(
+    flow: Arc<Flow>,
+    base_node: BaseFlowNode,
+    config: &RedFlowNodeConfig,
+) -> Box<dyn FlowNodeBehavior> {
     let node = InjectNode {
-        info: FlowNodeInfo {
-            id: config.id,
-            flow: Arc::downgrade(&flow),
-            name: config.name.clone(),
-            ports: config.wires.clone(),
-        },
+        base: base_node,
         cron_task_wrapper: Arc::new(TokRwLock::new(CronTaskWrapper { task_handle: None })),
     };
     Box::new(node)

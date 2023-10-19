@@ -1,19 +1,20 @@
-use crate::model::ElementId;
+use crate::model::{ElementId, Port, PortWire};
 use crate::msg::{Envelope, Msg};
 use std::collections::HashMap;
 use std::sync::{Arc, Weak};
+use tokio::sync::mpsc;
 use tokio::sync::RwLock as TokRwLock;
 use tokio_util::sync::CancellationToken;
 
 use crate::engine::FlowEngine;
 use crate::nodes::*;
-use crate::red::json::RedFlowConfig;
+use crate::red::json::{RedFlowConfig, RedFlowNodeConfig};
 use crate::registry::Registry;
 use crate::variant::Variant;
 use crate::EdgeLinkError;
 
 struct FlowState {
-    nodes: HashMap<ElementId, Box<dyn FlowNodeBehavior>>,
+    nodes: HashMap<ElementId, Arc<Box<dyn FlowNodeBehavior>>>,
     nodes_ordering: Vec<ElementId>,
     _context: Variant,
     _engine: Weak<FlowEngine>,
@@ -63,13 +64,15 @@ impl Flow {
 
         let mut msg_sent = false;
         let mut msgs_to_send = Vec::new();
-        for dest_node_id in port.node_ids.iter() {
+        for wire in port.wires.iter() {
             //let dest_node = &state.nodes[dest_node_id];
+            let target_node = Weak::upgrade(&wire.target_node)
+                .ok_or("Failed to get node, maybe it has been released?")?;
             for msg in msgs.iter() {
                 let envelope = Envelope {
                     src_node_id: src_node.id(),
                     src_port_index,
-                    dest_node_id: *dest_node_id,
+                    dest_node_id: target_node.id(),
                     clone_msg: msg_sent,
                     msg: msg.clone(),
                 };
@@ -97,12 +100,16 @@ impl Flow {
     ) -> crate::Result<()> {
         let state = self.shared.state.read().await;
         let source_node = &state.nodes[&msg.birth_place()];
-        let port = source_node.ports().get(port_index).unwrap();
+        let port = source_node
+            .ports()
+            .get(port_index)
+            .ok_or("Failed to get ports")?;
 
-        for nid in port.node_ids.iter() {
-            let dest_node = &state.nodes[nid];
+        for wire in port.wires.iter() {
+            let dest_node =
+                Weak::upgrade(&wire.target_node).ok_or("Failed to get node id in port")?;
             let msg_to_send = msg.clone();
-            dest_node.fan_in(msg_to_send, cancel.clone()).await?;
+            //dest_node.fan_in(msg_to_send, cancel.clone()).await?;
         }
 
         Ok(())
@@ -124,7 +131,7 @@ impl Flow {
             } else {
                 envelope.msg.clone()
             };
-            dest_node.fan_in(msg_to_send, cancel.clone()).await?;
+            //dest_node.fan_in(msg_to_send, cancel.clone()).await?;
         }
 
         Ok(())
@@ -155,9 +162,13 @@ impl Flow {
             for node_config in flow_config.nodes.iter() {
                 if let Some(meta_node) = reg.get(&node_config.type_name) {
                     println!("-- Found type: {}", meta_node.type_name);
-                    // 创建流节点实例
-                    let node = match meta_node.factory {
-                        NodeFactory::Flow(factory) => factory(flow.clone(), node_config),
+                    // create the new node
+                    let mut raw_node = match meta_node.factory {
+                        NodeFactory::Flow(factory) => {
+                            let base_flow_node =
+                                flow.clone().new_base_flow_node(&state, node_config)?;
+                            factory(flow.clone(), base_flow_node, node_config)
+                        }
                         _ => {
                             return Err(EdgeLinkError::NotSupported(
                                 format!(
@@ -169,7 +180,9 @@ impl Flow {
                             .into())
                         }
                     };
+                    let mut node = Arc::new(raw_node);
                     state.nodes_ordering.push(node.id());
+
                     state.nodes.insert(node_config.id, node);
                 }
             }
@@ -198,5 +211,35 @@ impl Flow {
             node.stop(cancel.clone()).await?;
         }
         Ok(())
+    }
+
+    fn new_base_flow_node(
+        self: Arc<Self>,
+        state: &FlowState,
+        node_config: &RedFlowNodeConfig,
+    ) -> crate::Result<BaseFlowNode> {
+        let (tx_root, rx) = mpsc::channel(100);
+        let mut ports = Vec::new();
+        // Convert the Node-RED wires elements to ours
+        for red_port in node_config.wires.iter() {
+            let mut wires = Vec::new();
+            for nid in red_port.node_ids.iter() {
+                let node_entry = state.nodes.get(nid).ok_or("Can not found node")?;
+                let pw = PortWire {
+                    target_node: Arc::downgrade(&node_entry),
+                    pipe: tx_root.clone(),
+                };
+                wires.push(pw);
+            }
+            ports.push(Port { wires });
+        }
+
+        Ok(BaseFlowNode {
+            id: node_config.id,
+            flow: Arc::downgrade(&self),
+            name: node_config.name.clone(),
+            msg_receiver: rx,
+            ports,
+        })
     }
 }

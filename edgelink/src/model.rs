@@ -1,3 +1,9 @@
+use std::sync::{Arc, Weak};
+
+use tokio::sync::mpsc;
+
+use crate::{msg::Msg, nodes::FlowNodeBehavior};
+
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Copy, Clone)]
 pub struct ElementId(pub(crate) u64);
 
@@ -6,3 +12,14 @@ impl std::fmt::Display for ElementId {
         write!(f, "{:016x}", self.0)
     }
 }
+
+pub struct PortWire {
+    pub target_node: Weak<Box<dyn FlowNodeBehavior>>,
+    pub pipe: tokio::sync::mpsc::Sender<Arc<Msg>>,
+}
+
+pub struct Port {
+    pub wires: Vec<PortWire>,
+}
+
+pub type MsgReceiver = mpsc::Receiver<Arc<Msg>>;

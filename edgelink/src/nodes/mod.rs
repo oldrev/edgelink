@@ -1,13 +1,14 @@
 use async_trait::async_trait;
 use std::fmt;
 use std::sync::{Arc, Weak};
+use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;
 
 use crate::engine::FlowEngine;
 use crate::flow::Flow;
-use crate::model::ElementId;
+use crate::model::{ElementId, MsgReceiver, Port, PortWire};
 use crate::msg::Msg;
-use crate::red::json::{RedFlowNodeConfig, RedGlobalNodeConfig, PortConfig};
+use crate::red::json::{RedFlowNodeConfig, RedGlobalNodeConfig, RedPortConfig};
 use crate::Result;
 
 mod common;
@@ -39,7 +40,7 @@ impl fmt::Display for NodeKind {
 #[derive(Clone, Copy)]
 pub enum NodeFactory {
     Global(fn(Arc<FlowEngine>, &RedGlobalNodeConfig) -> Box<dyn NodeBehavior>),
-    Flow(fn(Arc<Flow>, &RedFlowNodeConfig) -> Box<dyn FlowNodeBehavior>),
+    Flow(fn(Arc<Flow>, BaseFlowNode, &RedFlowNodeConfig) -> Box<dyn FlowNodeBehavior>),
 }
 
 #[derive(Clone, Copy)]
@@ -50,11 +51,12 @@ pub struct MetaNode {
     pub factory: NodeFactory,
 }
 
-pub struct FlowNodeInfo {
+pub struct BaseFlowNode {
     pub id: ElementId,
     pub flow: Weak<Flow>,
     pub name: String,
-    pub ports: Vec<PortConfig>,
+    pub msg_receiver: MsgReceiver,
+    pub ports: Vec<Port>,
 }
 
 #[async_trait]
@@ -67,8 +69,9 @@ pub trait NodeBehavior: Send + Sync {
 
 #[async_trait]
 pub trait FlowNodeBehavior: NodeBehavior + Send + Sync {
-    fn ports(&self) -> &Vec<PortConfig>;
-    async fn fan_in(&self, msg: Arc<Msg>, cancel: CancellationToken) -> crate::Result<()>;
+    fn ports(&self) -> &Vec<Port>;
+
+    async fn process(&mut self, cancel: CancellationToken) -> crate::Result<()>;
 }
 
 pub(crate) struct BuiltinNodeDescriptor {

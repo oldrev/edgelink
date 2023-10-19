@@ -1,21 +1,22 @@
 use crate::flow::Flow;
 use crate::nodes::*;
+use crate::red::json::{RedFlowNodeConfig, RedPortConfig};
 use crate::Result;
-use crate::red::json::{RedFlowNodeConfig, PortConfig};
+use std::borrow::BorrowMut;
 use std::sync::Arc;
 
 struct DebugNode {
-    info: FlowNodeInfo,
+    base: BaseFlowNode,
 }
 
 #[async_trait]
 impl NodeBehavior for DebugNode {
     fn id(&self) -> ElementId {
-        self.info.id
+        self.base.id
     }
 
     fn name(&self) -> &str {
-        &self.info.name
+        &self.base.name
     }
 
     async fn start(&self, _cancel: CancellationToken) -> Result<()> {
@@ -29,25 +30,25 @@ impl NodeBehavior for DebugNode {
 
 #[async_trait]
 impl FlowNodeBehavior for DebugNode {
-    fn ports(&self) -> &Vec<PortConfig> {
-        &self.info.ports
+    fn ports(&self) -> &Vec<Port> {
+        &self.base.ports
     }
 
-    async fn fan_in(&self, msg: Arc<Msg>, _cancel: CancellationToken) -> crate::Result<()> {
-        println!("收到消息：\n{:#?}", msg.as_ref());
+    async fn process(&mut self, cancel: CancellationToken) -> crate::Result<()> {
+        while !cancel.is_cancelled() {
+            let msg = self.base.msg_receiver.recv().await.unwrap();
+            println!("收到消息：\n{:#?}", msg.as_ref());
+        }
         Ok(())
     }
 }
 
-fn new_node(flow: Arc<Flow>, config: &RedFlowNodeConfig) -> Box<dyn FlowNodeBehavior> {
-    let node = DebugNode {
-        info: FlowNodeInfo {
-            id: config.id,
-            flow: Arc::downgrade(&flow),
-            name: config.name.clone(),
-            ports: config.wires.clone(),
-        },
-    };
+fn new_node(
+    flow: Arc<Flow>,
+    base_node: BaseFlowNode,
+    config: &RedFlowNodeConfig,
+) -> Box<dyn FlowNodeBehavior> {
+    let node = DebugNode { base: base_node };
     Box::new(node)
 }
 
