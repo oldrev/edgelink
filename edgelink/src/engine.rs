@@ -52,13 +52,10 @@ impl FlowEngine {
                     let node = match meta_node.factory {
                         NodeFactory::Global(factory) => factory(engine.clone(), global_config),
                         _ => {
-                            return Err(EdgeLinkError::NotSupported(
-                                format!(
-                                    "Can not found global node factory for Node(id={0}, type='{1}'",
-                                    global_config.id, global_config.type_name
-                                )
-                                .to_string(),
-                            )
+                            return Err(EdgeLinkError::NotSupported(format!(
+                                "Can not found global node factory for Node(id={0}, type='{1}'",
+                                global_config.id, global_config.type_name
+                            ))
                             .into())
                         }
                     };
@@ -89,7 +86,7 @@ impl FlowEngine {
     pub async fn stop(&self, cancel: CancellationToken) -> crate::Result<()> {
         let state = self.shared.state.write().await;
         for flow in state.flows.iter() {
-            flow.stop(cancel.clone()).await?;
+            flow.clone().stop(cancel.clone()).await?;
         }
         Ok(())
     }

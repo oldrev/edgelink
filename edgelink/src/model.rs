@@ -15,7 +15,7 @@ impl std::fmt::Display for ElementId {
 
 pub struct PortWire {
     pub target_node: Weak<Box<dyn FlowNodeBehavior>>,
-    pub pipe: tokio::sync::mpsc::Sender<Arc<Msg>>,
+    pub msg_sender: tokio::sync::mpsc::Sender<Arc<Msg>>,
 }
 
 pub struct Port {

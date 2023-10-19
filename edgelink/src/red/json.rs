@@ -89,7 +89,7 @@ pub fn load_flows_json_value(root_jv: &JsonValue) -> Result<JsonValues> {
 
     Ok(JsonValues {
         flows: flow_configs,
-        global_nodes: global_nodes,
+        global_nodes,
     })
 }
 

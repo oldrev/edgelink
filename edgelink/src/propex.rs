@@ -25,7 +25,7 @@ struct PropexEval<'a> {
 
 pub fn parse(expr: &str) -> Result<Vec<PropexSegment<'_>>, PropexError> {
     let eval = PropexEval {
-        expr: expr,
+        expr,
         pos: std::cell::Cell::new(0),
     };
     let mut segs = Vec::new();

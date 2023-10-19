@@ -30,16 +30,20 @@ impl NodeBehavior for DebugNode {
 
 #[async_trait]
 impl FlowNodeBehavior for DebugNode {
-    fn ports(&self) -> &Vec<Port> {
-        &self.base.ports
+    fn base(&self) -> &BaseFlowNode {
+        &self.base
     }
 
-    async fn process(&mut self, cancel: CancellationToken) -> crate::Result<()> {
+    async fn process(&self, cancel: CancellationToken) {
+        let mut recv_guard = self.base.msg_receiver.lock().await;
         while !cancel.is_cancelled() {
-            let msg = self.base.msg_receiver.recv().await.unwrap();
-            println!("收到消息：\n{:#?}", msg.as_ref());
+            if let Some(msg) = recv_guard.recv().await {
+                println!("收到消息：\n{:#?}", msg.as_ref());
+            } else {
+                //break;
+                println!("咋个会已关闭");
+            }
         }
-        Ok(())
     }
 }
 

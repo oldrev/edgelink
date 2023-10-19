@@ -1,5 +1,5 @@
 use crate::model::{ElementId, Port, PortWire};
-use crate::msg::{Envelope, Msg};
+use crate::msg::Msg;
 use std::collections::HashMap;
 use std::sync::{Arc, Weak};
 use tokio::sync::mpsc;
@@ -50,37 +50,32 @@ impl Flow {
         &self,
         src_node_id: ElementId,
         src_port_index: usize,
-        msgs: Vec<Arc<Msg>>,
-        cancel: CancellationToken,
+        msgs: &[Arc<Msg>],
+        _cancel: CancellationToken,
     ) -> crate::Result<()> {
         let state = self.shared.state.read().await;
         let src_node = &state.nodes[&src_node_id];
-        if src_port_index >= src_node.ports().len() {
+        if src_port_index >= src_node.base().ports.len() {
             return Err(
                 crate::EdgeLinkError::InvalidOperation("Invalid port index".to_string()).into(),
             );
         }
-        let port = &src_node.ports()[src_port_index];
+        let port = &src_node.base().ports[src_port_index];
 
         let mut msg_sent = false;
-        let mut msgs_to_send = Vec::new();
         for wire in port.wires.iter() {
             //let dest_node = &state.nodes[dest_node_id];
-            let target_node = Weak::upgrade(&wire.target_node)
-                .ok_or("Failed to get node, maybe it has been released?")?;
             for msg in msgs.iter() {
-                let envelope = Envelope {
-                    src_node_id: src_node.id(),
-                    src_port_index,
-                    dest_node_id: target_node.id(),
-                    clone_msg: msg_sent,
-                    msg: msg.clone(),
+                let msg_to_send: Arc<Msg> = if msg_sent {
+                    Arc::new(msg.as_ref().clone())
+                } else {
+                    msg.clone()
                 };
+                wire.msg_sender.send(msg_to_send).await?;
                 msg_sent = true;
-                msgs_to_send.push(envelope);
             }
         }
-        self.deliver_msgs(msgs_to_send, cancel.clone()).await
+        Ok(())
     }
 
     pub async fn fan_out_all(
@@ -101,7 +96,8 @@ impl Flow {
         let state = self.shared.state.read().await;
         let source_node = &state.nodes[&msg.birth_place()];
         let port = source_node
-            .ports()
+            .base()
+            .ports
             .get(port_index)
             .ok_or("Failed to get ports")?;
 
@@ -115,6 +111,7 @@ impl Flow {
         Ok(())
     }
 
+    /*
     /// 这里值传递 Vec 要不要优化下
     async fn deliver_msgs(
         &self,
@@ -124,7 +121,8 @@ impl Flow {
         let state = self.shared.state.read().await;
 
         for envelope in envelopes.iter() {
-            //let src_node = &state.nodes[&envelope.src_node_id];
+            let src_node = &state.nodes[&envelope.src_node_id];
+            let src_port = src_node.base().ports.iter().nth(envelope.src_port_index).unwrap();
             let dest_node = &state.nodes[&envelope.dest_node_id];
             let msg_to_send: Arc<Msg> = if envelope.clone_msg {
                 Arc::new(envelope.msg.as_ref().clone())
@@ -136,6 +134,7 @@ impl Flow {
 
         Ok(())
     }
+    */
 
     pub(crate) async fn new(
         engine: Arc<FlowEngine>,
@@ -163,24 +162,21 @@ impl Flow {
                 if let Some(meta_node) = reg.get(&node_config.type_name) {
                     println!("-- Found type: {}", meta_node.type_name);
                     // create the new node
-                    let mut raw_node = match meta_node.factory {
+                    let raw_node = match meta_node.factory {
                         NodeFactory::Flow(factory) => {
                             let base_flow_node =
                                 flow.clone().new_base_flow_node(&state, node_config)?;
                             factory(flow.clone(), base_flow_node, node_config)
                         }
                         _ => {
-                            return Err(EdgeLinkError::NotSupported(
-                                format!(
-                                    "Can not found flow node factory for Node(id={0}, type='{1}'",
-                                    flow_config.id, flow_config.type_name
-                                )
-                                .to_string(),
-                            )
+                            return Err(EdgeLinkError::NotSupported(format!(
+                                "Can not found flow node factory for Node(id={0}, type='{1}'",
+                                flow_config.id, flow_config.type_name
+                            ))
                             .into())
                         }
                     };
-                    let mut node = Arc::new(raw_node);
+                    let node = Arc::new(raw_node);
                     state.nodes_ordering.push(node.id());
 
                     state.nodes.insert(node_config.id, node);
@@ -191,19 +187,23 @@ impl Flow {
         Ok(flow)
     }
 
-    pub(crate) async fn start(&self, cancel: CancellationToken) -> crate::Result<()> {
+    pub(crate) async fn start(self: Arc<Self>, cancel: CancellationToken) -> crate::Result<()> {
         let state = self.shared.state.write().await;
         println!("-- Starting Flow (id={0})...", self.id);
         // 启动是按照节点依赖顺序的逆序
         for node_id in state.nodes_ordering.iter().rev() {
-            let node = &state.nodes[node_id];
+            let node = state.nodes[node_id].clone();
             println!("---- Starting Node (id='{0}')...", node.id());
             node.start(cancel.clone()).await?;
+            // Start the async-task of each flow node
+            let node_task_cancel = cancel.clone();
+            let node_to_run = node.clone();
+            tokio::spawn(async move { node_to_run.process(node_task_cancel).await });
         }
         Ok(())
     }
 
-    pub(crate) async fn stop(&self, cancel: CancellationToken) -> crate::Result<()> {
+    pub(crate) async fn stop(self: Arc<Self>, cancel: CancellationToken) -> crate::Result<()> {
         let state = self.shared.state.write().await;
         println!("-- Stopping Flow (id={0})...", self.id);
         for node_id in state.nodes_ordering.iter() {
@@ -226,8 +226,8 @@ impl Flow {
             for nid in red_port.node_ids.iter() {
                 let node_entry = state.nodes.get(nid).ok_or("Can not found node")?;
                 let pw = PortWire {
-                    target_node: Arc::downgrade(&node_entry),
-                    pipe: tx_root.clone(),
+                    target_node: Arc::downgrade(node_entry),
+                    msg_sender: tx_root.clone(),
                 };
                 wires.push(pw);
             }
@@ -238,7 +238,7 @@ impl Flow {
             id: node_config.id,
             flow: Arc::downgrade(&self),
             name: node_config.name.clone(),
-            msg_receiver: rx,
+            msg_receiver: tokio::sync::Mutex::new(rx),
             ports,
         })
     }
