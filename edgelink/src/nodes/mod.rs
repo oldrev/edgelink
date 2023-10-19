@@ -54,7 +54,7 @@ pub struct BaseFlowNode {
     pub id: ElementId,
     pub flow: Weak<Flow>,
     pub name: String,
-    pub msg_receiver: tokio::sync::Mutex<MsgReceiver>,
+    pub msg_receiver: TokMutex<MsgReceiver>,
     pub ports: Vec<Port>,
 }
 
