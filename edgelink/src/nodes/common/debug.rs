@@ -35,7 +35,7 @@ impl FlowNodeBehavior for DebugNode {
 
     async fn process(&self, cancel: CancellationToken) {
         while !cancel.is_cancelled() {
-            let mut recv_guard = self.base.msg_receiver.lock().await;
+            let mut recv_guard = self.base().msg_receiver.msgs_rx.lock().await;
             match recv_guard.recv().await {
                 Some(msg) => println!("收到消息：\n{:#?}", msg.as_ref()),
                 _ => {

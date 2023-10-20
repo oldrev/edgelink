@@ -164,8 +164,9 @@ impl Flow {
                 if let Some(meta_node) = reg.get(&node_config.type_name) {
                     let raw_node = match meta_node.factory {
                         NodeFactory::Flow(factory) => {
-                            let base_flow_node =
-                                scoped_flow.clone().new_base_flow_node(&state, node_config)?;
+                            let base_flow_node = scoped_flow
+                                .clone()
+                                .new_base_flow_node(&state, node_config)?;
                             factory(scoped_flow.clone(), base_flow_node, node_config)
                         }
                         _ => {
@@ -238,7 +239,7 @@ impl Flow {
             id: node_config.id,
             flow: Arc::downgrade(&self),
             name: node_config.name.clone(),
-            msg_receiver: tokio::sync::Mutex::new(rx),
+            msg_receiver: MsgReceiverWrapper::new(rx),
             ports,
         })
     }

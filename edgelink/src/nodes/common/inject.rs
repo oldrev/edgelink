@@ -1,9 +1,9 @@
 use crate::flow::Flow;
 use crate::msg::Msg;
-use crate::nodes::*;
 use crate::red::json::*;
 use crate::variant::Variant;
 use crate::Result;
+use crate::{nodes::*, EdgeLinkError};
 use std::sync::{Arc, Weak};
 use std::time::Duration;
 
@@ -29,8 +29,12 @@ impl InjectNode {
                         .unwrap();
                     println!("Msg injected");
                 }
-                Err(_) => todo!(),
-            }
+                Err(ref err) => {
+                    println!("Inject task has been cancelled.");
+                    break;
+                }
+                Err(_) => break,
+            };
         }
         println!("The CRON task has been stopped.");
     }

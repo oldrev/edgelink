@@ -13,11 +13,13 @@ impl std::fmt::Display for ElementId {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct PortWire {
     pub target_node: Weak<Box<dyn FlowNodeBehavior>>,
     pub msg_sender: tokio::sync::mpsc::Sender<Arc<Msg>>,
 }
 
+#[derive(Debug, Clone)]
 pub struct Port {
     pub wires: Vec<PortWire>,
 }

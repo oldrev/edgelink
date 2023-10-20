@@ -50,12 +50,32 @@ pub struct MetaNode {
     pub factory: NodeFactory,
 }
 
+#[derive(Debug)]
 pub struct BaseFlowNode {
     pub id: ElementId,
     pub flow: Weak<Flow>,
     pub name: String,
-    pub msg_receiver: TokMutex<MsgReceiver>,
+    pub msg_receiver: MsgReceiverWrapper,
     pub ports: Vec<Port>,
+}
+
+#[derive(Debug)]
+pub struct MsgReceiverWrapper {
+    msgs_rx: TokMutex<MsgReceiver>,
+}
+
+impl MsgReceiverWrapper {
+    pub fn new(rx: MsgReceiver) -> Self {
+        MsgReceiverWrapper {
+            msgs_rx: TokMutex::new(rx),
+        }
+    }
+}
+
+impl Drop for MsgReceiverWrapper {
+    fn drop(&mut self) {
+        println!("------------------------- Droping....");
+    }
 }
 
 #[async_trait]
