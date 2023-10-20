@@ -38,8 +38,8 @@ impl fmt::Display for NodeKind {
 
 #[derive(Clone, Copy)]
 pub enum NodeFactory {
-    Global(fn(Arc<FlowEngine>, &RedGlobalNodeConfig) -> Box<dyn NodeBehavior>),
-    Flow(fn(Arc<Flow>, BaseFlowNode, &RedFlowNodeConfig) -> Box<dyn FlowNodeBehavior>),
+    Global(fn(Arc<FlowEngine>, &RedGlobalNodeConfig) -> Arc<dyn NodeBehavior>),
+    Flow(fn(Arc<Flow>, BaseFlowNode, &RedFlowNodeConfig) -> Arc<dyn FlowNodeBehavior>),
 }
 
 #[derive(Clone, Copy)]
@@ -55,26 +55,20 @@ pub struct BaseFlowNode {
     pub id: ElementId,
     pub flow: Weak<Flow>,
     pub name: String,
-    pub msg_receiver: MsgReceiverWrapper,
+    pub msg_receiver: MsgReceiverHolder,
     pub ports: Vec<Port>,
 }
 
 #[derive(Debug)]
-pub struct MsgReceiverWrapper {
-    msgs_rx: TokMutex<MsgReceiver>,
+pub struct MsgReceiverHolder {
+    rx: TokMutex<MsgReceiver>,
 }
 
-impl MsgReceiverWrapper {
+impl MsgReceiverHolder {
     pub fn new(rx: MsgReceiver) -> Self {
-        MsgReceiverWrapper {
-            msgs_rx: TokMutex::new(rx),
+        MsgReceiverHolder {
+            rx: TokMutex::new(rx),
         }
-    }
-}
-
-impl Drop for MsgReceiverWrapper {
-    fn drop(&mut self) {
-        println!("------------------------- Droping....");
     }
 }
 

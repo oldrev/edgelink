@@ -14,7 +14,7 @@ use crate::variant::Variant;
 use crate::EdgeLinkError;
 
 struct FlowState {
-    nodes: HashMap<ElementId, Arc<Box<dyn FlowNodeBehavior>>>,
+    nodes: HashMap<ElementId, Arc<dyn FlowNodeBehavior>>,
     nodes_ordering: Vec<ElementId>,
     _context: Variant,
     _engine: Weak<FlowEngine>,
@@ -162,7 +162,7 @@ impl Flow {
 
             for node_config in flow_config.nodes.iter() {
                 if let Some(meta_node) = reg.get(&node_config.type_name) {
-                    let raw_node = match meta_node.factory {
+                    let node = match meta_node.factory {
                         NodeFactory::Flow(factory) => {
                             let base_flow_node = scoped_flow
                                 .clone()
@@ -177,7 +177,6 @@ impl Flow {
                             .into())
                         }
                     };
-                    let node = Arc::new(raw_node);
                     state.nodes_ordering.push(node.id());
 
                     state.nodes.insert(node_config.id, node);
@@ -239,7 +238,7 @@ impl Flow {
             id: node_config.id,
             flow: Arc::downgrade(&self),
             name: node_config.name.clone(),
-            msg_receiver: MsgReceiverWrapper::new(rx),
+            msg_receiver: MsgReceiverHolder::new(rx),
             ports,
         })
     }

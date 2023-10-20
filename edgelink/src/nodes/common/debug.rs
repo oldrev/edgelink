@@ -35,7 +35,7 @@ impl FlowNodeBehavior for DebugNode {
 
     async fn process(&self, cancel: CancellationToken) {
         while !cancel.is_cancelled() {
-            let mut recv_guard = self.base().msg_receiver.msgs_rx.lock().await;
+            let mut recv_guard = self.base().msg_receiver.rx.lock().await;
             match recv_guard.recv().await {
                 Some(msg) => println!("收到消息：\n{:#?}", msg.as_ref()),
                 _ => {
@@ -51,9 +51,9 @@ fn new_node(
     _flow: Arc<Flow>,
     base_node: BaseFlowNode,
     _config: &RedFlowNodeConfig,
-) -> Box<dyn FlowNodeBehavior> {
+) -> Arc<dyn FlowNodeBehavior> {
     let node = DebugNode { base: base_node };
-    Box::new(node)
+    Arc::new(node)
 }
 
 inventory::submit! {

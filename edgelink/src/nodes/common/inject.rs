@@ -84,9 +84,9 @@ fn new_node(
     _flow: Arc<Flow>,
     base_node: BaseFlowNode,
     _config: &RedFlowNodeConfig,
-) -> Box<dyn FlowNodeBehavior> {
+) -> Arc<dyn FlowNodeBehavior> {
     let node = InjectNode { base: base_node };
-    Box::new(node)
+    Arc::new(node)
 }
 
 inventory::submit! {

@@ -8,7 +8,7 @@ use crate::{registry::Registry, variant::Variant, EdgeLinkError};
 
 struct FlowEngineState {
     flows: Vec<Arc<Flow>>,
-    global_nodes: Vec<Box<dyn NodeBehavior>>,
+    global_nodes: Vec<Arc<dyn NodeBehavior>>,
     _context: Variant,
     _shutdown: bool,
 }

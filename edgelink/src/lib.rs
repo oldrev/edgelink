@@ -46,10 +46,8 @@ pub enum EdgeLinkError {
     InvalidOperation(String),
 
     #[error(transparent)]
-    Other(#[from] crate::Error),  // source and Display delegate to anyhow::Error
+    Other(#[from] crate::Error), // source and Display delegate to anyhow::Error
 }
-
-
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 
