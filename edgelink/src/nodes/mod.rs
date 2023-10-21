@@ -1,14 +1,16 @@
 use async_trait::async_trait;
+use tokio::select;
 use std::fmt;
 use std::sync::{Arc, Weak};
 use tokio::sync::Mutex as TokMutex;
 use tokio_util::sync::CancellationToken;
 
+use crate::async_util::delay_millis;
 use crate::engine::FlowEngine;
 use crate::flow::Flow;
-use crate::model::{ElementId, MsgReceiver, Port};
+use crate::model::{ElementId, Msg, MsgReceiver, MsgSender, Port};
 use crate::red::json::{RedFlowNodeConfig, RedGlobalNodeConfig};
-use crate::Result;
+use crate::{EdgeLinkError, Result};
 
 mod common;
 
@@ -39,7 +41,7 @@ impl fmt::Display for NodeKind {
 #[derive(Clone, Copy)]
 pub enum NodeFactory {
     Global(fn(Arc<FlowEngine>, &RedGlobalNodeConfig) -> Arc<dyn NodeBehavior>),
-    Flow(fn(Arc<Flow>, BaseFlowNode, &RedFlowNodeConfig) -> Arc<dyn FlowNodeBehavior>),
+    Flow(fn(Arc<Flow>, Arc<BaseFlowNode>, &RedFlowNodeConfig) -> Arc<dyn FlowNodeBehavior>),
 }
 
 #[derive(Clone, Copy)]
@@ -55,13 +57,27 @@ pub struct BaseFlowNode {
     pub id: ElementId,
     pub flow: Weak<Flow>,
     pub name: String,
-    pub msg_receiver: MsgReceiverHolder,
+    pub msg_tx: MsgSender,
+    pub msg_rx: MsgReceiverHolder,
     pub ports: Vec<Port>,
+}
+
+impl BaseFlowNode {
+    pub(crate) async fn wait_for_msg(&self) -> crate::Result<Arc<Msg>> {
+        let rx = &mut self.msg_rx.rx.lock().await;
+        match rx.recv().await {
+            Some(msg) => Ok(msg),
+            None => {
+                println!("咋个会收不到");
+                Err(EdgeLinkError::TaskCancelled.into())
+            }
+        }
+    }
 }
 
 #[derive(Debug)]
 pub struct MsgReceiverHolder {
-    rx: TokMutex<MsgReceiver>,
+    pub rx: TokMutex<MsgReceiver>,
 }
 
 impl MsgReceiverHolder {
@@ -85,6 +101,18 @@ pub trait FlowNodeBehavior: NodeBehavior {
     fn base(&self) -> &BaseFlowNode;
 
     async fn process(&self, cancel: CancellationToken);
+
+    async fn wait_for_msg(&self, cancel: CancellationToken) -> crate::Result<Arc<Msg>> {
+        select! {
+            _ = cancel.cancelled() => {
+                // The token was cancelled
+                Err(EdgeLinkError::TaskCancelled.into())
+            }
+            result = self.base().wait_for_msg() => {
+                result
+            }
+        }
+    }
 }
 
 pub(crate) struct BuiltinNodeDescriptor {

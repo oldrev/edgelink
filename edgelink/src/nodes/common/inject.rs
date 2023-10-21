@@ -1,14 +1,13 @@
 use crate::flow::Flow;
-use crate::msg::Msg;
-use crate::red::json::*;
-use crate::variant::Variant;
+use crate::model::*;
 use crate::Result;
 use crate::{nodes::*, EdgeLinkError};
 use std::sync::{Arc, Weak};
 use std::time::Duration;
+use crate::model::*;
 
 struct InjectNode {
-    base: BaseFlowNode,
+    base: Arc<BaseFlowNode>,
 }
 
 impl InjectNode {
@@ -16,7 +15,7 @@ impl InjectNode {
         while !cancel.is_cancelled() {
             // TODO FIXME
             let delay_result =
-                crate::async_util::delay(Duration::from_secs(2), cancel.clone()).await;
+                crate::async_util::delay(Duration::from_secs(2), cancel.child_token()).await;
             match delay_result {
                 Ok(()) => {
                     let flow_ref = Weak::upgrade(&self.base().flow).unwrap();
@@ -29,11 +28,13 @@ impl InjectNode {
                         .unwrap();
                     println!("Msg injected");
                 }
-                Err(ref err) => {
-                    println!("Inject task has been cancelled.");
-                    break;
-                }
-                Err(_) => break,
+                Err(ref err) => match err.downcast_ref().unwrap() {
+                    EdgeLinkError::TaskCancelled => {
+                        println!("Inject task has been cancelled.");
+                        break;
+                    }
+                    _ => break,
+                },
             };
         }
         println!("The CRON task has been stopped.");
@@ -82,7 +83,7 @@ impl FlowNodeBehavior for InjectNode {
 
 fn new_node(
     _flow: Arc<Flow>,
-    base_node: BaseFlowNode,
+    base_node: Arc<BaseFlowNode>,
     _config: &RedFlowNodeConfig,
 ) -> Arc<dyn FlowNodeBehavior> {
     let node = InjectNode { base: base_node };

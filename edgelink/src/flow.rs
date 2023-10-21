@@ -1,6 +1,5 @@
-use crate::model::{ElementId, Port, PortWire};
-use crate::msg::Msg;
-use std::collections::HashMap;
+use crate::model::{ElementId, Port, PortWire, Msg, Variant};
+use std::collections::BTreeMap;
 use std::sync::{Arc, Weak};
 use tokio::sync::mpsc;
 use tokio::sync::RwLock as TokRwLock;
@@ -10,15 +9,16 @@ use crate::engine::FlowEngine;
 use crate::nodes::*;
 use crate::red::json::{RedFlowConfig, RedFlowNodeConfig};
 use crate::registry::Registry;
-use crate::variant::Variant;
 use crate::EdgeLinkError;
 
 struct FlowState {
-    nodes: HashMap<ElementId, Arc<dyn FlowNodeBehavior>>,
+    nodes: BTreeMap<ElementId, Arc<dyn FlowNodeBehavior>>,
     nodes_ordering: Vec<ElementId>,
     _context: Variant,
     _engine: Weak<FlowEngine>,
 }
+
+pub type FlowNodeTask = tokio::task::JoinHandle<()>;
 
 struct FlowShared {
     state: TokRwLock<FlowState>,
@@ -71,8 +71,9 @@ impl Flow {
                 } else {
                     msg.clone()
                 };
-                assert!(!wire.msg_sender.is_closed());
+                println!("target NodeID={0}", wire.target_node_id);
                 wire.msg_sender.send(msg_to_send).await?;
+                debug_assert!(!wire.msg_sender.is_closed());
                 msg_sent = true;
             }
         }
@@ -149,7 +150,7 @@ impl Flow {
             shared: Arc::new(FlowShared {
                 state: TokRwLock::new(FlowState {
                     _engine: Arc::downgrade(&engine),
-                    nodes: HashMap::with_capacity(flow_config.nodes.len()),
+                    nodes: BTreeMap::new(),
                     nodes_ordering: Vec::new(),
                     _context: Variant::empty_object(),
                 }),
@@ -190,8 +191,8 @@ impl Flow {
     pub(crate) async fn start(self: Arc<Self>, cancel: CancellationToken) -> crate::Result<()> {
         let state = self.shared.state.write().await;
         println!("-- Starting Flow (id={0})...", self.id);
-        // 启动是按照节点依赖顺序的逆序
-        for node_id in state.nodes_ordering.iter().rev() {
+        // 启动是按照节点依赖顺序的正序
+        for node_id in state.nodes_ordering.iter() {
             let node = state.nodes[node_id].clone();
             println!("---- Starting Node (id='{0}')...", node.id());
             node.start(cancel.clone()).await?;
@@ -217,29 +218,33 @@ impl Flow {
         self: Arc<Self>,
         state: &FlowState,
         node_config: &RedFlowNodeConfig,
-    ) -> crate::Result<BaseFlowNode> {
+    ) -> crate::Result<Arc<BaseFlowNode>> {
         let mut ports = Vec::new();
         let (tx_root, rx) = mpsc::channel(100);
         // Convert the Node-RED wires elements to ours
         for red_port in node_config.wires.iter() {
             let mut wires = Vec::new();
             for nid in red_port.node_ids.iter() {
-                let node_entry = state.nodes.get(nid).ok_or("Can not found node")?;
+                let node_entry = state.nodes.get(nid).ok_or("Can not found target node")?;
+                let tx = node_entry.base().msg_tx.to_owned();
                 let pw = PortWire {
+                    target_node_id: *nid,
                     target_node: Arc::downgrade(node_entry),
-                    msg_sender: tx_root.clone(),
+                    msg_sender: tx,
                 };
                 wires.push(pw);
             }
-            ports.push(Port { wires });
+            let port = Port { wires };
+            ports.push(port);
         }
 
-        Ok(BaseFlowNode {
+        Ok(Arc::new(BaseFlowNode {
             id: node_config.id,
             flow: Arc::downgrade(&self),
             name: node_config.name.clone(),
-            msg_receiver: MsgReceiverHolder::new(rx),
+            msg_tx: tx_root,
+            msg_rx: MsgReceiverHolder::new(rx),
             ports,
-        })
+        }))
     }
 }

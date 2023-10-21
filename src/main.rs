@@ -4,7 +4,7 @@ use edgelink::registry::{Registry, RegistryImpl};
 use edgelink::Result;
 use std::sync::Arc;
 use tokio::sync::RwLock as TokRwLock;
-use tokio::{spawn, time};
+use tokio::time;
 use tokio_util::sync::CancellationToken;
 
 /*
@@ -97,6 +97,11 @@ fn register_all_di_services() -> di::ServiceCollection {
     services
 }
 
+async fn run_main_task(sp: &di::ServiceProvider, cancel: CancellationToken) -> crate::Result<()> {
+    let rt = sp.clone().get_required::<Runtime>();
+    rt.run(cancel.clone()).await
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     // let m = Modal {};
@@ -109,19 +114,18 @@ async fn main() -> Result<()> {
     let cancel = CancellationToken::new();
 
     let runtime_cancel_token = cancel.clone();
-    let task = spawn(async move {
-        let rt = sp.clone().get_required::<Runtime>();
-        rt.run(runtime_cancel_token.clone()).await
-    });
 
     tokio::select! {
         _ = tokio:: signal::ctrl_c() => {
             println!("CTRL-C is pressed, cancelling all tasks...");
             cancel.cancel()
         },
-        //_ = shutdown_recv.recv() => {},
+        _ = run_main_task(&sp, runtime_cancel_token) =>  {
+            println!("Main task stopped. This should not happen!")
+        },
     }
 
+    /*
     match task.await {
         Ok(_) => {
             println!("Async task completed successfully.");
@@ -133,4 +137,7 @@ async fn main() -> Result<()> {
             Err(err.into())
         }
     }
+    */
+
+    Ok(())
 }

@@ -3,9 +3,10 @@ use crate::nodes::*;
 use crate::red::json::RedFlowNodeConfig;
 use crate::Result;
 use std::sync::Arc;
+use crate::model::*;
 
 struct DebugNode {
-    base: BaseFlowNode,
+    base: Arc<BaseFlowNode>,
 }
 
 #[async_trait]
@@ -35,21 +36,24 @@ impl FlowNodeBehavior for DebugNode {
 
     async fn process(&self, cancel: CancellationToken) {
         while !cancel.is_cancelled() {
-            let mut recv_guard = self.base().msg_receiver.rx.lock().await;
-            match recv_guard.recv().await {
-                Some(msg) => println!("收到消息：\n{:#?}", msg.as_ref()),
-                _ => {
-                    println!("咋个会已关闭");
+            match self.wait_for_msg(cancel.clone()).await {
+                Ok(msg) => println!("收到消息：\n{:#?}", msg.as_ref()),
+                Err(ref err) => {
+                    println!("Error: \n{:#?}", err);
                     break;
                 }
             }
         }
+
+        let rx = &mut self.base().msg_rx.rx.lock().await;
+        rx.close();
+        println!("DebugNode process() task has been terminated.");
     }
 }
 
 fn new_node(
     _flow: Arc<Flow>,
-    base_node: BaseFlowNode,
+    base_node: Arc<BaseFlowNode>,
     _config: &RedFlowNodeConfig,
 ) -> Arc<dyn FlowNodeBehavior> {
     let node = DebugNode { base: base_node };

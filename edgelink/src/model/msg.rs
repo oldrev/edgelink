@@ -5,8 +5,7 @@ use lazy_static::lazy_static;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::Arc;
 
-use crate::model::ElementId;
-use crate::variant::Variant;
+use crate::model::{ElementId, Variant};
 
 #[derive(Debug)]
 pub struct Msg {
@@ -16,6 +15,16 @@ pub struct Msg {
 }
 
 impl Msg {
+    pub fn with_none_payload(birth_place: ElementId) -> Arc<Self> {
+        let mut msg = Msg {
+            id: Msg::generate_id(),
+            birth_place: birth_place,
+            data: BTreeMap::new(),
+        };
+        msg.data.insert("payload".to_string(), Variant::Null);
+        Arc::new(msg)
+    }
+
     pub fn with_payload(birth_place: ElementId, payload: Variant) -> Arc<Self> {
         let mut msg = Msg {
             id: Msg::generate_id(),

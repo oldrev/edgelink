@@ -2,9 +2,10 @@ use std::sync::Arc;
 use tokio::sync::RwLock as TokRwLock;
 use tokio_util::sync::CancellationToken;
 
+use crate::model::Variant;
 use crate::flow::Flow;
 use crate::nodes::{NodeBehavior, NodeFactory};
-use crate::{registry::Registry, variant::Variant, EdgeLinkError};
+use crate::{registry::Registry, EdgeLinkError};
 
 struct FlowEngineState {
     flows: Vec<Arc<Flow>>,

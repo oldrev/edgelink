@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, HashSet};
+use std::collections::{HashSet, BTreeMap};
 use std::{fs::File, io::Read};
 
 use serde::Deserializer;
