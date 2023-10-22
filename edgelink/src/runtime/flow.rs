@@ -1,14 +1,15 @@
-use crate::model::{ElementId, Port, PortWire, Msg, Variant};
 use std::collections::BTreeMap;
 use std::sync::{Arc, Weak};
 use tokio::sync::mpsc;
+use tokio::sync::Mutex as TokMutex;
 use tokio::sync::RwLock as TokRwLock;
 use tokio_util::sync::CancellationToken;
 
-use crate::engine::FlowEngine;
-use crate::nodes::*;
-use crate::red::json::{RedFlowConfig, RedFlowNodeConfig};
-use crate::registry::Registry;
+use crate::runtime::engine::FlowEngine;
+use crate::runtime::model::{ElementId, Msg, Port, PortWire, Variant};
+use crate::runtime::nodes::*;
+use crate::runtime::red::json::{RedFlowConfig, RedFlowNodeConfig};
+use crate::runtime::registry::Registry;
 use crate::EdgeLinkError;
 
 struct FlowState {
@@ -28,6 +29,9 @@ pub struct Flow {
     pub id: ElementId,
     pub label: String,
     pub disabled: bool,
+
+    pub stopped_tx: mpsc::Sender<()>,
+    stopped_rx: TokMutex<mpsc::Receiver<()>>,
 
     shared: Arc<FlowShared>,
 }
@@ -71,7 +75,6 @@ impl Flow {
                 } else {
                     msg.clone()
                 };
-                println!("target NodeID={0}", wire.target_node_id);
                 wire.msg_sender.send(msg_to_send).await?;
                 debug_assert!(!wire.msg_sender.is_closed());
                 msg_sent = true;
@@ -143,10 +146,13 @@ impl Flow {
         flow_config: &RedFlowConfig,
         reg: Arc<dyn Registry>,
     ) -> crate::Result<Arc<Self>> {
+        let (stopped_tx, mut stopped_rx) = mpsc::channel(1);
         let flow: Arc<Flow> = Arc::new(Flow {
             id: flow_config.id,
             label: flow_config.label.clone(),
             disabled: flow_config.disabled.unwrap_or(false),
+            stopped_rx: TokMutex::new(stopped_rx),
+            stopped_tx,
             shared: Arc::new(FlowShared {
                 state: TokRwLock::new(FlowState {
                     _engine: Arc::downgrade(&engine),
@@ -211,6 +217,9 @@ impl Flow {
             let node = &state.nodes[node_id];
             node.stop(cancel.clone()).await?;
         }
+        drop(&self.stopped_tx);
+        let stopped_rx = &mut self.stopped_rx.lock().await;
+        let _ = stopped_rx.recv().await;
         Ok(())
     }
 

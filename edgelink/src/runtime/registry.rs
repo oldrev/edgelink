@@ -1,10 +1,10 @@
 use std::collections::BTreeMap;
 use std::sync::Arc;
 
-use crate::nodes::MetaNode;
+use crate::runtime::nodes::MetaNode;
 use inventory;
 
-use crate::nodes::BuiltinNodeDescriptor;
+use crate::runtime::nodes::BuiltinNodeDescriptor;
 
 pub trait Registry: Send + Sync {
     fn all(&self) -> &BTreeMap<&'static str, MetaNode>;

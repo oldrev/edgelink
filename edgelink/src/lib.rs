@@ -1,15 +1,8 @@
 use thiserror::Error;
 
-pub mod async_util;
-pub mod engine;
-pub mod flow;
-pub mod nodes;
-pub mod red;
-pub mod registry;
-pub mod shutdown;
-
-pub mod model;
 pub mod utils;
+pub mod runtime;
+pub mod shutdown;
 
 /// The `PluginRegistrar` is defined by the application and passed to `plugin_entry`. It's used
 /// for a plugin module to register itself with the application.

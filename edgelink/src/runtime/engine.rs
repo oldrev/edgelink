@@ -1,15 +1,21 @@
+use std::collections::BTreeMap;
 use std::sync::Arc;
 use tokio::sync::RwLock as TokRwLock;
+use tokio::sync::Mutex as TokMutex;
 use tokio_util::sync::CancellationToken;
+use tokio::sync::mpsc;
 
-use crate::model::Variant;
-use crate::flow::Flow;
-use crate::nodes::{NodeBehavior, NodeFactory};
-use crate::{registry::Registry, EdgeLinkError};
+use crate::runtime::model::Variant;
+use crate::runtime::flow::Flow;
+use crate::runtime::nodes::{NodeBehavior, NodeFactory};
+use crate::runtime::registry::Registry;
+use crate::EdgeLinkError;
+
+use super::model::ElementId;
 
 struct FlowEngineState {
-    flows: Vec<Arc<Flow>>,
-    global_nodes: Vec<Arc<dyn NodeBehavior>>,
+    flows: BTreeMap<ElementId, Arc<Flow>>,
+    global_nodes: BTreeMap<ElementId, Arc<dyn NodeBehavior>>,
     _context: Variant,
     _shutdown: bool,
 }
@@ -19,6 +25,8 @@ struct FlowEngineShared {
 }
 
 pub struct FlowEngine {
+    pub stopped_tx: mpsc::Sender<()>,
+    stopped_rx: TokMutex<mpsc::Receiver<()>>,
     shared: Arc<FlowEngineShared>,
 }
 
@@ -27,13 +35,16 @@ impl FlowEngine {
         reg: Arc<dyn Registry>,
         flows_json_path: &str,
     ) -> crate::Result<Arc<FlowEngine>> {
-        let json_values = crate::red::json::load_flows_json(flows_json_path)?;
+        let json_values = crate::runtime::red::json::load_flows_json(flows_json_path)?;
+        let (stopped_tx, mut stopped_rx) = mpsc::channel(1);
 
         let engine = Arc::new(FlowEngine {
+            stopped_rx: TokMutex::new(stopped_rx),
+            stopped_tx,
             shared: Arc::new(FlowEngineShared {
                 state: TokRwLock::new(FlowEngineState {
-                    flows: Vec::new(),
-                    global_nodes: Vec::new(),
+                    flows: BTreeMap::new(),
+                    global_nodes: BTreeMap::new(),
                     _context: Variant::empty_object(),
                     _shutdown: false,
                 }),
@@ -45,7 +56,7 @@ impl FlowEngine {
             // load flows
             for flow_config in json_values.flows.iter() {
                 let flow = Flow::new(engine.clone(), flow_config, reg.clone()).await?;
-                state.flows.push(flow);
+                state.flows.insert(flow.id, flow);
             }
 
             for global_config in json_values.global_nodes.iter() {
@@ -60,7 +71,7 @@ impl FlowEngine {
                             .into())
                         }
                     };
-                    state.global_nodes.push(node);
+                    state.global_nodes.insert(node.id(), node);
                 }
             }
         }
@@ -70,7 +81,7 @@ impl FlowEngine {
 
     pub async fn start(&self, cancel: CancellationToken) -> crate::Result<()> {
         let state = self.shared.state.write().await;
-        for flow in state.flows.iter() {
+        for flow in state.flows.values() {
             //let flow_lock = TokMutex::new(flow.clone());
             let flow_lock = flow.clone();
             let child_cancel = cancel.clone();
@@ -85,10 +96,15 @@ impl FlowEngine {
     }
 
     pub async fn stop(&self, cancel: CancellationToken) -> crate::Result<()> {
+        println!("Stopping all flows...");
         let state = self.shared.state.write().await;
-        for flow in state.flows.iter() {
+        for flow in state.flows.values() {
             flow.clone().stop(cancel.clone()).await?;
         }
+        drop(&self.stopped_tx);
+        let stopped_rx = &mut self.stopped_rx.lock().await;
+        let _ = stopped_rx.recv().await;
+        println!("All flows stopped.");
         Ok(())
     }
 }

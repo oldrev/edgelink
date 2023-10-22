@@ -2,7 +2,7 @@ use std::sync::{Arc, Weak};
 
 use tokio::sync::mpsc;
 
-use crate::{nodes::FlowNodeBehavior};
+use crate::runtime::nodes::FlowNodeBehavior;
 
 mod variant;
 mod msg;

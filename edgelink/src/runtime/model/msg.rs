@@ -5,7 +5,7 @@ use lazy_static::lazy_static;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::Arc;
 
-use crate::model::{ElementId, Variant};
+use crate::runtime::model::{ElementId, Variant};
 
 #[derive(Debug)]
 pub struct Msg {
