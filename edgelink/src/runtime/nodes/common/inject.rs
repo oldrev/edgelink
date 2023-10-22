@@ -56,7 +56,7 @@ impl NodeBehavior for InjectNode {
         Ok(())
     }
 
-    async fn stop(&self, _cancel: CancellationToken) -> Result<()> {
+    async fn stop(&self) -> Result<()> {
         /*
             let cron_task_wrapper_ptr = self.cron_task_wrapper.clone();
             tokio::task::spawn(async move {

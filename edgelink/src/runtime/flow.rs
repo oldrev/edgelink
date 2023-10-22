@@ -210,12 +210,12 @@ impl Flow {
         Ok(())
     }
 
-    pub(crate) async fn stop(self: Arc<Self>, cancel: CancellationToken) -> crate::Result<()> {
+    pub(crate) async fn stop(self: Arc<Self>) -> crate::Result<()> {
         let state = self.shared.state.write().await;
         println!("-- Stopping Flow (id={0})...", self.id);
         for node_id in state.nodes_ordering.iter() {
             let node = &state.nodes[node_id];
-            node.stop(cancel.clone()).await?;
+            node.stop().await?;
         }
         drop(&self.stopped_tx);
         let stopped_rx = &mut self.stopped_rx.lock().await;

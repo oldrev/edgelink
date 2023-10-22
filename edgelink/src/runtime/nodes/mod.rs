@@ -92,7 +92,7 @@ pub trait NodeBehavior: Send + Sync {
     fn id(&self) -> ElementId;
     fn name(&self) -> &str;
     async fn start(&self, cancel: CancellationToken) -> Result<()>;
-    async fn stop(&self, cancel: CancellationToken) -> Result<()>;
+    async fn stop(&self) -> Result<()>;
 }
 
 #[async_trait]

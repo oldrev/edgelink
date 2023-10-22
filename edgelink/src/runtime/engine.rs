@@ -95,11 +95,11 @@ impl FlowEngine {
         Ok(())
     }
 
-    pub async fn stop(&self, cancel: CancellationToken) -> crate::Result<()> {
+    pub async fn stop(&self) -> crate::Result<()> {
         println!("Stopping all flows...");
         let state = self.shared.state.write().await;
         for flow in state.flows.values() {
-            flow.clone().stop(cancel.clone()).await?;
+            flow.clone().stop().await?;
         }
         drop(&self.stopped_tx);
         let stopped_rx = &mut self.stopped_rx.lock().await;

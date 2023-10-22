@@ -24,7 +24,7 @@ impl NodeBehavior for DebugNode {
         Ok(())
     }
 
-    async fn stop(&self, _cancel: CancellationToken) -> Result<()> {
+    async fn stop(&self) -> Result<()> {
         Ok(())
     }
 }
