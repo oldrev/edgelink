@@ -12,6 +12,8 @@ use crate::runtime::red::json::{RedFlowConfig, RedFlowNodeConfig};
 use crate::runtime::registry::Registry;
 use crate::EdgeLinkError;
 
+const NODE_MSG_CHANNEL_CAPACITY: usize = 32;
+
 struct FlowState {
     nodes: BTreeMap<ElementId, Arc<dyn FlowNodeBehavior>>,
     nodes_ordering: Vec<ElementId>,
@@ -229,7 +231,7 @@ impl Flow {
         node_config: &RedFlowNodeConfig,
     ) -> crate::Result<Arc<BaseFlowNode>> {
         let mut ports = Vec::new();
-        let (tx_root, rx) = mpsc::channel(100);
+        let (tx_root, rx) = mpsc::channel(NODE_MSG_CHANNEL_CAPACITY);
         // Convert the Node-RED wires elements to ours
         for red_port in node_config.wires.iter() {
             let mut wires = Vec::new();

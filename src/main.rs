@@ -66,10 +66,10 @@ impl Runtime {
             .await
             .unwrap();
         *engine_holder = Option::Some(engine.clone());
-        engine.start(cancel.clone()).await.unwrap();
+        let _ = engine.start(cancel.clone()).await.unwrap();
         let wait_cancel = cancel;
         wait_cancel.cancelled().await;
-        engine.stop().await;
+        let _ = engine.stop().await;
         println!("The flows engine stopped.");
     }
 
