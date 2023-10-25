@@ -28,6 +28,7 @@ pub struct FlowEngine {
     pub stopped_tx: mpsc::Sender<()>,
     stopped_rx: TokMutex<mpsc::Receiver<()>>,
     shared: Arc<FlowEngineShared>,
+    stop_token: CancellationToken,
 }
 
 impl FlowEngine {
@@ -41,6 +42,7 @@ impl FlowEngine {
         let engine = Arc::new(FlowEngine {
             stopped_rx: TokMutex::new(stopped_rx),
             stopped_tx,
+            stop_token: CancellationToken::new(),
             shared: Arc::new(FlowEngineShared {
                 state: TokRwLock::new(FlowEngineState {
                     flows: BTreeMap::new(),
@@ -79,15 +81,14 @@ impl FlowEngine {
         Ok(engine)
     }
 
-    pub async fn start(&self, cancel: CancellationToken) -> crate::Result<()> {
+    pub async fn start(&self) -> crate::Result<()> {
         let state = self.shared.state.write().await;
         for flow in state.flows.values() {
             //let flow_lock = TokMutex::new(flow.clone());
             let flow_lock = flow.clone();
-            let child_cancel = cancel.clone();
             tokio::task::spawn(async move {
                 let scoped_flow = flow_lock;
-                scoped_flow.start(child_cancel).await
+                scoped_flow.start().await
             })
             .await??;
         }
@@ -97,6 +98,7 @@ impl FlowEngine {
 
     pub async fn stop(&self) -> crate::Result<()> {
         println!("Stopping all flows...");
+        self.stop_token.cancel();
         let state = self.shared.state.write().await;
         for flow in state.flows.values() {
             flow.clone().stop().await?;

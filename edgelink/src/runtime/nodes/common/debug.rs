@@ -19,14 +19,6 @@ impl NodeBehavior for DebugNode {
     fn name(&self) -> &str {
         &self.base.name
     }
-
-    async fn start(&self, _cancel: CancellationToken) -> Result<()> {
-        Ok(())
-    }
-
-    async fn stop(&self) -> Result<()> {
-        Ok(())
-    }
 }
 
 #[async_trait]
@@ -35,9 +27,9 @@ impl FlowNodeBehavior for DebugNode {
         &self.base
     }
 
-    async fn process(&self, cancel: CancellationToken) {
-        while !cancel.is_cancelled() {
-            match self.wait_for_msg(cancel.clone()).await {
+    async fn run(&self, stop_token: CancellationToken) {
+        while !stop_token.is_cancelled() {
+            match self.wait_for_msg(stop_token.clone()).await {
                 Ok(msg) => println!("收到消息：\n{:#?}", msg.as_ref()),
                 Err(ref err) => {
                     println!("Error: \n{:#?}", err);

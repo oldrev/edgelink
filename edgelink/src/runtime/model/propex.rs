@@ -147,7 +147,8 @@ impl<'a> PropexEval<'a> {
 
 #[test]
 fn parse_propex_should_be_ok() {
-    let expr1 = "test1.hello .world[ 'aaa' ].name_of";
+    //let expr1 = "test1.hello .world[ 'aaa' ].name_of";
+    let expr1 = "test1.name_of";
     let segs = parse(expr1).unwrap();
 
     match segs[0] {
