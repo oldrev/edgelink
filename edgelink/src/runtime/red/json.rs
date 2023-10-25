@@ -1,4 +1,4 @@
-use std::collections::{HashSet, BTreeMap};
+use std::collections::{BTreeMap, HashSet};
 use std::{fs::File, io::Read};
 
 use serde::Deserializer;
@@ -11,7 +11,7 @@ use crate::runtime::model::*;
 use crate::{EdgeLinkError, Result};
 
 /// Loading 'flows.js'
-pub fn load_flows_json(flows_json_path: &str) -> Result<JsonValues> {
+pub fn load_flows_json(flows_json_path: &str) -> crate::Result<JsonValues> {
     let mut file = File::open(flows_json_path)?;
     let mut contents = String::new();
     file.read_to_string(&mut contents)?;
@@ -19,7 +19,7 @@ pub fn load_flows_json(flows_json_path: &str) -> Result<JsonValues> {
     load_flows_json_value(&root_jv)
 }
 
-pub fn load_flows_json_value(root_jv: &JsonValue) -> Result<JsonValues> {
+pub fn load_flows_json_value(root_jv: &JsonValue) -> crate::Result<JsonValues> {
     let all_values = root_jv.as_array().ok_or(EdgeLinkError::BadFlowsJson(
         "The root node must be a Array".to_string(),
     ))?;
@@ -217,4 +217,55 @@ impl<'de> Deserialize<'de> for ElementId {
             other => Err(other).map_err(D::Error::custom),
         }?
     }
+}
+
+#[derive(Debug)]
+struct RedPropertyTriple {
+    pub p: String,
+    pub vt: String,
+    pub v: crate::runtime::model::Variant,
+}
+
+fn red_property_triple_parse(jv: &serde_json::Value) -> crate::Result<RedPropertyTriple> {
+    let triple = jv
+        .as_object()
+        .ok_or(EdgeLinkError::BadFlowsJson("Bad JSON".to_string()))?;
+    let v = triple
+        .get("v")
+        .ok_or(EdgeLinkError::BadFlowsJson("Bad JSON".to_string()))?
+        .as_str()
+        .ok_or(EdgeLinkError::BadFlowsJson("Bad JSON".to_string()))?;
+    Ok(RedPropertyTriple {
+        p: triple
+            .get("p")
+            .ok_or(EdgeLinkError::BadFlowsJson("Bad JSON".to_string()))?
+            .as_str()
+            .ok_or(EdgeLinkError::BadFlowsJson("Bad JSON".to_string()))?
+            .to_string(),
+        vt: triple
+            .get("vt")
+            .ok_or(EdgeLinkError::BadFlowsJson("Bad JSON".to_string()))?
+            .as_str()
+            .ok_or(EdgeLinkError::BadFlowsJson("Bad JSON".to_string()))?
+            .to_string(),
+        v: Variant::String(v.to_string()),
+    })
+}
+
+impl RedPropertyTriple {
+
+    pub fn collection_from_json_value(
+        jv: &serde_json::Value,
+    ) -> crate::Result<Vec<RedPropertyTriple>> {
+        if let Some(objects) = jv.as_array() {
+            let entries: crate::Result<Vec<RedPropertyTriple>> = objects
+                .iter()
+                .map(|object| red_property_triple_parse(&object))
+                .collect();
+            entries
+        } else {
+            Err(EdgeLinkError::BadFlowsJson("Bad JSON".to_string()).into())
+        }
+    }
+
 }

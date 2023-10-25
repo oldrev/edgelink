@@ -30,6 +30,7 @@ pub struct Flow {
     pub label: String,
     pub disabled: bool,
 
+    pub stop_token: CancellationToken,
     pub stopped_tx: mpsc::Sender<()>,
     stopped_rx: TokMutex<mpsc::Receiver<()>>,
 
@@ -161,6 +162,7 @@ impl Flow {
                     _context: Variant::empty_object(),
                 }),
             }),
+            stop_token: CancellationToken::new(),
         });
 
         let scoped_flow = flow.clone();
@@ -194,18 +196,17 @@ impl Flow {
         Ok(flow)
     }
 
-    pub(crate) async fn start(self: Arc<Self>, cancel: CancellationToken) -> crate::Result<()> {
+    pub(crate) async fn start(self: Arc<Self>) -> crate::Result<()> {
         let state = self.shared.state.write().await;
         println!("-- Starting Flow (id={0})...", self.id);
         // 启动是按照节点依赖顺序的正序
         for node_id in state.nodes_ordering.iter() {
             let node = state.nodes[node_id].clone();
             println!("---- Starting Node (id='{0}')...", node.id());
-            node.start(cancel.clone()).await?;
             // Start the async-task of each flow node
-            let node_task_cancel = cancel.clone();
             let node_to_run = node.clone();
-            tokio::task::spawn(async move { node_to_run.process(node_task_cancel).await });
+            let child_stop_token = self.stop_token.child_token();
+            tokio::task::spawn(async move { node_to_run.run(child_stop_token).await });
         }
         Ok(())
     }
@@ -213,10 +214,7 @@ impl Flow {
     pub(crate) async fn stop(self: Arc<Self>) -> crate::Result<()> {
         let state = self.shared.state.write().await;
         println!("-- Stopping Flow (id={0})...", self.id);
-        for node_id in state.nodes_ordering.iter() {
-            let node = &state.nodes[node_id];
-            node.stop().await?;
-        }
+        self.stop_token.cancel();
         drop(&self.stopped_tx);
         let stopped_rx = &mut self.stopped_rx.lock().await;
         let _ = stopped_rx.recv().await;

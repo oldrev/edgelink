@@ -18,7 +18,7 @@ impl Msg {
     pub fn with_none_payload(birth_place: ElementId) -> Arc<Self> {
         let mut msg = Msg {
             id: Msg::generate_id(),
-            birth_place: birth_place,
+            birth_place,
             data: BTreeMap::new(),
         };
         msg.data.insert("payload".to_string(), Variant::Null);
@@ -28,7 +28,7 @@ impl Msg {
     pub fn with_payload(birth_place: ElementId, payload: Variant) -> Arc<Self> {
         let mut msg = Msg {
             id: Msg::generate_id(),
-            birth_place: birth_place,
+            birth_place,
             data: BTreeMap::new(),
         };
         msg.data.insert("payload".to_string(), payload);

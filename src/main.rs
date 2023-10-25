@@ -66,7 +66,7 @@ impl Runtime {
             .await
             .unwrap();
         *engine_holder = Option::Some(engine.clone());
-        engine.start(cancel.clone()).await.unwrap();
+        engine.start().await.unwrap();
         let wait_cancel = cancel;
         wait_cancel.cancelled().await;
         engine.stop().await;
@@ -84,8 +84,8 @@ impl Runtime {
     }
 
     pub async fn run(self: Arc<Self>, cancel: CancellationToken) -> crate::Result<()> {
-        let task1 = tokio::task::spawn(self.clone().main_flow_task(cancel.child_token()));
-        let task2 = tokio::task::spawn(self.clone().idle_task(cancel.child_token()));
+        let task1 = tokio::task::spawn(self.clone().main_flow_task(cancel.clone()));
+        let task2 = tokio::task::spawn(self.clone().idle_task(cancel.clone()));
         _ = tokio::join!(task1, task2);
         Ok(())
     }

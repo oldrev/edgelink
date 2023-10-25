@@ -91,15 +91,13 @@ impl MsgReceiverHolder {
 pub trait NodeBehavior: Send + Sync {
     fn id(&self) -> ElementId;
     fn name(&self) -> &str;
-    async fn start(&self, cancel: CancellationToken) -> Result<()>;
-    async fn stop(&self) -> Result<()>;
 }
 
 #[async_trait]
 pub trait FlowNodeBehavior: NodeBehavior {
     fn base(&self) -> &BaseFlowNode;
 
-    async fn process(&self, cancel: CancellationToken);
+    async fn run(&self, stop_token: CancellationToken);
 
     async fn wait_for_msg(&self, cancel: CancellationToken) -> crate::Result<Arc<Msg>> {
         select! {
