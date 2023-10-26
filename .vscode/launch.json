@@ -63,18 +63,12 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug integration test 'engine_test'",
+            "name": "Debug integration test 'all'",
             "cargo": {
                 "args": [
                     "test",
-                    "--no-run",
-                    "--test=engine_test",
-                    "--package=edgelink"
-                ],
-                "filter": {
-                    "name": "engine_test",
-                    "kind": "test"
-                }
+                    "--all",
+                ]
             },
             "args": [],
             "cwd": "${workspaceFolder}"

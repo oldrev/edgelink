@@ -144,6 +144,7 @@ dependencies = [
  "lazy_static",
  "log",
  "more-di",
+ "nom",
  "serde",
  "serde_json",
  "thiserror",
