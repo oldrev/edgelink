@@ -122,35 +122,21 @@ fn parse_sub_fragment(i: &str) -> IResult<&str, PropexSegment, VerboseError<&str
 }
 
 fn parse_nav(i: &str) -> IResult<&str, Vec<PropexSegment>, VerboseError<&str>> {
-    let mut segs = Vec::new();
-    let p = pair(parse_first_fragment, many0(parse_sub_fragment)).parse(i)?;
-    segs.push(p.1 .0.clone());
-    for x in p.1 .1.iter() {
-        segs.push(*x);
-    }
-    // parse_first_fragment.map(move |x| segs.push(x)).parse(i)?;
+    let (_, (first, rest)) = pair(parse_first_fragment, many0(parse_sub_fragment)).parse(i)?;
+    let mut segs = Vec::with_capacity(rest.len() + 1);
+    segs.push(first);
+    segs.extend(rest);
     Ok((i, segs))
 }
 
 pub fn parse(expr: &str) -> Result<Vec<PropexSegment<'_>>, PropexError> {
-    let mut segs = Vec::new();
-    let mut _levels: usize = 0;
-
-    /*
-    let mut lex = Token::lexer(expr);
-
-    while let Some(token) = lex.next() {
-        let seg = match token {
-            Ok(Token::Dot) => continue,
-            Ok(Token::DoubleQuotedString) => PropexSegment::StringIndex(lex.slice()),
-            Err(err) => return Err(PropexError::BadSyntax("Syntax error".to_string())),
-            _ => PropexSegment::IntegerIndex(123),
-        };
-        segs.push(seg);
+    if expr.len() == 0 {
+        return Err(PropexError::BadArguments);
     }
-    */
-
-    Ok(segs)
+    match parse_nav(expr) {
+        Ok((_, segs)) => Ok(segs),
+        Err(ve) => Err(PropexError::BadSyntax(ve.to_string())),
+    }
 }
 
 #[test]
@@ -167,7 +153,7 @@ fn parse_primitives_should_be_ok() {
     let (_, parsed) = parse_property(expr).unwrap();
     assert_eq!(PropexSegment::StringIndex("_test_1"), parsed);
 
-    let expr = "['aaa']";
+    let expr = " [ 'aaa']";
     let (_, parsed) = parse_index(expr).unwrap();
     assert_eq!(PropexSegment::StringIndex("aaa"), parsed);
 
@@ -179,7 +165,7 @@ fn parse_primitives_should_be_ok() {
 #[test]
 fn parse_propex_should_be_ok() {
     let expr1 = "test1.hello .world['aaa'][333][\"bb\"].name_of";
-    let segs = parse_nav(expr1).unwrap().1;
+    let segs = parse(expr1).unwrap();
 
     assert_eq!(7, segs.len());
     assert_eq!(PropexSegment::StringIndex("test1"), segs[0]);
@@ -191,3 +177,18 @@ fn parse_propex_should_be_ok() {
     assert_eq!(PropexSegment::StringIndex("name_of"), segs[6]);
 }
 
+#[test]
+fn parse_propex_with_first_index_accessing_should_be_ok() {
+    let expr1 = "['test1'].hello .world['aaa'].see[333][\"bb\"].name_of";
+    let segs = parse(expr1).unwrap();
+
+    assert_eq!(8, segs.len());
+    assert_eq!(PropexSegment::StringIndex("test1"), segs[0]);
+    assert_eq!(PropexSegment::StringIndex("hello"), segs[1]);
+    assert_eq!(PropexSegment::StringIndex("world"), segs[2]);
+    assert_eq!(PropexSegment::StringIndex("aaa"), segs[3]);
+    assert_eq!(PropexSegment::StringIndex("see"), segs[4]);
+    assert_eq!(PropexSegment::IntegerIndex(333), segs[5]);
+    assert_eq!(PropexSegment::StringIndex("bb"), segs[6]);
+    assert_eq!(PropexSegment::StringIndex("name_of"), segs[7]);
+}
