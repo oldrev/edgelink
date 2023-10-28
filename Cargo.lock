@@ -147,6 +147,7 @@ dependencies = [
  "nom",
  "serde",
  "serde_json",
+ "smallvec",
  "thiserror",
  "tokio",
  "tokio-util",
