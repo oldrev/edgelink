@@ -1,3 +1,4 @@
+use log;
 use std::collections::BTreeMap;
 use std::sync::Arc;
 use tokio::sync::RwLock as TokRwLock;
@@ -92,12 +93,12 @@ impl FlowEngine {
             })
             .await??;
         }
-        println!("All flows started.");
+        log::info!("All flows started.");
         Ok(())
     }
 
     pub async fn stop(&self) -> crate::Result<()> {
-        println!("Stopping all flows...");
+        log::info!("Stopping all flows...");
         self.stop_token.cancel();
         let state = self.shared.state.write().await;
         for flow in state.flows.values() {
@@ -106,7 +107,7 @@ impl FlowEngine {
         drop(&self.stopped_tx);
         let stopped_rx = &mut self.stopped_rx.lock().await;
         let _ = stopped_rx.recv().await;
-        println!("All flows stopped.");
+        log::info!("All flows stopped.");
         Ok(())
     }
 }

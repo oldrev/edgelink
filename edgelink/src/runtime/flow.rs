@@ -1,3 +1,4 @@
+use log;
 use std::collections::BTreeMap;
 use std::sync::{Arc, Weak};
 use tokio::sync::mpsc;
@@ -200,11 +201,11 @@ impl Flow {
 
     pub(crate) async fn start(self: Arc<Self>) -> crate::Result<()> {
         let state = self.shared.state.write().await;
-        println!("-- Starting Flow (id={0})...", self.id);
+        log::info!("-- Starting Flow (id={0})...", self.id);
         // 启动是按照节点依赖顺序的正序
         for node_id in state.nodes_ordering.iter() {
             let node = state.nodes[node_id].clone();
-            println!("---- Starting Node (id='{0}')...", node.id());
+            log::info!("---- Starting Node (id='{0}')...", node.id());
             // Start the async-task of each flow node
             let node_to_run = node.clone();
             let child_stop_token = self.stop_token.child_token();
@@ -215,7 +216,7 @@ impl Flow {
 
     pub(crate) async fn stop(self: Arc<Self>) -> crate::Result<()> {
         let state = self.shared.state.write().await;
-        println!("-- Stopping Flow (id={0})...", self.id);
+        log::info!("-- Stopping Flow (id={0})...", self.id);
         self.stop_token.cancel();
         drop(&self.stopped_tx);
         let stopped_rx = &mut self.stopped_rx.lock().await;

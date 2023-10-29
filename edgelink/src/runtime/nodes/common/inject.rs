@@ -1,3 +1,4 @@
+use log;
 use std::sync::{Arc, Weak};
 use std::time::Duration;
 
@@ -55,14 +56,14 @@ impl InjectNode {
                 }
                 Err(ref err) => match err.downcast_ref().unwrap() {
                     EdgeLinkError::TaskCancelled => {
-                        println!("Inject task has been cancelled.");
+                        log::warn!("Inject task has been cancelled.");
                         break;
                     }
                     _ => break,
                 },
             };
         }
-        println!("The CRON task has been stopped.");
+        log::info!("The CRON task has been stopped.");
     }
 
     async fn repeat_task(&self, stop_token: CancellationToken) {
@@ -84,7 +85,7 @@ impl InjectNode {
                 }
                 Err(ref err) => match err.downcast_ref().unwrap() {
                     EdgeLinkError::TaskCancelled => {
-                        println!("Inject task has been cancelled.");
+                        log::warn!("Inject task has been cancelled.");
                         break;
                     }
                     _ => break,

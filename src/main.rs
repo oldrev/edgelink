@@ -4,9 +4,13 @@ use tokio::time;
 use tokio_util::sync::CancellationToken;
 // use libloading::Library;
 
+use log4rs;
+use log;
+
 use edgelink::runtime::engine::FlowEngine;
 use edgelink::runtime::registry::{Registry, RegistryImpl};
 use edgelink::Result;
+
 
 /*
 use core::{Plugin, PluginRegistrar};
@@ -46,6 +50,9 @@ fn main() {
 }
 
 */
+pub(crate) fn log_init() {
+    log4rs::init_file("log.toml", Default::default()).unwrap();
+}
 
 struct Runtime {
     registry: Arc<dyn Registry>,
@@ -70,14 +77,14 @@ impl Runtime {
         let wait_cancel = cancel;
         wait_cancel.cancelled().await;
         let _ = engine.stop().await;
-        println!("The flows engine stopped.");
+        log::info!("The flows engine stopped.");
     }
 
     async fn idle_task(self: Arc<Self>, cancel: CancellationToken) {
         loop {
             time::sleep(tokio::time::Duration::from_secs(1)).await;
             if cancel.is_cancelled() {
-                println!("Cancelling the idle task...");
+                log::info!("Cancelling the idle task...");
                 break;
             }
         }
@@ -109,6 +116,8 @@ async fn run_main_task(sp: &di::ServiceProvider, cancel: CancellationToken) -> c
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    log_init();
+
     // let m = Modal {};
     // m.run().await;
     println!("EdgeLink 1.0");
@@ -126,7 +135,7 @@ async fn main() -> Result<()> {
             cancel.cancel()
         },
         _ = run_main_task(&sp, runtime_cancel_token) =>  {
-            println!("Main task stopped. This should not happen!")
+            log::error!("Main task stopped. This should not happen!")
         },
     }
 

@@ -1,3 +1,4 @@
+use log;
 use std::sync::Arc;
 
 use crate::Result;
@@ -30,9 +31,9 @@ impl FlowNodeBehavior for DebugNode {
     async fn run(&self, stop_token: CancellationToken) {
         while !stop_token.is_cancelled() {
             match self.wait_for_msg(stop_token.clone()).await {
-                Ok(msg) => println!("收到消息：\n{:#?}", msg.as_ref()),
+                Ok(msg) => log::info!("收到消息：\n{:#?}", msg.as_ref()),
                 Err(ref err) => {
-                    println!("Error: \n{:#?}", err);
+                    log::error!("Error: \n{:#?}", err);
                     break;
                 }
             }
@@ -40,7 +41,7 @@ impl FlowNodeBehavior for DebugNode {
 
         let rx = &mut self.base().msg_rx.rx.lock().await;
         rx.close();
-        println!("DebugNode process() task has been terminated.");
+        log::debug!("DebugNode process() task has been terminated.");
     }
 }
 

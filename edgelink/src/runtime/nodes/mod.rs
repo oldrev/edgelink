@@ -1,3 +1,4 @@
+use log;
 use async_trait::async_trait;
 use tokio::select;
 use std::fmt;
@@ -67,7 +68,7 @@ impl BaseFlowNode {
         match rx.recv().await {
             Some(msg) => Ok(msg),
             None => {
-                println!("咋个会收不到");
+                log::error!("咋个会收不到");
                 Err(EdgeLinkError::TaskCancelled.into())
             }
         }
