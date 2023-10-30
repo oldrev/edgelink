@@ -302,24 +302,38 @@ impl From<&[u8]> for Variant {
     }
 }
 
-/*
-pub trait VariantObject {
-    fn get_by_str(&self, key: &str) -> Option<&Variant>;
-}
-
-impl VariantObject for BTreeMap<String, Variant> {
-    fn get_by_str(&self, key: &str) -> Option<&Variant> {
-        self.get(key)
+impl From<serde_json::Value> for Variant {
+    fn from(jv: serde_json::Value) -> Self {
+        match jv {
+            serde_json::Value::Null => Variant::Null,
+            serde_json::Value::Bool(boolean) => Variant::from(boolean),
+            serde_json::Value::Number(number) => {
+                if number.is_i64() {
+                    Variant::Integer(number.as_i64().unwrap())
+                } else if number.is_u64() {
+                    Variant::Integer(number.as_i64().unwrap())
+                } else {
+                    Variant::Float(number.as_f64().unwrap())
+                }
+            }
+            serde_json::Value::String(string) => Variant::String(string.to_owned()),
+            serde_json::Value::Array(array) => {
+                Variant::Array(array.iter().map(|e| Variant::from(e)).collect())
+            }
+            serde_json::Value::Object(object) => {
+                let new_map: BTreeMap<String, Variant> =
+                    object.iter().map(|(k, v)| (k.to_owned(), Variant::from(v))).collect();
+                Variant::Object(new_map)
+            }
+        }
     }
 }
-
-*/
 
 impl From<&serde_json::Value> for Variant {
     fn from(jv: &serde_json::Value) -> Self {
         match jv {
             serde_json::Value::Null => Variant::Null,
-            serde_json::Value::Bool(boolean) => Variant::Bool(*boolean),
+            serde_json::Value::Bool(boolean) => Variant::from(*boolean),
             serde_json::Value::Number(number) => {
                 if number.is_i64() {
                     Variant::Integer(number.as_i64().unwrap())
@@ -330,8 +344,14 @@ impl From<&serde_json::Value> for Variant {
                 }
             }
             serde_json::Value::String(string) => Variant::String(string.clone()),
-            serde_json::Value::Array(array) => todo!(),
-            serde_json::Value::Object(object) => todo!(),
+            serde_json::Value::Array(array) => {
+                Variant::Array(array.iter().map(|e| Variant::from(e)).collect())
+            }
+            serde_json::Value::Object(object) => {
+                let new_map: BTreeMap<String, Variant> =
+                    object.iter().map(|(k, v)| (k.clone(), Variant::from(v))).collect();
+                Variant::Object(new_map)
+            }
         }
     }
 }
