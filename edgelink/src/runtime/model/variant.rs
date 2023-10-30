@@ -199,7 +199,7 @@ impl Variant {
                 let mut bytes = Vec::with_capacity(array.len());
                 for e in array.iter() {
                     if let Some(byte) = e.as_i64() {
-                        if byte < 0 || byte > 0xFF {
+                        if !(0..=0xFF).contains(&byte) {
                             return Err(EdgeLinkError::NotSupported(
                                 "Invalid byte value".to_owned(),
                             )
@@ -216,11 +216,7 @@ impl Variant {
                 Ok(Variant::Bytes(bytes))
             }
             serde_json::Value::String(string) => Ok(Variant::from(string.as_bytes())),
-            _ => {
-                return Err(
-                    EdgeLinkError::NotSupported("Invalid byte JSON Value".to_owned()).into(),
-                )
-            }
+            _ => Err(EdgeLinkError::NotSupported("Invalid byte JSON Value".to_owned()).into()),
         }
     }
 }
@@ -308,9 +304,7 @@ impl From<serde_json::Value> for Variant {
             serde_json::Value::Null => Variant::Null,
             serde_json::Value::Bool(boolean) => Variant::from(boolean),
             serde_json::Value::Number(number) => {
-                if number.is_i64() {
-                    Variant::Integer(number.as_i64().unwrap())
-                } else if number.is_u64() {
+                if number.is_i64() || number.is_u64() {
                     Variant::Integer(number.as_i64().unwrap())
                 } else {
                     Variant::Float(number.as_f64().unwrap())
@@ -318,11 +312,13 @@ impl From<serde_json::Value> for Variant {
             }
             serde_json::Value::String(string) => Variant::String(string.to_owned()),
             serde_json::Value::Array(array) => {
-                Variant::Array(array.iter().map(|e| Variant::from(e)).collect())
+                Variant::Array(array.iter().map(Variant::from).collect())
             }
             serde_json::Value::Object(object) => {
-                let new_map: BTreeMap<String, Variant> =
-                    object.iter().map(|(k, v)| (k.to_owned(), Variant::from(v))).collect();
+                let new_map: BTreeMap<String, Variant> = object
+                    .iter()
+                    .map(|(k, v)| (k.to_owned(), Variant::from(v)))
+                    .collect();
                 Variant::Object(new_map)
             }
         }
@@ -345,11 +341,13 @@ impl From<&serde_json::Value> for Variant {
             }
             serde_json::Value::String(string) => Variant::String(string.clone()),
             serde_json::Value::Array(array) => {
-                Variant::Array(array.iter().map(|e| Variant::from(e)).collect())
+                Variant::Array(array.iter().map(Variant::from).collect())
             }
             serde_json::Value::Object(object) => {
-                let new_map: BTreeMap<String, Variant> =
-                    object.iter().map(|(k, v)| (k.clone(), Variant::from(v))).collect();
+                let new_map: BTreeMap<String, Variant> = object
+                    .iter()
+                    .map(|(k, v)| (k.clone(), Variant::from(v)))
+                    .collect();
                 Variant::Object(new_map)
             }
         }

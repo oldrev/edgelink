@@ -1,8 +1,8 @@
-use log;
 use async_trait::async_trait;
-use tokio::select;
+use log;
 use std::fmt;
 use std::sync::{Arc, Weak};
+use tokio::select;
 use tokio::sync::Mutex as TokMutex;
 use tokio_util::sync::CancellationToken;
 
@@ -38,10 +38,15 @@ impl fmt::Display for NodeKind {
     }
 }
 
+type GlobalNodeFactoryFn = fn(Arc<FlowEngine>, &RedGlobalNodeConfig) -> Arc<dyn NodeBehavior>;
+
+type FlowNodeFactoryFn =
+    fn(Arc<Flow>, Arc<BaseFlowNode>, &RedFlowNodeConfig) -> Arc<dyn FlowNodeBehavior>;
+
 #[derive(Clone, Copy)]
 pub enum NodeFactory {
-    Global(fn(Arc<FlowEngine>, &RedGlobalNodeConfig) -> Arc<dyn NodeBehavior>),
-    Flow(fn(Arc<Flow>, Arc<BaseFlowNode>, &RedFlowNodeConfig) -> Arc<dyn FlowNodeBehavior>),
+    Global(GlobalNodeFactoryFn),
+    Flow(FlowNodeFactoryFn),
 }
 
 #[derive(Clone, Copy)]

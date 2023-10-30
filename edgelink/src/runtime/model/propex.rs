@@ -130,7 +130,7 @@ fn parse_nav(i: &str) -> IResult<&str, Vec<PropexSegment>, VerboseError<&str>> {
 }
 
 pub fn parse(expr: &str) -> Result<Vec<PropexSegment<'_>>, PropexError> {
-    if expr.len() == 0 {
+    if expr.is_empty() {
         return Err(PropexError::BadArguments);
     }
     match parse_nav(expr) {

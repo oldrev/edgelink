@@ -253,7 +253,7 @@ impl<'a> RedPropertyTriple<'a> {
         if let Some(objects) = jv.as_array() {
             let entries: crate::Result<Vec<RedPropertyTriple>> = objects
                 .iter()
-                .map(|object| parse_property_triple(&object))
+                .map(parse_property_triple)
                 .collect();
             entries
         } else {
