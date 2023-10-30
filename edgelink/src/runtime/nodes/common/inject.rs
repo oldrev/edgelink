@@ -1,6 +1,9 @@
-use log;
+use std::str::FromStr;
 use std::sync::{Arc, Weak};
 use std::time::Duration;
+
+use cron::Schedule;
+use log;
 
 use crate::runtime::flow::Flow;
 use crate::runtime::model::*;
@@ -9,15 +12,17 @@ use crate::runtime::nodes::*;
 use crate::EdgeLinkError;
 use crate::Result;
 
-struct NodeConfig {
+#[derive(Debug, Clone)]
+struct InjectNodeConfig {
     repeat: Option<u64>,
-    cron: Option<String>,
+    cron: Option<cron::Schedule>,
     once: bool,
     once_delay: Option<u64>,
 }
 
 struct InjectNode {
     base: Arc<BaseFlowNode>,
+    config: InjectNodeConfig,
 }
 
 impl InjectNode {
@@ -92,6 +97,7 @@ impl InjectNode {
                 },
             };
         }
+        log::info!("The `repeat` task has been stopped.");
     }
 }
 
@@ -122,7 +128,28 @@ fn new_node(
     base_node: Arc<BaseFlowNode>,
     _config: &RedFlowNodeConfig,
 ) -> Arc<dyn FlowNodeBehavior> {
-    let node = InjectNode { base: base_node };
+    let config = InjectNodeConfig {
+        repeat: _config.json.get("repeat").and_then(|v| v.as_u64()),
+        cron: _config.json.get("crontab").and_then(|v| {
+            v.as_str().and_then(|ct| {
+                if let Ok(s) = Schedule::from_str(ct) {
+                    Some(s)
+                } else {
+                    None
+                }
+            })
+        }),
+        once: _config.json.get("once").unwrap().as_bool().unwrap(),
+        once_delay: _config
+            .json
+            .get("onceDelay")
+            .and_then(|v| v.as_f64().map(|f| (f * 1000.0).round() as u64)),
+    };
+
+    let node = InjectNode {
+        base: base_node,
+        config,
+    };
     Arc::new(node)
 }
 

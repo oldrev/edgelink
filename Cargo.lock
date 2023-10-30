@@ -171,6 +171,7 @@ name = "edgelink"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "cron",
  "inventory",
  "lazy_static",
  "log",
