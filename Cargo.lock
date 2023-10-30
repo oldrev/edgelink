@@ -176,6 +176,7 @@ dependencies = [
  "log",
  "more-di",
  "nom",
+ "regex",
  "serde",
  "serde_json",
  "smallvec",

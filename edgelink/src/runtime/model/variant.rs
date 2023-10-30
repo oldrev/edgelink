@@ -1,5 +1,7 @@
 use std::collections::BTreeMap;
 
+use crate::EdgeLinkError;
+
 #[non_exhaustive]
 #[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub enum Variant {
@@ -190,6 +192,37 @@ impl Variant {
             other => Err(other),
         }
     }
+
+    pub fn bytes_from_json_value(jv: &serde_json::Value) -> crate::Result<Variant> {
+        match jv {
+            serde_json::Value::Array(array) => {
+                let mut bytes = Vec::with_capacity(array.len());
+                for e in array.iter() {
+                    if let Some(byte) = e.as_i64() {
+                        if byte < 0 || byte > 0xFF {
+                            return Err(EdgeLinkError::NotSupported(
+                                "Invalid byte value".to_owned(),
+                            )
+                            .into());
+                        }
+                        bytes.push(byte as u8)
+                    } else {
+                        return Err(EdgeLinkError::NotSupported(
+                            "Invalid byte JSON value type".to_owned(),
+                        )
+                        .into());
+                    }
+                }
+                Ok(Variant::Bytes(bytes))
+            }
+            serde_json::Value::String(string) => Ok(Variant::from(string.as_bytes())),
+            _ => {
+                return Err(
+                    EdgeLinkError::NotSupported("Invalid byte JSON Value".to_owned()).into(),
+                )
+            }
+        }
+    }
 }
 
 macro_rules! implfrom {
@@ -215,7 +248,6 @@ implfrom! {
     Integer(i8),
 
     Bytes(Vec<u8>),
-    Bytes(&[u8]),
 
     Float(f64),
     Float(f32),
@@ -264,6 +296,12 @@ impl From<&[(&str, Variant)]> for Variant {
     }
 }
 
+impl From<&[u8]> for Variant {
+    fn from(array: &[u8]) -> Self {
+        Variant::Bytes(array.to_vec())
+    }
+}
+
 /*
 pub trait VariantObject {
     fn get_by_str(&self, key: &str) -> Option<&Variant>;
@@ -276,6 +314,27 @@ impl VariantObject for BTreeMap<String, Variant> {
 }
 
 */
+
+impl From<&serde_json::Value> for Variant {
+    fn from(jv: &serde_json::Value) -> Self {
+        match jv {
+            serde_json::Value::Null => Variant::Null,
+            serde_json::Value::Bool(boolean) => Variant::Bool(*boolean),
+            serde_json::Value::Number(number) => {
+                if number.is_i64() {
+                    Variant::Integer(number.as_i64().unwrap())
+                } else if number.is_u64() {
+                    Variant::Integer(number.as_i64().unwrap())
+                } else {
+                    Variant::Float(number.as_f64().unwrap())
+                }
+            }
+            serde_json::Value::String(string) => Variant::String(string.clone()),
+            serde_json::Value::Array(array) => todo!(),
+            serde_json::Value::Object(object) => todo!(),
+        }
+    }
+}
 
 #[test]
 fn variant_clone_should_be_ok() {
