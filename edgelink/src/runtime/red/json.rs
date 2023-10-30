@@ -20,9 +20,7 @@ pub fn load_flows_json(flows_json_path: &str) -> crate::Result<JsonValues> {
 }
 
 pub fn load_flows_json_value(root_jv: &JsonValue) -> crate::Result<JsonValues> {
-    let all_values = root_jv.as_array().ok_or(EdgeLinkError::BadFlowsJson(
-        "The root node must be a Array".to_string(),
-    ))?;
+    let all_values = root_jv.as_array().ok_or(EdgeLinkError::BadFlowsJson())?;
 
     // 初始化 JsonValues 结构
     let mut flows = Vec::new();
@@ -56,7 +54,7 @@ pub fn load_flows_json_value(root_jv: &JsonValue) -> crate::Result<JsonValues> {
                 }
             }
         } else {
-            return Err(EdgeLinkError::BadFlowsJson("".to_string()).into());
+            return Err(EdgeLinkError::BadFlowsJson().into());
         }
     }
 
@@ -65,9 +63,7 @@ pub fn load_flows_json_value(root_jv: &JsonValue) -> crate::Result<JsonValues> {
         // We check for cycle errors before usage
         match node_id {
             Ok((node_id, _)) => sorted_flow_nodes.push(flow_nodes[node_id].clone()),
-            Err(_) => {
-                return Err(EdgeLinkError::BadFlowsJson("Unexpected cycle!".to_string()).into())
-            }
+            Err(_) => return Err(EdgeLinkError::BadFlowsJson().into()),
         }
     }
 
@@ -220,52 +216,66 @@ impl<'de> Deserialize<'de> for ElementId {
 }
 
 #[derive(Debug)]
-struct RedPropertyTriple {
-    pub p: String,
-    pub vt: String,
+struct RedPropertyTriple<'a> {
+    pub p: &'a str,
+    pub vt: &'a str,
     pub v: crate::runtime::model::Variant,
 }
 
-fn red_property_triple_parse(jv: &serde_json::Value) -> crate::Result<RedPropertyTriple> {
-    let triple = jv
-        .as_object()
-        .ok_or(EdgeLinkError::BadFlowsJson("Bad JSON".to_string()))?;
+type RedPropertyTable<'a> = Vec<RedPropertyTriple<'a>>;
+
+fn parse_property_triple(jv: &serde_json::Value) -> crate::Result<RedPropertyTriple> {
+    let triple = jv.as_object().ok_or(EdgeLinkError::BadFlowsJson())?;
     let v = triple
         .get("v")
-        .ok_or(EdgeLinkError::BadFlowsJson("Bad JSON".to_string()))?
+        .ok_or(EdgeLinkError::BadFlowsJson())?
         .as_str()
-        .ok_or(EdgeLinkError::BadFlowsJson("Bad JSON".to_string()))?;
+        .ok_or(EdgeLinkError::BadFlowsJson())?;
     Ok(RedPropertyTriple {
         p: triple
             .get("p")
-            .ok_or(EdgeLinkError::BadFlowsJson("Bad JSON".to_string()))?
+            .ok_or(EdgeLinkError::BadFlowsJson())?
             .as_str()
-            .ok_or(EdgeLinkError::BadFlowsJson("Bad JSON".to_string()))?
-            .to_string(),
+            .ok_or(EdgeLinkError::BadFlowsJson())?,
         vt: triple
             .get("vt")
-            .ok_or(EdgeLinkError::BadFlowsJson("Bad JSON".to_string()))?
+            .ok_or(EdgeLinkError::BadFlowsJson())?
             .as_str()
-            .ok_or(EdgeLinkError::BadFlowsJson("Bad JSON".to_string()))?
-            .to_string(),
+            .ok_or(EdgeLinkError::BadFlowsJson())?,
         v: Variant::String(v.to_string()),
     })
 }
 
-impl RedPropertyTriple {
-
+impl<'a> RedPropertyTriple<'a> {
     pub fn collection_from_json_value(
         jv: &serde_json::Value,
     ) -> crate::Result<Vec<RedPropertyTriple>> {
         if let Some(objects) = jv.as_array() {
             let entries: crate::Result<Vec<RedPropertyTriple>> = objects
                 .iter()
-                .map(|object| red_property_triple_parse(&object))
+                .map(|object| parse_property_triple(&object))
                 .collect();
             entries
         } else {
-            Err(EdgeLinkError::BadFlowsJson("Bad JSON".to_string()).into())
+            Err(EdgeLinkError::BadFlowsJson().into())
         }
     }
+}
 
+#[test]
+fn parse_red_property_triple_should_be_ok() {
+    let data = r#"[
+        {
+            "p": "timestamp",
+            "v": "",
+            "vt": "date"
+        }
+    ]"#;
+
+    // Parse the string of data into serde_json::Value.
+    let v: serde_json::Value = serde_json::from_str(data).unwrap();
+    let triples = RedPropertyTriple::collection_from_json_value(&v).unwrap();
+    assert_eq!(1, triples.len());
+    assert_eq!("timestamp", triples[0].p);
+    assert_eq!("date", triples[0].vt);
 }

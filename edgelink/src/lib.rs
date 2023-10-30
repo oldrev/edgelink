@@ -23,8 +23,11 @@ pub trait Plugin {
 
 #[derive(Error, Debug)]
 pub enum EdgeLinkError {
-    #[error("Invalid 'flows.json': {0}")]
-    BadFlowsJson(String),
+    #[error("Invalid 'flows.json'")]
+    BadFlowsJson(),
+
+    #[error("Unsupported 'flows.json' format: {0}")]
+    UnsupportedFlowsJsonFormat(String),
 
     #[error("Not supported: {0}")]
     NotSupported(String),
