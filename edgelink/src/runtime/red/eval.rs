@@ -3,7 +3,10 @@ use std::any::Any;
 use std::sync::Arc;
 
 use crate::{
-    runtime::model::{Msg, Variant},
+    runtime::{
+        model::{Msg, Variant},
+        nodes::NodeBehavior,
+    },
     utils, EdgeLinkError,
 };
 
@@ -17,7 +20,7 @@ use crate::{
  * @param  {Node} node - the node evaluating the property
  * @return {String} The parsed string
  */
-fn evaluate_env_property<'a>(value: &str, node: &dyn Any) -> crate::Result<&'a str> {
+fn evaluate_env_property<'a>(value: &str, node: &dyn NodeBehavior) -> crate::Result<&'a str> {
     /*
     var flow = (node && hasOwnProperty.call(node, "_flow")) ? node._flow : null;
     var result;
@@ -50,10 +53,10 @@ fn evaluate_env_property<'a>(value: &str, node: &dyn Any) -> crate::Result<&'a s
  * @param  {Function} callback - (optional) called when the property is evaluated
  * @return {any} The evaluted property, if no `callback` is provided
  */
-fn evaluate_node_property(
+pub fn evaluate_node_property(
     value: &JsonValue,
     _type: &str,
-    node: &dyn Any,
+    node: &dyn NodeBehavior,
     msg: Arc<Msg>,
 ) -> crate::Result<Variant> {
     let evaluated = match _type {
@@ -63,7 +66,7 @@ fn evaluate_node_property(
 
         "json" => {
             let root_jv: JsonValue = serde_json::from_str(value.as_str().unwrap())?;
-            Variant::from(&root_jv)
+            Variant::from(root_jv)
         }
 
         "re" => Variant::String(value.as_str().unwrap().to_string()),
@@ -108,14 +111,17 @@ fn evaluate_node_property(
         "bool" => Variant::Bool(value.as_bool().unwrap()),
 
         "jsonata" => {
-            todo!()
+            return Err(EdgeLinkError::NotSupported(
+                "Unsupported node property: JSONATA".to_owned(),
+            )
+            .into());
         }
 
         "env" => Variant::String(evaluate_env_property(value.as_str().unwrap(), node)?.to_string()),
 
         _ => {
             return Err(EdgeLinkError::NotSupported(
-                format!("Unsupported node property: {0}", _type).to_string(),
+                format!("Unsupported node property: {0}", _type).to_owned(),
             )
             .into());
         }

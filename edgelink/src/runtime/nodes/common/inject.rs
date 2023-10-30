@@ -39,24 +39,24 @@ impl InjectNode {
 
     async fn cron_task(&self, stop_token: CancellationToken) {
         while !stop_token.is_cancelled() {
-            // TODO FIXME
             let delay_result =
                 crate::utils::async_util::delay(Duration::from_secs(2), stop_token.child_token())
                     .await;
             match delay_result {
                 Ok(()) => {
-                    let flow_ref = Weak::upgrade(&self.base().flow).unwrap();
-                    let now = crate::utils::time::unix_now().unwrap();
-                    let payload = Variant::from(now);
-                    let msg = Msg::with_payload(self.base.id, payload);
-                    flow_ref
-                        .fan_out_single_port(self.base.id, 0, &[msg], stop_token.clone())
-                        .await
-                        .unwrap();
+                    let flow_ref = Weak::upgrade(&self.base().flow).unwrap(); //Shut the fuck up & let me die in peace
+                    if let Ok(now) = crate::utils::time::unix_now() {
+                        let payload = Variant::from(now);
+                        let msg = Msg::with_payload(self.base.id, payload);
+                        flow_ref
+                            .fan_out_single_port(self.base.id, 0, &[msg], stop_token.clone())
+                            .await
+                            .unwrap();
+                    }
                 }
                 Err(ref err) => match err.downcast_ref().unwrap() {
                     EdgeLinkError::TaskCancelled => {
-                        log::warn!("Inject task has been cancelled.");
+                        log::warn!("Inject task cancelled.");
                         break;
                     }
                     _ => break,
