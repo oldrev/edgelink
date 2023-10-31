@@ -104,7 +104,7 @@ impl FlowEngine {
         for flow in state.flows.values() {
             flow.clone().stop().await?;
         }
-        drop(&self.stopped_tx);
+        //drop(&self.stopped_tx);
         let stopped_rx = &mut self.stopped_rx.lock().await;
         let _ = stopped_rx.recv().await;
         log::info!("All flows stopped.");

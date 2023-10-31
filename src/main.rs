@@ -4,9 +4,6 @@ use tokio::time;
 use tokio_util::sync::CancellationToken;
 // use libloading::Library;
 
-use log4rs;
-use log;
-
 use edgelink::runtime::engine::FlowEngine;
 use edgelink::runtime::registry::{Registry, RegistryImpl};
 use edgelink::Result;

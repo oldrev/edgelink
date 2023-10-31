@@ -331,9 +331,7 @@ impl From<&serde_json::Value> for Variant {
             serde_json::Value::Null => Variant::Null,
             serde_json::Value::Bool(boolean) => Variant::from(*boolean),
             serde_json::Value::Number(number) => {
-                if number.is_i64() {
-                    Variant::Integer(number.as_i64().unwrap())
-                } else if number.is_u64() {
+                if number.is_i64() || number.is_u64() {
                     Variant::Integer(number.as_i64().unwrap())
                 } else {
                     Variant::Float(number.as_f64().unwrap())

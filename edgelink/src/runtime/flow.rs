@@ -215,10 +215,10 @@ impl Flow {
     }
 
     pub(crate) async fn stop(self: Arc<Self>) -> crate::Result<()> {
-        let state = self.shared.state.write().await;
+        //let state = self.shared.state.write().await;
         log::info!("-- Stopping Flow (id={0})...", self.id);
         self.stop_token.cancel();
-        drop(&self.stopped_tx);
+        //drop(&self.stopped_tx);
         let stopped_rx = &mut self.stopped_rx.lock().await;
         let _ = stopped_rx.recv().await;
         Ok(())
