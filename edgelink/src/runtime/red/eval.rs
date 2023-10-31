@@ -110,7 +110,7 @@ fn evaluate_env_property<'a>(value: &str, node: &dyn FlowNodeBehavior) -> crate:
 pub fn evaluate_node_property(
     value: &JsonValue,
     _type: &str,
-    node: &dyn NodeBehavior,
+    node: &dyn FlowNodeBehavior,
     msg: Arc<Msg>,
 ) -> crate::Result<Variant> {
     let evaluated = match _type {
