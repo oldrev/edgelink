@@ -179,7 +179,7 @@ impl Flow {
                             let base_flow_node = scoped_flow
                                 .clone()
                                 .new_base_flow_node(&state, node_config)?;
-                            factory(scoped_flow.clone(), base_flow_node, node_config)
+                            factory(scoped_flow.clone(), base_flow_node, node_config)?
                         }
                         _ => {
                             return Err(EdgeLinkError::NotSupported(format!(

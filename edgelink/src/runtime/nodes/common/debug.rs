@@ -1,11 +1,11 @@
 use log;
 use std::sync::Arc;
 
-use crate::Result;
 use crate::runtime::flow::Flow;
+use crate::runtime::model::*;
 use crate::runtime::nodes::*;
 use crate::runtime::red::json::RedFlowNodeConfig;
-use crate::runtime::model::*;
+use crate::Result;
 
 struct DebugNode {
     base: Arc<BaseFlowNode>,
@@ -49,9 +49,9 @@ fn new_node(
     _flow: Arc<Flow>,
     base_node: Arc<BaseFlowNode>,
     _config: &RedFlowNodeConfig,
-) -> Arc<dyn FlowNodeBehavior> {
+) -> crate::Result<Arc<dyn FlowNodeBehavior>> {
     let node = DebugNode { base: base_node };
-    Arc::new(node)
+    Ok(Arc::new(node))
 }
 
 inventory::submit! {

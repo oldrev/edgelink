@@ -127,7 +127,7 @@ fn new_node(
     _flow: Arc<Flow>,
     base_node: Arc<BaseFlowNode>,
     _config: &RedFlowNodeConfig,
-) -> Arc<dyn FlowNodeBehavior> {
+) -> crate::Result<Arc<dyn FlowNodeBehavior>> {
     let config = InjectNodeConfig {
         repeat: _config.json.get("repeat").and_then(|v| v.as_u64()),
         cron: _config.json.get("crontab").and_then(|v| {
@@ -150,7 +150,7 @@ fn new_node(
         base: base_node,
         config,
     };
-    Arc::new(node)
+    Ok(Arc::new(node))
 }
 
 inventory::submit! {

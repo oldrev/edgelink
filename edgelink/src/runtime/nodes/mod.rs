@@ -38,10 +38,14 @@ impl fmt::Display for NodeKind {
     }
 }
 
-type GlobalNodeFactoryFn = fn(Arc<FlowEngine>, &RedGlobalNodeConfig) -> Arc<dyn NodeBehavior>;
+type GlobalNodeFactoryFn =
+    fn(Arc<FlowEngine>, &RedGlobalNodeConfig) -> crate::Result<Arc<dyn NodeBehavior>>;
 
-type FlowNodeFactoryFn =
-    fn(Arc<Flow>, Arc<BaseFlowNode>, &RedFlowNodeConfig) -> Arc<dyn FlowNodeBehavior>;
+type FlowNodeFactoryFn = fn(
+    Arc<Flow>,
+    Arc<BaseFlowNode>,
+    &RedFlowNodeConfig,
+) -> crate::Result<Arc<dyn FlowNodeBehavior>>;
 
 #[derive(Clone, Copy)]
 pub enum NodeFactory {

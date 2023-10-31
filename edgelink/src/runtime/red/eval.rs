@@ -78,22 +78,7 @@ pub fn evaluate_node_property(
             Variant::bytes_from_json_value(&jv)?
         }
 
-        "flow" => {
-            /*
-            var contextKey = parseContextStore(value);
-            if (/\[msg/.test(contextKey.key)) {
-                // The key has a nest msg. reference to evaluate first
-                contextKey.key = normalisePropertyExpression(contextKey.key, msg, true)
-            }
-            result = node.context()[type].get(contextKey.key,contextKey.store,callback);
-            if (callback) {
-                return;
-            }
-                 */
-            todo!()
-        }
-
-        "global" => {
+        "flow" | "global" => {
             /*
             var contextKey = parseContextStore(value);
             if (/\[msg/.test(contextKey.key)) {

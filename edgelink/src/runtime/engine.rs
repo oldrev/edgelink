@@ -65,7 +65,7 @@ impl FlowEngine {
             for global_config in json_values.global_nodes.iter() {
                 if let Some(meta_node) = reg.get(global_config.type_name.as_str()) {
                     let node = match meta_node.factory {
-                        NodeFactory::Global(factory) => factory(engine.clone(), global_config),
+                        NodeFactory::Global(factory) => factory(engine.clone(), global_config)?,
                         _ => {
                             return Err(EdgeLinkError::NotSupported(format!(
                                 "Can not found global node factory for Node(id={0}, type='{1}'",
