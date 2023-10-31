@@ -32,6 +32,9 @@ pub enum EdgeLinkError {
     #[error("Not supported: {0}")]
     NotSupported(String),
 
+    #[error("Invalid arguments: {0}")]
+    BadArguments(String),
+
     #[error("Task cancelled")]
     TaskCancelled,
 

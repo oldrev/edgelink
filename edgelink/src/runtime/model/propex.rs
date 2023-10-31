@@ -30,14 +30,6 @@ pub enum PropexSegment<'a> {
     StringIndex(&'a str), // Use a reference to a string slice
 }
 
-fn parse_identifier(i: &str) -> IResult<&str, &str, VerboseError<&str>> {
-    recognize(pair(
-        alt((alpha1, tag("_"))),
-        many0_count(alt((alphanumeric1, tag("_")))),
-    ))
-    .parse(i)
-}
-
 fn parse_double_quoted_string(i: &str) -> IResult<&str, PropexSegment, VerboseError<&str>> {
     map(
         context(
@@ -92,7 +84,7 @@ fn parse_property(i: &str) -> IResult<&str, PropexSegment, VerboseError<&str>> {
     map(
         context(
             "property",
-            delimited(multispace0, parse_identifier, multispace0),
+            delimited(multispace0, crate::utils::parser::identifier, multispace0),
         ),
         PropexSegment::StringIndex,
     )
@@ -105,7 +97,7 @@ fn parse_subproperty(i: &str) -> IResult<&str, PropexSegment, VerboseError<&str>
             "subproperty",
             preceded(
                 delimited(multispace0, char('.'), multispace0),
-                delimited(multispace0, parse_identifier, multispace0),
+                delimited(multispace0, crate::utils::parser::identifier, multispace0),
             ),
         ),
         PropexSegment::StringIndex,
