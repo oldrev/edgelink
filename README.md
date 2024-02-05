@@ -1,10 +1,10 @@
-# Node-RED Rust Backend
+# EdgeLink: A Node-RED Compatible Runtime in Rust
 
 ![Node-RED Rust Backend](assets/banner.jpg)
 
 ## Overview
 
-This is a Node-RED backend implemented in Rust, designed to enhance performance and reduce memory footprint. By replacing the original NodeJS backend with this Rust-based implementation, you can achieve better performance and a smaller memory footprint.
+This is a Node-RED compatible runtime implemented in Rust, designed to enhance performance and reduce memory footprint. By replacing the original NodeJS backend with this Rust-based implementation, you can achieve better performance and a smaller memory footprint.
 
 ## Features
 
