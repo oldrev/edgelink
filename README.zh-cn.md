@@ -42,7 +42,11 @@ cargo build --release
 
 ## 贡献
 
-欢迎贡献！请阅读 [CONTRIBUTING.md](CONTRIBUTING.md) 获取更多信息。
+欢迎贡献！请阅读 [CONTRIBUTING.md](.github/CONTRIBUTING.md) 获取更多信息。
+
+## 反馈与技术支持
+
+我们欢迎任何反馈！如果你遇到任何技术问题或者 bug，请不要提交 [issue](https://github.com/edge-link/edgelink-rust/issues)。
 
 ## 许可证
 

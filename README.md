@@ -42,7 +42,7 @@ Adjust various settings in the configuration file, such as port number, database
 
 ## Contribution
 
-Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for more details.
+Contributions are welcome! Please read [CONTRIBUTING.md](.github/CONTRIBUTING.md) for more details.
 
 ## Project Status
 
@@ -58,7 +58,7 @@ Please refer to [ISSUES.md](docs/ISSUES.md) for a list of known issues and worka
 
 ## Feedback and Support
 
-We welcome your feedback! If you encounter any issues or have suggestions, please open an [issue](https://github.com/your-username/node-red-rust-backend/issues).
+We welcome your feedback! If you encounter any issues or have suggestions, please open an [issue](https://github.com/edge-link/edgelink-rust/issues).
 
 ## License
 
