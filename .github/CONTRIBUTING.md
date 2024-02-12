@@ -9,8 +9,8 @@ Thank you for considering contributing to the EdgeLink! Contributions are essent
 2. Clone the forked repository to your local machine:
 
     ```bash
-    git clone https://github.com/edge-link/edgelink-rust.git
-    cd edgelink-rust
+    git clone https://github.com/edge-link/edgelink.rs.git
+    cd edgelink.rs
     ```
 
 3. Create a new branch for your feature or bug fix:
@@ -47,7 +47,7 @@ Thank you for considering contributing to the EdgeLink! Contributions are essent
 
 ## Reporting Issues
 
-If you find a bug or have a feature request, please open an issue on the [issue tracker](https://github.com/edgelink/edgelink-rust/issues). Ensure that you provide as much detail as possible, including steps to reproduce the issue.
+If you find a bug or have a feature request, please open an issue on the [issue tracker](https://github.com/edgelink/edgelink.rs/issues). Ensure that you provide as much detail as possible, including steps to reproduce the issue.
 
 ## Code of Conduct
 
@@ -55,7 +55,7 @@ Please note that this project is released with a [Contributor Code of Conduct](C
 
 ## Contact
 
-If you have any questions or need clarification, feel free to reach out to the project maintainers through [email@example.com](mailto:oldrev@gmail.com) or open a discussion on the [GitHub Discussions](https://github.com/edgelink/edgelink-rust/discussions) page.
+If you have any questions or need clarification, feel free to reach out to the project maintainers through [email@example.com](mailto:oldrev@gmail.com) or open a discussion on the [GitHub Discussions](https://github.com/edgelink/edgelink.rs/discussions) page.
 
 ## Thank You!
 

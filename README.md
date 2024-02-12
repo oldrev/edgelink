@@ -20,8 +20,8 @@ This is a Node-RED compatible runtime implemented in Rust, designed to enhance p
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/edge-link/edgelink-rust.git
-cd edgelink-rust
+git clone https://github.com/edge-link/edgelink.rs.git
+cd edgelink.rs
 ```
 
 ### 2. Build
@@ -58,7 +58,7 @@ Please refer to [ISSUES.md](docs/ISSUES.md) for a list of known issues and worka
 
 ## Feedback and Support
 
-We welcome your feedback! If you encounter any issues or have suggestions, please open an [issue](https://github.com/edge-link/edgelink-rust/issues).
+We welcome your feedback! If you encounter any issues or have suggestions, please open an [issue](https://github.com/edge-link/edgelink.rs/issues).
 
 ## License
 

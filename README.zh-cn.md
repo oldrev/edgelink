@@ -46,7 +46,7 @@ cargo build --release
 
 ## 反馈与技术支持
 
-我们欢迎任何反馈！如果你遇到任何技术问题或者 bug，请不要提交 [issue](https://github.com/edge-link/edgelink-rust/issues)。
+我们欢迎任何反馈！如果你遇到任何技术问题或者 bug，请不要提交 [issue](https://github.com/edge-link/edgelink.rs/issues)。
 
 ## 许可证
 
