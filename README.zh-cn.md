@@ -2,6 +2,8 @@
 
 ![Node-RED Rust Backend](assets/banner.jpg)
 
+[English](README.md) | 简体中文
+
 ## 概述
 
 EdgeLink 是一个使用 Rust 编写的 Node-RED 后端运行时，旨在提高性能并降低内存占用。通过将 Node-RED 的原 NodeJS 后端替换为这个基于 Rust 的实现，可以获得更好的性能和更小的内存足迹。
