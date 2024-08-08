@@ -4,7 +4,7 @@ use std::sync::Arc;
 use crate::{
     runtime::{
         model::{Msg, Variant},
-        nodes::{NodeBehavior, FlowNodeBehavior},
+        nodes::FlowNodeBehavior,
     },
     utils, EdgeLinkError,
 };
@@ -19,11 +19,9 @@ fn context_store_parser(
 ) -> nom::IResult<&str, ParsedContextStoreProperty<'_>, nom::error::VerboseError<&str>> {
     use crate::utils::parser::*;
     use nom::{
-        branch::alt,
         bytes::complete::tag,
         character::complete::{char, multispace0},
-        sequence::{delimited, preceded, tuple},
-        Parser,
+        sequence::{delimited, preceded},
     };
 
     let (input, _) = tag("#:")(input)?;

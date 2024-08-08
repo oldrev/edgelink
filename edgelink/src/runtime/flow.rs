@@ -150,7 +150,7 @@ impl Flow {
         flow_config: &RedFlowConfig,
         reg: Arc<dyn Registry>,
     ) -> crate::Result<Arc<Self>> {
-        let (stopped_tx, mut stopped_rx) = mpsc::channel(1);
+        let (stopped_tx, stopped_rx) = mpsc::channel(1);
         let flow: Arc<Flow> = Arc::new(Flow {
             id: flow_config.id,
             label: flow_config.label.clone(),

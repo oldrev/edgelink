@@ -5,7 +5,6 @@ use crate::runtime::flow::Flow;
 use crate::runtime::model::*;
 use crate::runtime::nodes::*;
 use crate::runtime::red::json::RedFlowNodeConfig;
-use crate::Result;
 
 struct DebugNode {
     base: Arc<BaseFlowNode>,

@@ -8,7 +8,7 @@ use serde_json::Value as JsonValue;
 use topo_sort::TopoSort;
 
 use crate::runtime::model::*;
-use crate::{EdgeLinkError, Result};
+use crate::EdgeLinkError;
 
 /// Loading 'flows.js'
 pub fn load_flows_json(flows_json_path: &str) -> crate::Result<JsonValues> {

@@ -2,14 +2,12 @@ use thiserror::Error;
 
 use nom::{
     branch::alt,
-    bytes::complete::{escaped, tag, take_while},
-    character::complete::{alpha1, alphanumeric1, char, digit1, multispace0, one_of},
-    combinator::{cut, iterator, map, map_res, opt, recognize, value},
-    error::{context, convert_error, ContextError, ErrorKind, ParseError, VerboseError},
-    multi::{many0, many0_count, separated_list0},
-    number::complete::double,
-    sequence::{self, delimited, pair, preceded, separated_pair, terminated},
-    Err, IResult, Parser,
+    bytes::complete::escaped,
+    character::complete::{alphanumeric1, char, digit1, multispace0, one_of},
+    combinator::{cut, map, map_res},
+    error::{context, ParseError, VerboseError},
+    multi::many0,
+    sequence::{delimited, pair, preceded, terminated}, IResult, Parser,
 };
 
 #[derive(Error, Debug)]

@@ -10,7 +10,7 @@ use crate::runtime::engine::FlowEngine;
 use crate::runtime::flow::Flow;
 use crate::runtime::model::{ElementId, Msg, MsgReceiver, MsgSender, Port};
 use crate::runtime::red::json::{RedFlowNodeConfig, RedGlobalNodeConfig};
-use crate::{EdgeLinkError, Result};
+use crate::EdgeLinkError;
 
 mod common;
 

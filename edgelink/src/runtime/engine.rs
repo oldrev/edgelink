@@ -38,7 +38,7 @@ impl FlowEngine {
         flows_json_path: &str,
     ) -> crate::Result<Arc<FlowEngine>> {
         let json_values = crate::runtime::red::json::load_flows_json(flows_json_path)?;
-        let (stopped_tx, mut stopped_rx) = mpsc::channel(1);
+        let (stopped_tx, stopped_rx) = mpsc::channel(1);
 
         let engine = Arc::new(FlowEngine {
             stopped_rx: TokMutex::new(stopped_rx),
