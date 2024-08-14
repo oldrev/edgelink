@@ -1,12 +1,39 @@
+use clap::Parser;
+use dirs_next::home_dir;
+use log;
 use std::sync::Arc;
 use tokio::sync::RwLock as TokRwLock;
 use tokio::time;
 use tokio_util::sync::CancellationToken;
+
 // use libloading::Library;
+
+use std::thread;
 
 use edgelink::runtime::engine::FlowEngine;
 use edgelink::runtime::registry::{Registry, RegistryImpl};
 use edgelink::Result;
+
+/// Simple program to greet a person
+#[derive(Parser, Debug, Clone)]
+#[command(version, about, long_about = None)]
+struct EdgeLinkArgs {
+    /// Path of the 'flows.json' file
+    #[arg(short, long, default_value_t = default_flows_path())]
+    flows_path: String,
+}
+
+fn default_flows_path() -> String {
+    match home_dir() {
+        Some(path) => path
+            .join(".node-red")
+            .join("flows.json")
+            .to_string_lossy()
+            .to_string(),
+        None => "".to_string(),
+    }
+}
+
 
 
 /*
@@ -52,13 +79,15 @@ pub(crate) fn log_init() {
 }
 
 struct Runtime {
+    args: Arc<EdgeLinkArgs>,
     registry: Arc<dyn Registry>,
     engine: TokRwLock<Option<Arc<FlowEngine>>>,
 }
 
 impl Runtime {
-    fn new(reg: Arc<dyn Registry>) -> Self {
+    fn new(elargs: Arc<EdgeLinkArgs>, reg: Arc<dyn Registry>) -> Self {
         Runtime {
+            args: elargs.clone(),
             registry: reg.clone(),
             engine: TokRwLock::new(None),
         }
@@ -66,7 +95,8 @@ impl Runtime {
 
     async fn main_flow_task(self: Arc<Self>, cancel: CancellationToken) {
         let mut engine_holder = self.engine.write().await;
-        let engine = FlowEngine::new(self.registry.clone(), "./flows.json")
+        log::info!("Loading flows file: {}", &self.args.flows_path);
+        let engine = FlowEngine::new(self.registry.clone(), &self.args.flows_path)
             .await
             .unwrap();
         *engine_holder = Option::Some(engine.clone());
@@ -95,14 +125,16 @@ impl Runtime {
     }
 }
 
-fn register_all_di_services() -> di::ServiceCollection {
+fn register_all_di_services(args: EdgeLinkArgs) -> di::ServiceCollection {
     let mut services = di::ServiceCollection::new();
     services
         .add(di::singleton::<dyn Registry, RegistryImpl>().from(|_| Arc::new(RegistryImpl::new())))
-        .add(
-            di::singleton_as_self::<Runtime>()
-                .from(|sp| Arc::new(Runtime::new(sp.get_required::<dyn Registry>()))),
-        );
+        .add(di::singleton_as_self::<Runtime>().from(move |sp| {
+            Arc::new(Runtime::new(
+                Arc::new(args.clone()),
+                sp.get_required::<dyn Registry>(),
+            ))
+        }));
     services
 }
 
@@ -117,9 +149,12 @@ async fn main() -> Result<()> {
 
     // let m = Modal {};
     // m.run().await;
-    println!("EdgeLink 1.0");
+    log::info!("EdgeLink {}", env!("CARGO_PKG_VERSION"));
+    log::info!("==========================================================\n");
 
-    let services = register_all_di_services();
+    let elargs = EdgeLinkArgs::parse();
+    let services = register_all_di_services(elargs);
+
     let _provider = services.build_provider()?;
     let sp = Arc::new(_provider);
     let cancel = CancellationToken::new();

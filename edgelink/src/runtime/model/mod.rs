@@ -4,9 +4,9 @@ use tokio::sync::mpsc;
 
 use crate::runtime::nodes::FlowNodeBehavior;
 
-mod variant;
 mod msg;
 pub mod propex;
+mod variant;
 
 pub use msg::Msg;
 pub use variant::Variant;

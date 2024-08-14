@@ -7,7 +7,8 @@ use nom::{
     combinator::{cut, map, map_res},
     error::{context, ParseError, VerboseError},
     multi::many0,
-    sequence::{delimited, pair, preceded, terminated}, IResult, Parser,
+    sequence::{delimited, pair, preceded, terminated},
+    IResult, Parser,
 };
 
 #[derive(Error, Debug)]

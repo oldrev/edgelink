@@ -18,6 +18,12 @@
             },
             {
                 "p": "topic",
+                "v": "",
+                "vt": "date"
+            },
+            {
+                "p": "testField",
+                "v": "test",
                 "vt": "str"
             }
         ],

@@ -1,8 +1,8 @@
 use thiserror::Error;
 
-pub mod utils;
 pub mod runtime;
 pub mod shutdown;
+pub mod utils;
 
 /// The `PluginRegistrar` is defined by the application and passed to `plugin_entry`. It's used
 /// for a plugin module to register itself with the application.

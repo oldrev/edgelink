@@ -27,10 +27,10 @@ impl FlowNodeBehavior for DebugNode {
         &self.base
     }
 
-    async fn run(&self, stop_token: CancellationToken) {
+    async fn run(self: Arc<Self>, stop_token: CancellationToken) {
         while !stop_token.is_cancelled() {
             match self.wait_for_msg(stop_token.clone()).await {
-                Ok(msg) => log::info!("收到消息：\n{:#?}", msg.as_ref()),
+                Ok(msg) => log::info!("Message Received [Node: {}] ：\n{:#?}", self.name(), msg.as_ref()),
                 Err(ref err) => {
                     log::error!("Error: \n{:#?}", err);
                     break;

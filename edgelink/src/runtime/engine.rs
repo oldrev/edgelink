@@ -1,13 +1,13 @@
 use log;
 use std::collections::BTreeMap;
 use std::sync::Arc;
-use tokio::sync::RwLock as TokRwLock;
-use tokio::sync::Mutex as TokMutex;
-use tokio_util::sync::CancellationToken;
 use tokio::sync::mpsc;
+use tokio::sync::Mutex as TokMutex;
+use tokio::sync::RwLock as TokRwLock;
+use tokio_util::sync::CancellationToken;
 
-use crate::runtime::model::Variant;
 use crate::runtime::flow::Flow;
+use crate::runtime::model::Variant;
 use crate::runtime::nodes::{NodeBehavior, NodeFactory};
 use crate::runtime::registry::Registry;
 use crate::EdgeLinkError;

@@ -222,7 +222,7 @@ struct RedPropertyTriple<'a> {
     pub v: crate::runtime::model::Variant,
 }
 
-type RedPropertyTable<'a> = Vec<RedPropertyTriple<'a>>;
+// type RedPropertyTable<'a> = Vec<RedPropertyTriple<'a>>;
 
 fn parse_property_triple(jv: &serde_json::Value) -> crate::Result<RedPropertyTriple> {
     let triple = jv.as_object().ok_or(EdgeLinkError::BadFlowsJson())?;
@@ -251,10 +251,8 @@ impl<'a> RedPropertyTriple<'a> {
         jv: &serde_json::Value,
     ) -> crate::Result<Vec<RedPropertyTriple>> {
         if let Some(objects) = jv.as_array() {
-            let entries: crate::Result<Vec<RedPropertyTriple>> = objects
-                .iter()
-                .map(parse_property_triple)
-                .collect();
+            let entries: crate::Result<Vec<RedPropertyTriple>> =
+                objects.iter().map(parse_property_triple).collect();
             entries
         } else {
             Err(EdgeLinkError::BadFlowsJson().into())

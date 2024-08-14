@@ -107,7 +107,7 @@ pub trait NodeBehavior: Send + Sync {
 pub trait FlowNodeBehavior: NodeBehavior {
     fn base(&self) -> &BaseFlowNode;
 
-    async fn run(&self, stop_token: CancellationToken);
+    async fn run(self: Arc<Self>, stop_token: CancellationToken);
 
     async fn wait_for_msg(&self, cancel: CancellationToken) -> crate::Result<Arc<Msg>> {
         select! {
