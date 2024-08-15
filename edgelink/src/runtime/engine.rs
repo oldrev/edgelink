@@ -37,7 +37,15 @@ impl FlowEngine {
         reg: Arc<dyn Registry>,
         flows_json_path: &str,
     ) -> crate::Result<Arc<FlowEngine>> {
-        let json_values = crate::runtime::red::json::load_flows_json(flows_json_path)?;
+        let json_values =
+            crate::runtime::red::json::load_flows_json(flows_json_path).or_else(|e| {
+                log::error!(
+                    "Failed to load NodeRED JSON file '{}': {}",
+                    flows_json_path,
+                    e.to_string()
+                );
+                Err(e)
+            })?;
         let (stopped_tx, stopped_rx) = mpsc::channel(1);
 
         let engine = Arc::new(FlowEngine {
@@ -63,7 +71,8 @@ impl FlowEngine {
             }
 
             for global_config in json_values.global_nodes.iter() {
-                if let Some(meta_node) = reg.get(global_config.type_name.as_str()) {
+                let node_type_name = global_config.type_name.as_str();
+                if let Some(meta_node) = reg.get(node_type_name) {
                     let node = match meta_node.factory {
                         NodeFactory::Global(factory) => factory(engine.clone(), global_config)?,
                         _ => {
@@ -75,6 +84,8 @@ impl FlowEngine {
                         }
                     };
                     state.global_nodes.insert(node.id(), node);
+                } else {
+                    log::warn!("Unknown global node type: {}", node_type_name);
                 }
             }
         }

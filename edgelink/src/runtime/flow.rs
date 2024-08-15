@@ -154,7 +154,7 @@ impl Flow {
         let flow: Arc<Flow> = Arc::new(Flow {
             id: flow_config.id,
             label: flow_config.label.clone(),
-            disabled: flow_config.disabled.unwrap_or(false),
+            disabled: flow_config.disabled,
             stopped_rx: TokMutex::new(stopped_rx),
             stopped_tx,
             shared: Arc::new(FlowShared {
@@ -197,6 +197,8 @@ impl Flow {
                     state.nodes_ordering.push(node.id());
 
                     state.nodes.insert(node_config.id, node);
+                } else {
+                    log::warn!("Unknown flow node type: {}", node_config.type_name);
                 }
             }
         }
@@ -240,10 +242,6 @@ impl Flow {
         for red_port in node_config.wires.iter() {
             let mut wires = Vec::new();
             for nid in red_port.node_ids.iter() {
-                log::info!("-------- Keys in nodes:");
-                for k in state.nodes.keys() {
-                    log::info!("{}", k);
-                }
                 let node_entry = state.nodes.get(nid).ok_or(format!(
                     "Referenced node not found [this_node.id='{}' this_node.name='{}', referenced_node.id='{}']",
                     node_config.id,

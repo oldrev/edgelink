@@ -113,7 +113,7 @@ impl InjectNode {
         flow_ref
             .fan_out_single_port(self.base.id, 0, &[msg], stop_token.clone())
             .await
-            .unwrap();
+            .unwrap(); //FIXME
     }
 }
 

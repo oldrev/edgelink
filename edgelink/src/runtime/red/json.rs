@@ -5,7 +5,7 @@ use serde::Deserializer;
 use serde::{de::Error, Deserialize};
 use serde_json::Map as JsonMap;
 use serde_json::Value as JsonValue;
-use topo_sort::TopoSort;
+use topological_sort::TopologicalSort;
 
 use crate::runtime::model::*;
 use crate::EdgeLinkError;
@@ -27,7 +27,7 @@ pub fn load_flows_json_value(root_jv: &JsonValue) -> crate::Result<JsonValues> {
     let mut flow_nodes = BTreeMap::new();
     let mut global_nodes = Vec::new();
 
-    let mut topo_sort = TopoSort::new();
+    let mut topo_sort = TopologicalSort::<&str>::new();
     // 遍历 JSON 数组并分类子元素
     for item in all_values.iter() {
         if let Some(obj) = item.as_object() {
@@ -41,7 +41,9 @@ pub fn load_flows_json_value(root_jv: &JsonValue) -> crate::Result<JsonValues> {
                     _ => match obj.get("z") {
                         Some(_) => {
                             let deps = obj.get_flow_node_dependencies();
-                            topo_sort.insert_from_set(id_str, deps);
+                            for &dep in deps.iter() {
+                                topo_sort.add_dependency(dep, id_str);
+                            }
                             flow_nodes.insert(id_str, item.clone());
                         }
                         None => {
@@ -58,13 +60,17 @@ pub fn load_flows_json_value(root_jv: &JsonValue) -> crate::Result<JsonValues> {
         }
     }
 
-    let mut sorted_flow_nodes = Vec::with_capacity(flow_nodes.len());
-    for node_id in &topo_sort {
+    let mut sorted_flow_nodes = Vec::new();
+    while let Some(node_id) = topo_sort.pop() {
         // We check for cycle errors before usage
-        match node_id {
-            Ok((node_id, _)) => sorted_flow_nodes.push(flow_nodes[node_id].clone()),
-            Err(_) => return Err(EdgeLinkError::BadFlowsJson().into()),
-        }
+        let node = flow_nodes[node_id].clone();
+        log::debug!(
+            "\t -- node.id={}, node.name={}, node.type={}",
+            node_id,
+            node.get("name").unwrap().as_str().unwrap(),
+            node.get("type").unwrap().as_str().unwrap()
+        );
+        sorted_flow_nodes.push(node);
     }
 
     let mut flow_configs = Vec::with_capacity(flows.len());
@@ -72,12 +78,15 @@ pub fn load_flows_json_value(root_jv: &JsonValue) -> crate::Result<JsonValues> {
         let mut flow_config: RedFlowConfig = serde_json::from_value(flow.clone())?;
         flow_config.json = flow.as_object().unwrap().clone();
         let mut flow_node_configs = Vec::new();
-        for flow_node in sorted_flow_nodes.iter() {
-            if flow_node.get("z") == flow.get("id") {
-                let mut node_config: RedFlowNodeConfig = serde_json::from_value(flow_node.clone())?;
-                node_config.json = flow_node.as_object().unwrap().clone();
-                flow_node_configs.push(node_config);
-            }
+        let flow_id = flow.get("id").unwrap();
+        let owned_nodes = sorted_flow_nodes
+            .iter()
+            .filter(|x| x.get("z").map_or(false, |z| z == flow_id))
+            .into_iter();
+        for flow_node in owned_nodes.into_iter() {
+            let mut node_config: RedFlowNodeConfig = serde_json::from_value(flow_node.clone())?;
+            node_config.json = flow_node.as_object().unwrap().clone();
+            flow_node_configs.push(node_config);
         }
         flow_config.nodes = flow_node_configs;
         flow_configs.push(flow_config);
@@ -118,7 +127,8 @@ pub struct RedPortConfig {
 
 #[derive(Debug, serde::Deserialize)]
 pub struct RedFlowConfig {
-    pub disabled: Option<bool>,
+    #[serde(default)]
+    pub disabled: bool,
 
     // #[serde(deserialize_with = "from_hex")]
     pub id: ElementId,
@@ -144,6 +154,7 @@ pub struct RedFlowNodeConfig {
     #[serde(alias = "type")]
     pub type_name: String,
 
+    #[serde(default)]
     pub name: String,
 
     //#[serde(deserialize_with = "from_hex")]
@@ -151,7 +162,8 @@ pub struct RedFlowNodeConfig {
 
     pub active: Option<bool>,
 
-    pub disabled: Option<bool>,
+    #[serde(default)]
+    pub disabled: bool,
 
     pub wires: Vec<RedPortConfig>,
 
@@ -167,11 +179,13 @@ pub struct RedGlobalNodeConfig {
     #[serde(alias = "type")]
     pub type_name: String,
 
+    #[serde(default)]
     pub name: String,
 
     pub active: Option<bool>,
 
-    pub disabled: Option<bool>,
+    #[serde(default)]
+    pub disabled: bool,
 
     #[serde(skip)]
     pub json: serde_json::Map<String, JsonValue>,
