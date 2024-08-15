@@ -13,6 +13,7 @@ use crate::runtime::red::json::{RedFlowNodeConfig, RedGlobalNodeConfig};
 use crate::EdgeLinkError;
 
 mod common;
+mod function;
 
 #[derive(Debug, Clone, Copy)]
 pub enum NodeState {
