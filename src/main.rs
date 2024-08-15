@@ -34,8 +34,6 @@ fn default_flows_path() -> String {
     }
 }
 
-
-
 /*
 use core::{Plugin, PluginRegistrar};
 
@@ -93,21 +91,20 @@ impl Runtime {
         }
     }
 
-    async fn main_flow_task(self: Arc<Self>, cancel: CancellationToken) {
+    async fn main_flow_task(self: Arc<Self>, cancel: CancellationToken) -> crate::Result<()> {
         let mut engine_holder = self.engine.write().await;
         log::info!("Loading flows file: {}", &self.args.flows_path);
-        let engine = FlowEngine::new(self.registry.clone(), &self.args.flows_path)
-            .await
-            .unwrap();
+        let engine = FlowEngine::new(self.registry.clone(), &self.args.flows_path).await?;
         *engine_holder = Option::Some(engine.clone());
-        engine.start().await.unwrap();
+        engine.start().await?;
         let wait_cancel = cancel;
         wait_cancel.cancelled().await;
-        let _ = engine.stop().await;
+        engine.stop().await?;
         log::info!("The flows engine stopped.");
+        Ok(())
     }
 
-    async fn idle_task(self: Arc<Self>, cancel: CancellationToken) {
+    async fn idle_task(self: Arc<Self>, cancel: CancellationToken) -> crate::Result<()> {
         loop {
             time::sleep(tokio::time::Duration::from_secs(1)).await;
             if cancel.is_cancelled() {
@@ -115,12 +112,25 @@ impl Runtime {
                 break;
             }
         }
+        Ok(())
     }
 
     pub async fn run(self: Arc<Self>, cancel: CancellationToken) -> crate::Result<()> {
         let task1 = tokio::task::spawn(self.clone().main_flow_task(cancel.clone()));
         let task2 = tokio::task::spawn(self.clone().idle_task(cancel.clone()));
-        _ = tokio::join!(task1, task2);
+        let result = tokio::join!(task1, task2);
+        if result.0.is_err() {
+            log::error!("MainFlowTask failure");
+            return Err(
+                edgelink::EdgeLinkError::NotSupported("Bad main flow task".to_string()).into(),
+            );
+        }
+        if result.1.is_err() {
+            log::error!("IdleTask failure");
+            return Err(
+                edgelink::EdgeLinkError::NotSupported("Bad main flow task".to_string()).into(),
+            );
+        }
         Ok(())
     }
 }
