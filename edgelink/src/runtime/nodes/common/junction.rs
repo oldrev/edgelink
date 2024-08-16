@@ -1,28 +1,14 @@
 use std::collections::BTreeMap;
-use std::str::FromStr;
 use std::sync::Arc;
-use std::time::Duration;
-use tokio::sync::Mutex as TokMutex;
 
 use log;
-use tokio_cron_scheduler::{Job, JobScheduler, JobSchedulerError};
 
 use crate::runtime::flow::Flow;
 use crate::runtime::model::*;
 use crate::runtime::nodes::*;
-use crate::EdgeLinkError;
 
 struct JunctionNode {
     base: Arc<BaseFlowNode>,
-    scope: BTreeMap<ElementId, Arc<dyn FlowNodeBehavior>>,
-}
-
-impl JunctionNode {
-    fn create_msg(&self) -> Arc<Msg> {
-        let now = crate::utils::time::unix_now().unwrap();
-        let payload = Variant::from(now);
-        Msg::with_payload(self.base.id, payload)
-    }
 }
 
 #[async_trait]
@@ -72,7 +58,6 @@ fn new_node(
 ) -> crate::Result<Arc<dyn FlowNodeBehavior>> {
     let node = JunctionNode {
         base: base_node,
-        scope: BTreeMap::new(),
     };
     Ok(Arc::new(node))
 }

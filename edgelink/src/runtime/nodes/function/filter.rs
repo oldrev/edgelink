@@ -1,5 +1,4 @@
 use std::collections::BTreeMap;
-use std::str::FromStr;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::Mutex as TokMutex;
@@ -17,11 +16,6 @@ struct FilterNode {
 }
 
 impl FilterNode {
-    fn create_msg(&self) -> Arc<Msg> {
-        let now = crate::utils::time::unix_now().unwrap();
-        let payload = Variant::from(now);
-        Msg::with_payload(self.base.id, payload)
-    }
 }
 
 #[async_trait]

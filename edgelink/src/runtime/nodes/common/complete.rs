@@ -1,11 +1,7 @@
 use std::collections::BTreeMap;
-use std::str::FromStr;
 use std::sync::Arc;
-use std::time::Duration;
-use tokio::sync::Mutex as TokMutex;
 
 use log;
-use tokio_cron_scheduler::{Job, JobScheduler, JobSchedulerError};
 
 use crate::runtime::flow::Flow;
 use crate::runtime::model::*;
@@ -18,11 +14,6 @@ struct CompleteNode {
 }
 
 impl CompleteNode {
-    fn create_msg(&self) -> Arc<Msg> {
-        let now = crate::utils::time::unix_now().unwrap();
-        let payload = Variant::from(now);
-        Msg::with_payload(self.base.id, payload)
-    }
 }
 
 #[async_trait]
@@ -42,7 +33,9 @@ impl FlowNodeBehavior for CompleteNode {
         &self.base
     }
 
-    async fn run(self: Arc<Self>, stop_token: CancellationToken) {}
+    async fn run(self: Arc<Self>, stop_token: CancellationToken) {
+        stop_token.cancelled().await;
+    }
 }
 
 fn new_node(

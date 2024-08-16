@@ -34,7 +34,7 @@ impl fmt::Display for NodeKind {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             NodeKind::Flow => write!(f, "GlobalNode"),
-            NodeKind::Global => write!(f, "FlwoNode"),
+            NodeKind::Global => write!(f, "FlowoNode"),
         }
     }
 }
@@ -48,13 +48,13 @@ type FlowNodeFactoryFn = fn(
     &RedFlowNodeConfig,
 ) -> crate::Result<Arc<dyn FlowNodeBehavior>>;
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub enum NodeFactory {
     Global(GlobalNodeFactoryFn),
     Flow(FlowNodeFactoryFn),
 }
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct MetaNode {
     /// The tag of the element
     pub kind: NodeKind,
@@ -73,7 +73,7 @@ pub struct BaseFlowNode {
 }
 
 impl BaseFlowNode {
-    pub(crate) async fn wait_for_msg(&self) -> crate::Result<Arc<Msg>> {
+    pub(crate) async fn wait_for_msg_forever(&self) -> crate::Result<Arc<Msg>> {
         let rx = &mut self.msg_rx.rx.lock().await;
         match rx.recv().await {
             Some(msg) => Ok(msg),
@@ -110,13 +110,13 @@ pub trait FlowNodeBehavior: NodeBehavior {
 
     async fn run(self: Arc<Self>, stop_token: CancellationToken);
 
-    async fn wait_for_msg(&self, cancel: CancellationToken) -> crate::Result<Arc<Msg>> {
+    async fn wait_for_msg(&self, stop_token: CancellationToken) -> crate::Result<Arc<Msg>> {
         select! {
-            _ = cancel.cancelled() => {
+            _ = stop_token.cancelled() => {
                 // The token was cancelled
                 Err(EdgeLinkError::TaskCancelled.into())
             }
-            result = self.base().wait_for_msg() => {
+            result = self.base().wait_for_msg_forever() => {
                 result
             }
         }

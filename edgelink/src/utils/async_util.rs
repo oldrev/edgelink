@@ -15,6 +15,10 @@ pub async fn delay(dur: Duration, cancel: CancellationToken) -> crate::Result<()
     }
 }
 
+pub async fn delay_secs_f64(secs: f64, cancel: CancellationToken) -> crate::Result<()> {
+    delay(Duration::from_secs_f64(secs), cancel).await
+}
+
 pub async fn delay_millis(millis: u64, cancel: CancellationToken) -> crate::Result<()> {
     delay(Duration::from_millis(millis), cancel).await
 }

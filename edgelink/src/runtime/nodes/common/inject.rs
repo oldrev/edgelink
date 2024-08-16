@@ -1,10 +1,8 @@
-use std::str::FromStr;
 use std::sync::Arc;
 use std::time::Duration;
-use tokio::sync::Mutex as TokMutex;
 
 use log;
-use tokio_cron_scheduler::{Job, JobScheduler, JobSchedulerError};
+use tokio_cron_scheduler::{Job, JobScheduler};
 
 use crate::runtime::flow::Flow;
 use crate::runtime::model::*;
@@ -25,23 +23,20 @@ struct InjectNode {
 }
 
 impl InjectNode {
-    fn create_msg(&self) -> Arc<Msg> {
-        let now = crate::utils::time::unix_now().unwrap();
-        let payload = Variant::from(now);
-        Msg::with_payload(self.base.id, payload)
+    async fn once_task(&self, stop_token: CancellationToken) -> crate::Result<()> {
+        if let Some(once_delay_value) = self.config.once_delay {
+            crate::utils::async_util::delay(
+                Duration::from_secs_f64(once_delay_value),
+                stop_token.child_token(),
+            )
+            .await?;
+        }
+
+        self.inject_msg(stop_token).await?;
+        Ok(())
     }
 
-    async fn once_task(&self, stop_token: CancellationToken) {
-        let msg = self.create_msg();
-
-        let flow_ref = Weak::upgrade(&self.base().flow).unwrap();
-        flow_ref
-            .fan_out_single_port(self.base.id, 0, &[msg], stop_token.child_token())
-            .await
-            .unwrap();
-    }
-
-    async fn cron_task(self: Arc<Self>, stop_token: CancellationToken) {
+    async fn cron_task(self: Arc<Self>, stop_token: CancellationToken) -> crate::Result<()> {
         let mut sched = JobScheduler::new().await.unwrap();
 
         let self1 = Arc::clone(&self);
@@ -49,16 +44,18 @@ impl InjectNode {
         let cron_job_stop_token = stop_token.child_token();
         let cron_expr = self.config.cron.as_ref().unwrap().as_ref();
         log::debug!("cron_expr='{}'", cron_expr);
-        let cron_job = Job::new_async(cron_expr, move |_, _| {
+        let cron_job_result = Job::new_async(cron_expr, move |_, _| {
             let self2 = Arc::clone(&self1);
             Box::pin({
                 let job_stop_token = cron_job_stop_token.child_token();
                 async move {
-                    self2.node_action(job_stop_token.child_token()).await;
+                    if let Err(e) = self2.inject_msg(job_stop_token.child_token()).await {
+                        log::error!("Failed to inject: {}", e.to_string());
+                    }
                 }
             })
         });
-        match cron_job {
+        match cron_job_result {
             Ok(checked_job) => {
                 sched.add(checked_job).await.unwrap();
 
@@ -70,50 +67,41 @@ impl InjectNode {
             }
             Err(e) => {
                 log::error!(
-                    "Failed to parse cron: '{}', node.name='{}'",
+                    "Failed to parse cron: '{}' [node.name='{}']: {}",
                     cron_expr,
-                    self.name()
+                    self.name(),
+                    e
                 );
                 panic!("Failed to parse cron"); //FIXME
             }
         }
 
         log::info!("The CRON task has been stopped.");
+        Ok(())
     }
 
-    async fn repeat_task(&self, stop_token: CancellationToken) {
+    async fn repeat_task(&self, stop_token: CancellationToken) -> crate::Result<()> {
         while !stop_token.is_cancelled() {
-            // TODO FIXME
-            let delay_result = crate::utils::async_util::delay(
+            crate::utils::async_util::delay(
                 Duration::from_secs_f64(self.config.repeat.unwrap()),
                 stop_token.child_token(),
             )
-            .await;
-            match delay_result {
-                Ok(()) => {
-                    self.node_action(stop_token.child_token()).await;
-                }
-                Err(ref err) => match err.downcast_ref().unwrap() {
-                    EdgeLinkError::TaskCancelled => {
-                        log::warn!("Inject task has been cancelled.");
-                        break;
-                    }
-                    _ => break,
-                },
-            };
+            .await?;
+            self.inject_msg(stop_token.child_token()).await?;
         }
         log::info!("The `repeat` task has been stopped.");
+        Ok(())
     }
 
-    async fn node_action(&self, stop_token: CancellationToken) {
+    async fn inject_msg(&self, stop_token: CancellationToken) -> crate::Result<()> {
         let flow_ref = Weak::upgrade(&self.base().flow).unwrap();
         let now = crate::utils::time::unix_now().unwrap();
         let payload = Variant::from(now);
         let msg = Msg::with_payload(self.base.id, payload);
         flow_ref
             .fan_out_single_port(self.base.id, 0, &[msg], stop_token.clone())
-            .await
-            .unwrap(); //FIXME
+            .await?;
+        Ok(())
     }
 }
 
@@ -144,7 +132,8 @@ impl FlowNodeBehavior for InjectNode {
         } else if self.config.cron.is_some() {
             self.clone().cron_task(stop_token.child_token()).await;
         } else {
-            log::warn!("The inject node [{}] has no trigger.", self.base.name);
+            log::warn!("The inject node [id='{}', name='{}'] has no trigger.", self.base.id, self.base.name);
+            stop_token.cancelled().await;
         }
     }
 }
@@ -160,14 +149,21 @@ fn new_node(
             .get("repeat")
             .and_then(|jv| jv.as_str())
             .and_then(|value| value.parse::<f64>().ok()),
+
         cron: _config
             .json
             .get("crontab")
             .and_then(|v| v.as_str())
-            .and_then(|v| Some(format!("0 {}", v))),
+            .and_then(|v| if v.is_empty() { None } else { Some(format!("0 {}", v)) }),
+
 
         once: _config.json.get("once").unwrap().as_bool().unwrap(),
-        once_delay: _config.json.get("onceDelay").unwrap().as_f64(),
+
+        once_delay: _config
+            .json
+            .get("onceDelay")
+            .and_then(|jv| jv.as_str())
+            .and_then(|value| value.parse::<f64>().ok()),
     };
 
     let node = InjectNode {
