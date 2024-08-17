@@ -1,4 +1,5 @@
 use core::num;
+use std::borrow::Borrow;
 use std::cmp;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -22,7 +23,7 @@ struct RangeNode {
 }
 
 impl RangeNode {
-    fn do_range(self: Arc<Self>, flow: Arc<Flow>, msg: &Msg) {
+    fn do_range(&self, flow: &Flow, msg: &Msg) {
         if let Some(value) = msg.get_trimmed_nav_property(&self.property) {
             let mut n: f64 = match value {
                 Variant::Number(num_value) => *num_value,
@@ -105,6 +106,7 @@ impl FlowNodeBehavior for RangeNode {
         while !stop_token.is_cancelled() {
             match self.wait_for_msg(stop_token.clone()).await {
                 Ok(msg) => {
+                    self.do_range(&flow_ref, &msg);
                     flow_ref
                         .fan_out_single_port(self.base.id, 0, &[msg], stop_token.clone())
                         .await

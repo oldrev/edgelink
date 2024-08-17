@@ -37,33 +37,52 @@ impl InjectNode {
     }
 
     async fn cron_task(self: Arc<Self>, stop_token: CancellationToken) -> crate::Result<()> {
-        let mut sched = JobScheduler::new().await.unwrap();
+        let mut sched = JobScheduler::new().await.unwrap_or_else(|e| {
+            log::error!("Failed to create JobScheduler: {}", e);
+            panic!("Failed to create JobScheduler")
+        });
 
-        let self1 = Arc::clone(&self);
-        // Add async job
-        let cron_job_stop_token = stop_token.child_token();
-        let cron_expr = self.cron.as_ref().unwrap().as_ref();
+        let cron_expr = match self.cron.as_ref() {
+            Some(expr) => expr.as_ref(),
+            None => {
+                log::error!("Cron expression is missing");
+                return Err("Cron expression is missing".into());
+            }
+        };
+
         log::debug!("cron_expr='{}'", cron_expr);
+
+        let cron_job_stop_token = stop_token.child_token();
+        let self1 = Arc::clone(&self);
+
         let cron_job_result = Job::new_async(cron_expr, move |_, _| {
             let self2 = Arc::clone(&self1);
-            Box::pin({
-                let job_stop_token = cron_job_stop_token.child_token();
-                async move {
-                    if let Err(e) = self2.inject_msg(job_stop_token.child_token()).await {
-                        log::error!("Failed to inject: {}", e.to_string());
-                    }
+            let job_stop_token = cron_job_stop_token.child_token();
+            Box::pin(async move {
+                if let Err(e) = self2.inject_msg(job_stop_token).await {
+                    log::error!("Failed to inject: {}", e);
                 }
             })
         });
+
         match cron_job_result {
             Ok(checked_job) => {
-                sched.add(checked_job).await.unwrap();
+                sched.add(checked_job).await.unwrap_or_else(|e| {
+                    log::error!("Failed to add job: {}", e);
+                    panic!("Failed to add job")
+                });
 
-                sched.start().await.unwrap();
+                sched.start().await.unwrap_or_else(|e| {
+                    log::error!("Failed to start scheduler: {}", e);
+                    panic!("Failed to start scheduler")
+                });
 
                 stop_token.cancelled().await;
 
-                sched.shutdown().await.unwrap();
+                sched.shutdown().await.unwrap_or_else(|e| {
+                    log::error!("Failed to shutdown scheduler: {}", e);
+                    panic!("Failed to shutdown scheduler")
+                });
             }
             Err(e) => {
                 log::error!(
@@ -72,7 +91,7 @@ impl InjectNode {
                     self.name(),
                     e
                 );
-                panic!("Failed to parse cron"); //FIXME
+                return Err(e.into());
             }
         }
 
@@ -99,7 +118,12 @@ impl InjectNode {
         let msg_body: BTreeMap<String, Variant> = self
             .props
             .iter()
-            .map(|i| (i.p.to_string(), eval::evaluate_node_property(&i.v, &i.vt, self, None).unwrap()))
+            .map(|i| {
+                (
+                    i.p.to_string(),
+                    eval::evaluate_node_property(&i.v, &i.vt, self, None).unwrap(),
+                )
+            })
             .collect();
 
         let msg = Msg::new_with_body(self.base.id, msg_body);
