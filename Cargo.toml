@@ -14,15 +14,15 @@ strip = true        # Automatically strip symbols from the binary.
 [dependencies]
 edgelink = { path = "./edgelink" }
 async-trait = "0.1.73"
-libloading = "0.5.2"
-more-di = { version = "2.1.2", features = ["builder", "inject", "async", "lazy"] }
+libloading = "0.8.5"
+more-di = { version = "3.1.0", features = ["builder", "inject", "async", "lazy"] }
 tokio = "1.33.0"
 log = "0.4.20"
 tokio-util = "0.7.9"
 log4rs = { version = "1.2.0", features = ["default", "toml_format"] }
 jsonata-rs = "0.1.5"
 bumpalo = "3.16.0"
-clap = "4.5.15"
+clap = "4.5.16"
 dirs-next = "2.0.0"
 
 [dev-dependencies]

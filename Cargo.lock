@@ -213,9 +213,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.5.15"
+version = "4.5.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "11d8838454fda655dafd3accb2b6e2bea645b9e4078abe84a22ceb947235c5cc"
+checksum = "ed6719fffa43d0d87e5fd8caeab59be1554fb028cd30edc88fc4369b17971019"
 dependencies = [
  "clap_builder",
  "clap_derive",
@@ -327,7 +327,7 @@ dependencies = [
  "inventory",
  "lazy_static",
  "log",
- "more-di",
+ "more-di 2.1.2",
  "nom",
  "regex",
  "serde",
@@ -360,7 +360,7 @@ dependencies = [
  "libloading",
  "log",
  "log4rs",
- "more-di",
+ "more-di 3.1.0",
  "serde_json_path",
  "tokio",
  "tokio-util",
@@ -532,12 +532,12 @@ checksum = "97b3888a4aecf77e811145cadf6eef5901f4782c53886191b2f693f24761847c"
 
 [[package]]
 name = "libloading"
-version = "0.5.2"
+version = "0.8.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f2b111a074963af1d37a139918ac6d49ad1d0d5e47f72fd55388619691a7d753"
+checksum = "4979f22fdb869068da03c9f7528f8297c6fd2606bc3a4affe42e6a823fdb8da4"
 dependencies = [
- "cc",
- "winapi",
+ "cfg-if",
+ "windows-targets",
 ]
 
 [[package]]
@@ -643,7 +643,17 @@ version = "2.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "59b1bdd49dae0962f8da2855cb60794948a7af2b9849421a340e89cf7f68ef8e"
 dependencies = [
- "more-di-macros",
+ "more-di-macros 2.1.0",
+ "spin",
+]
+
+[[package]]
+name = "more-di"
+version = "3.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f263611311a2012c4b8e7191e6906ed963e906d12a3b0dc679e4077c5f2dfb89"
+dependencies = [
+ "more-di-macros 3.1.0",
  "spin",
 ]
 
@@ -656,6 +666,17 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 1.0.109",
+]
+
+[[package]]
+name = "more-di-macros"
+version = "3.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4b04d5dd4cddcb6fc4b763cedfab4bdb543011130d2cfcdf4e755a7976494ce3"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.72",
 ]
 
 [[package]]
