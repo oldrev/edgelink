@@ -213,9 +213,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.5.15"
+version = "4.5.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "11d8838454fda655dafd3accb2b6e2bea645b9e4078abe84a22ceb947235c5cc"
+checksum = "ed6719fffa43d0d87e5fd8caeab59be1554fb028cd30edc88fc4369b17971019"
 dependencies = [
  "clap_builder",
  "clap_derive",
@@ -327,7 +327,7 @@ dependencies = [
  "inventory",
  "lazy_static",
  "log",
- "more-di",
+ "more-di 2.1.2",
  "nom",
  "regex",
  "serde",
@@ -353,7 +353,7 @@ dependencies = [
  "libloading",
  "log",
  "log4rs",
- "more-di",
+ "more-di 3.1.0",
  "serde_json_path",
  "tokio",
  "tokio-util",
@@ -636,7 +636,17 @@ version = "2.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "59b1bdd49dae0962f8da2855cb60794948a7af2b9849421a340e89cf7f68ef8e"
 dependencies = [
- "more-di-macros",
+ "more-di-macros 2.1.0",
+ "spin",
+]
+
+[[package]]
+name = "more-di"
+version = "3.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f263611311a2012c4b8e7191e6906ed963e906d12a3b0dc679e4077c5f2dfb89"
+dependencies = [
+ "more-di-macros 3.1.0",
  "spin",
 ]
 
@@ -649,6 +659,17 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 1.0.109",
+]
+
+[[package]]
+name = "more-di-macros"
+version = "3.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4b04d5dd4cddcb6fc4b763cedfab4bdb543011130d2cfcdf4e755a7976494ce3"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.72",
 ]
 
 [[package]]
