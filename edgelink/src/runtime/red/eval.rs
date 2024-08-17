@@ -9,6 +9,8 @@ use crate::{
     utils, EdgeLinkError,
 };
 
+use super::json::RedPropertyType;
+
 pub struct ParsedContextStoreProperty<'a> {
     pub store: &'a str,
     pub key: &'a str,
@@ -106,31 +108,44 @@ fn evaluate_env_property<'a>(value: &str, node: &dyn FlowNodeBehavior) -> crate:
  * @return {any} The evaluted property, if no `callback` is provided
  */
 pub fn evaluate_node_property(
-    value: &JsonValue,
-    _type: &str,
+    value: &str,
+    _type: &RedPropertyType,
     node: &dyn FlowNodeBehavior,
-    msg: Arc<Msg>,
+    msg: Option<&Msg>,
 ) -> crate::Result<Variant> {
     let evaluated = match _type {
-        "str" => Variant::String(value.as_str().unwrap().to_string()),
+        RedPropertyType::Str => Variant::String(value.to_string()),
 
-        "num" => Variant::Float(value.as_f64().unwrap()),
+        RedPropertyType::Num => match value.parse::<f64>() {
+            Ok(fv) => Variant::Number(fv),
+            Err(_) => Variant::Number(0.0)
+        },
 
-        "json" => {
-            let root_jv: JsonValue = serde_json::from_str(value.as_str().unwrap())?;
+        RedPropertyType::Json => {
+            let root_jv: JsonValue = serde_json::from_str(value)?;
             Variant::from(root_jv)
         }
 
-        "re" => Variant::String(value.as_str().unwrap().to_string()),
+        RedPropertyType::Re => Variant::String(value.to_string()),
 
-        "date" => Variant::Integer(utils::time::unix_now().unwrap()),
+        RedPropertyType::Date => match value {
+            "" => Variant::Number(utils::time::unix_now() as f64),
+            "object" => todo!(),
+            "iso" => Variant::String(utils::time::iso_now()),
+            _ => Variant::String(utils::time::millis_now()),
 
-        "bin" => {
-            let jv: JsonValue = serde_json::from_str(value.as_str().unwrap())?;
+        }
+
+        RedPropertyType::Bin => {
+            let jv: JsonValue = serde_json::from_str(value)?;
             Variant::bytes_from_json_value(&jv)?
         }
 
-        "flow" | "global" => {
+        RedPropertyType::Msg => {
+            msg.unwrap().get_trimmed_nav_property(value).unwrap().clone()
+        }
+
+        RedPropertyType::Flow | RedPropertyType::Global => {
             /*
             var contextKey = parseContextStore(value);
             if (/\[msg/.test(contextKey.key)) {
@@ -145,23 +160,13 @@ pub fn evaluate_node_property(
             todo!()
         }
 
-        "bool" => Variant::Bool(value.as_bool().unwrap()),
+        RedPropertyType::Bool => Variant::Bool(value.parse::<bool>().unwrap()),
 
-        "jsonata" => {
-            return Err(EdgeLinkError::NotSupported(
-                "Unsupported node property: JSONATA".to_owned(),
-            )
-            .into());
+        RedPropertyType::Jsonata => {
+            todo!()
         }
 
-        "env" => Variant::String(evaluate_env_property(value.as_str().unwrap(), node)?.to_string()),
-
-        _ => {
-            return Err(EdgeLinkError::NotSupported(
-                format!("Unsupported node property: {0}", _type).to_owned(),
-            )
-            .into());
-        }
+        RedPropertyType::Env => Variant::String(evaluate_env_property(value, node)?.to_string()),
     };
 
     Ok(evaluated)

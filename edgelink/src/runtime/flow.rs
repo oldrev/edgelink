@@ -72,7 +72,6 @@ impl Flow {
 
         let mut msg_sent = false;
         for wire in port.wires.iter() {
-            println!("fan out msg to node: [id='{}', ]", wire.target_node_id);
             //let dest_node = &state.nodes[dest_node_id];
             for msg in msgs.iter() {
                 let msg_to_send: Arc<Msg> = if msg_sent {

@@ -25,6 +25,7 @@ regex = "1.10.2"
 bumpalo = "3.16.0"
 tokio-cron-scheduler = "0.11.0"
 topological-sort = "0.2.2"
+chrono = "0.4.38"
 
 [dev-dependencies]
 # Enable test-utilities in dev mode only. This is mostly for tests.

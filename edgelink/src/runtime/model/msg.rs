@@ -5,7 +5,10 @@ use lazy_static::lazy_static;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::Arc;
 
+use tokio::sync::Mutex as TokMutex;
+
 use crate::runtime::model::{ElementId, Variant};
+use crate::runtime::red::json::RedPropertyTriple;
 
 use super::propex::{self, PropexSegment};
 
@@ -13,7 +16,7 @@ use super::propex::{self, PropexSegment};
 pub struct Msg {
     id: u32,
     birth_place: ElementId,
-    data: BTreeMap<String, Variant>,
+    body: BTreeMap<String, Variant>,
 }
 
 impl Msg {
@@ -21,9 +24,18 @@ impl Msg {
         let mut msg = Msg {
             id: Msg::generate_id(),
             birth_place,
-            data: BTreeMap::new(),
+            body: BTreeMap::new(),
         };
-        msg.data.insert("payload".to_string(), Variant::Null);
+        msg.body.insert("payload".to_string(), Variant::Null);
+        Arc::new(msg)
+    }
+
+    pub fn new_with_body(birth_place: ElementId, body: BTreeMap<String, Variant>) -> Arc<Self> {
+        let msg = Msg {
+            id: Msg::generate_id(),
+            birth_place,
+            body,
+        };
         Arc::new(msg)
     }
 
@@ -31,9 +43,9 @@ impl Msg {
         let mut msg = Msg {
             id: Msg::generate_id(),
             birth_place,
-            data: BTreeMap::new(),
+            body: BTreeMap::new(),
         };
-        msg.data.insert("payload".to_string(), payload);
+        msg.body.insert("payload".to_string(), payload);
         Arc::new(msg)
     }
 
@@ -46,11 +58,11 @@ impl Msg {
     }
 
     pub fn payload(&self) -> &Variant {
-        self.data.get("payload").unwrap() // TODO FIXME
+        self.body.get("payload").unwrap() // TODO FIXME
     }
 
     pub fn payload_mut(&mut self) -> Option<&mut Variant> {
-        self.data.borrow_mut().get_mut("payload")
+        self.body.borrow_mut().get_mut("payload")
     }
 
     pub fn generate_id() -> u32 {
@@ -59,7 +71,7 @@ impl Msg {
     }
 
     pub fn get_property(&self, prop: &str) -> Option<&Variant> {
-        self.data.get(prop)
+        self.body.get(prop)
     }
 
     pub fn get_nav_property(&self, expr: &str) -> Option<&Variant> {
@@ -80,6 +92,21 @@ impl Msg {
             None
         }
     }
+
+    pub fn get_trimmed_nav_property(&self, expr: &str) -> Option<&Variant> {
+        if expr.trim().starts_with("msg.") {
+            self.get_nav_property(&expr[4..])
+        } else {
+            self.get_nav_property(expr)
+        }
+    }
+
+    pub fn put_property(&mut self, expr: &str, value: &Variant) {
+        self.body
+            .entry(expr.to_string())
+            .and_modify(|e| *e = value.clone())
+            .or_insert(value.clone());
+    }
 }
 
 impl Clone for Msg {
@@ -87,7 +114,7 @@ impl Clone for Msg {
         Self {
             id: self.id,
             birth_place: self.birth_place,
-            data: self.data.clone(),
+            body: self.body.clone(),
         }
     }
 }

@@ -1,4 +1,6 @@
+use std::any::Any;
 use std::collections::{BTreeMap, HashSet};
+use std::fmt;
 use std::{fs::File, io::Read};
 
 use serde::Deserializer;
@@ -7,6 +9,7 @@ use serde_json::Map as JsonMap;
 use serde_json::Value as JsonValue;
 use topological_sort::TopologicalSort;
 
+use crate::runtime::model::Variant;
 use crate::runtime::model::*;
 use crate::EdgeLinkError;
 
@@ -229,38 +232,71 @@ impl<'de> Deserialize<'de> for ElementId {
     }
 }
 
-#[derive(Debug)]
-struct RedPropertyTriple<'a> {
-    pub p: &'a str,
-    pub vt: &'a str,
-    pub v: crate::runtime::model::Variant,
+#[derive(Debug, Clone, Copy)]
+pub enum RedPropertyType {
+    Str,
+    Num,
+    Json,
+    Re,
+    Date,
+    Bin,
+    Msg,
+    Flow,
+    Global,
+    Bool,
+    Jsonata,
+    Env,
 }
 
-type RedPropertyTable<'a> = Vec<RedPropertyTriple<'a>>;
+impl RedPropertyType {
+    pub fn from(ptype: &str) -> crate::Result<RedPropertyType> {
+        match ptype {
+            "str" => Ok(RedPropertyType::Str),
+            "num" => Ok(RedPropertyType::Num),
+            "json" => Ok(RedPropertyType::Json),
+            "re" => Ok(RedPropertyType::Re),
+            "date" => Ok(RedPropertyType::Date),
+            "bin" => Ok(RedPropertyType::Bin),
+            "msg" => Ok(RedPropertyType::Msg),
+            "flow" => Ok(RedPropertyType::Flow),
+            "global" => Ok(RedPropertyType::Global),
+            "bool" => Ok(RedPropertyType::Bool),
+            "jsonata" => Ok(RedPropertyType::Jsonata),
+            "env" => Ok(RedPropertyType::Env),
+            _ => Err(EdgeLinkError::BadFlowsJson().into()),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct RedPropertyTriple {
+    pub p: String,
+    pub vt: RedPropertyType,
+    pub v: String,
+}
 
 fn parse_property_triple(jv: &serde_json::Value) -> crate::Result<RedPropertyTriple> {
-    let triple = jv.as_object().ok_or(EdgeLinkError::BadFlowsJson())?;
-    let v = triple
-        .get("v")
-        .ok_or(EdgeLinkError::BadFlowsJson())?
-        .as_str()
-        .ok_or(EdgeLinkError::BadFlowsJson())?;
     Ok(RedPropertyTriple {
-        p: triple
+        vt: RedPropertyType::from(
+            jv.get("vt")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or("str"),
+        )?,
+        p: jv
             .get("p")
             .ok_or(EdgeLinkError::BadFlowsJson())?
             .as_str()
-            .ok_or(EdgeLinkError::BadFlowsJson())?,
-        vt: triple
-            .get("vt")
             .ok_or(EdgeLinkError::BadFlowsJson())?
-            .as_str()
-            .ok_or(EdgeLinkError::BadFlowsJson())?,
-        v: Variant::String(v.to_string()),
+            .to_string(),
+
+        v: match jv.get("v").and_then(serde_json::Value::as_str) {
+            Some(s) => s.to_string(),
+            None => "".to_string(),
+        },
     })
 }
 
-impl<'a> RedPropertyTriple<'a> {
+impl RedPropertyTriple {
     pub fn collection_from_json_value(
         jv: &serde_json::Value,
     ) -> crate::Result<Vec<RedPropertyTriple>> {

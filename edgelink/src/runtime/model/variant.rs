@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use regex;
 
 use crate::runtime::model::propex;
 use crate::EdgeLinkError;
@@ -11,11 +12,8 @@ pub enum Variant {
     /// Null
     Null,
 
-    /// An integer
-    Integer(i64),
-
     /// A float
-    Float(f64),
+    Number(f64),
 
     /// A string
     String(String),
@@ -36,24 +34,6 @@ pub enum Variant {
 impl Variant {
     pub fn new_empty_object() -> Variant {
         Variant::Object(BTreeMap::new())
-    }
-
-    pub fn is_integer(&self) -> bool {
-        matches!(self, Variant::Integer(..))
-    }
-
-    pub fn as_integer(&self) -> Option<i64> {
-        match self {
-            Variant::Integer(int) => Some(*int),
-            _ => None,
-        }
-    }
-
-    pub fn into_integer(self) -> Result<i64, Self> {
-        match self {
-            Variant::Integer(int) => Ok(int),
-            other => Err(other),
-        }
     }
 
     pub fn is_bytes(&self) -> bool {
@@ -81,20 +61,20 @@ impl Variant {
         }
     }
 
-    pub fn is_float(&self) -> bool {
-        matches!(self, Variant::Float(..))
+    pub fn is_number(&self) -> bool {
+        matches!(self, Variant::Number(..))
     }
 
-    pub fn as_float(&self) -> Option<f64> {
+    pub fn as_number(&self) -> Option<f64> {
         match *self {
-            Variant::Float(f) => Some(f),
+            Variant::Number(f) => Some(f),
             _ => None,
         }
     }
 
-    pub fn into_float(self) -> Result<f64, Self> {
+    pub fn into_number(self) -> Result<f64, Self> {
         match self {
-            Variant::Float(f) => Ok(f),
+            Variant::Number(f) => Ok(f),
             other => Err(other),
         }
     }
@@ -285,18 +265,17 @@ macro_rules! implfrom {
 }
 
 implfrom! {
-    Integer(i64),
-    Integer(u32),
-    Integer(i32),
-    Integer(u16),
-    Integer(i16),
-    Integer(u8),
-    Integer(i8),
+    Number(u32),
+    Number(i32),
+    Number(u16),
+    Number(i16),
+    Number(u8),
+    Number(i8),
 
     Bytes(Vec<u8>),
 
-    Float(f64),
-    Float(f32),
+    Number(f32),
+    Number(f64),
 
     String(String),
     String(&str),
@@ -316,9 +295,7 @@ implfrom! {
 impl From<char> for Variant {
     #[inline]
     fn from(value: char) -> Self {
-        let mut v = String::with_capacity(1);
-        v.push(value);
-        Variant::String(v)
+        Variant::String(value.to_string())
     }
 }
 
@@ -354,11 +331,7 @@ impl From<serde_json::Value> for Variant {
             serde_json::Value::Null => Variant::Null,
             serde_json::Value::Bool(boolean) => Variant::from(boolean),
             serde_json::Value::Number(number) => {
-                if number.is_i64() || number.is_u64() {
-                    Variant::Integer(number.as_i64().unwrap())
-                } else {
-                    Variant::Float(number.as_f64().unwrap())
-                }
+                Variant::Number(number.as_f64().unwrap())
             }
             serde_json::Value::String(string) => Variant::String(string.to_owned()),
             serde_json::Value::Array(array) => {
@@ -381,11 +354,7 @@ impl From<&serde_json::Value> for Variant {
             serde_json::Value::Null => Variant::Null,
             serde_json::Value::Bool(boolean) => Variant::from(*boolean),
             serde_json::Value::Number(number) => {
-                if number.is_i64() || number.is_u64() {
-                    Variant::Integer(number.as_i64().unwrap())
-                } else {
-                    Variant::Float(number.as_f64().unwrap())
-                }
+                Variant::Number(number.as_f64().unwrap())
             }
             serde_json::Value::String(string) => Variant::String(string.clone()),
             serde_json::Value::Array(array) => {

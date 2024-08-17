@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -7,23 +8,23 @@ use tokio_cron_scheduler::{Job, JobScheduler};
 use crate::runtime::flow::Flow;
 use crate::runtime::model::*;
 use crate::runtime::nodes::*;
+use crate::runtime::red::eval;
+use crate::runtime::red::json::RedPropertyTriple;
+use crate::runtime::red::json::RedPropertyType;
 
-#[derive(Debug, Clone)]
-struct InjectNodeConfig {
+struct InjectNode {
+    base: Arc<BaseFlowNode>,
+
     repeat: Option<f64>,
     cron: Option<String>,
     once: bool,
     once_delay: Option<f64>,
-}
-
-struct InjectNode {
-    base: Arc<BaseFlowNode>,
-    config: InjectNodeConfig,
+    props: Vec<RedPropertyTriple>,
 }
 
 impl InjectNode {
     async fn once_task(&self, stop_token: CancellationToken) -> crate::Result<()> {
-        if let Some(once_delay_value) = self.config.once_delay {
+        if let Some(once_delay_value) = self.once_delay {
             crate::utils::async_util::delay(
                 Duration::from_secs_f64(once_delay_value),
                 stop_token.child_token(),
@@ -41,7 +42,7 @@ impl InjectNode {
         let self1 = Arc::clone(&self);
         // Add async job
         let cron_job_stop_token = stop_token.child_token();
-        let cron_expr = self.config.cron.as_ref().unwrap().as_ref();
+        let cron_expr = self.cron.as_ref().unwrap().as_ref();
         log::debug!("cron_expr='{}'", cron_expr);
         let cron_job_result = Job::new_async(cron_expr, move |_, _| {
             let self2 = Arc::clone(&self1);
@@ -82,7 +83,7 @@ impl InjectNode {
     async fn repeat_task(&self, stop_token: CancellationToken) -> crate::Result<()> {
         while !stop_token.is_cancelled() {
             crate::utils::async_util::delay(
-                Duration::from_secs_f64(self.config.repeat.unwrap()),
+                Duration::from_secs_f64(self.repeat.unwrap()),
                 stop_token.child_token(),
             )
             .await?;
@@ -94,9 +95,15 @@ impl InjectNode {
 
     async fn inject_msg(&self, stop_token: CancellationToken) -> crate::Result<()> {
         let flow_ref = Weak::upgrade(&self.base().flow).unwrap();
-        let now = crate::utils::time::unix_now().unwrap();
-        let payload = Variant::from(now);
-        let msg = Msg::new_with_payload(self.base.id, payload);
+
+        let msg_body: BTreeMap<String, Variant> = self
+            .props
+            .iter()
+            .map(|i| (i.p.to_string(), eval::evaluate_node_property(&i.v, &i.vt, self, None).unwrap()))
+            .collect();
+
+        let msg = Msg::new_with_body(self.base.id, msg_body);
+
         flow_ref
             .fan_out_single_port(self.base.id, 0, &[msg], stop_token.clone())
             .await?;
@@ -122,17 +129,17 @@ impl FlowNodeBehavior for InjectNode {
     }
 
     async fn run(self: Arc<Self>, stop_token: CancellationToken) {
-        if self.config.once {
+        if self.once {
             if let Err(e) = self.once_task(stop_token.child_token()).await {
                 log::error!("The 'once_task' failed: {}", e.to_string());
             }
         }
 
-        if self.config.repeat.is_some() {
+        if self.repeat.is_some() {
             if let Err(e) = self.repeat_task(stop_token.child_token()).await {
                 log::error!("The 'repeat_task' failed: {}", e.to_string());
             }
-        } else if self.config.cron.is_some() {
+        } else if self.cron.is_some() {
             if let Err(e) = self.clone().cron_task(stop_token.child_token()).await {
                 log::error!("The CRON task failed: {}", e.to_string());
             }
@@ -152,7 +159,26 @@ fn new_node(
     base_node: Arc<BaseFlowNode>,
     _config: &RedFlowNodeConfig,
 ) -> crate::Result<Arc<dyn FlowNodeBehavior>> {
-    let config = InjectNodeConfig {
+    let mut props = RedPropertyTriple::collection_from_json_value(
+        &_config
+            .json
+            .get("props")
+            .ok_or(EdgeLinkError::BadFlowsJson())
+            .cloned()?,
+    )?;
+
+    if let Some(payload_type) = _config.json.get("payloadType").and_then(|v| v.as_str()) {
+        props.retain(|x| x.p != "payload");
+        props.push(RedPropertyTriple {
+            p: "payload".to_string(),
+            vt: RedPropertyType::from(payload_type)?,
+            v: "string".to_string(),
+        });
+    }
+
+    let node = InjectNode {
+        base: base_node,
+
         repeat: _config
             .json
             .get("repeat")
@@ -178,11 +204,8 @@ fn new_node(
             .get("onceDelay")
             .and_then(|jv| jv.as_str())
             .and_then(|value| value.parse::<f64>().ok()),
-    };
 
-    let node = InjectNode {
-        base: base_node,
-        config,
+        props: props,
     };
     Ok(Arc::new(node))
 }
