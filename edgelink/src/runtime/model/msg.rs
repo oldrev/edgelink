@@ -65,8 +65,8 @@ impl Msg {
     pub fn get_nav_property(&self, expr: &str) -> Option<&Variant> {
         if let Some(segs) = propex::parse(expr).ok() {
             match segs[0] {
-                // 访问 'msg' 的属性表达式第一级必须是字符串，也就是必须是
-                // `msg['aaa']` 或者 `msg.aaa`，而不能是 `msg[12]`
+                // The first level of the property expression for 'msg' must be a string, which means it must be
+                // `msg['aaa']` or `msg.aaa`, and not `msg[12]`
                 PropexSegment::StringIndex(first_prop_name) => {
                     if let Some(first_prop) = self.get_property(first_prop_name) {
                         first_prop.get_item_by_propex_segments(&segs[1..])

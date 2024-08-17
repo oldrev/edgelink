@@ -1,4 +1,4 @@
-# EdgeLink：使用 Rust 开发的 Node-RED 兼容运行时
+# EdgeLink：Rust 开发的 Node-RED 兼容运行时引擎
 
 ![Node-RED Rust Backend](assets/banner.jpg)
 
@@ -6,7 +6,7 @@
 
 ## 概述
 
-EdgeLink 是一个使用 Rust 编写的 Node-RED 后端运行时，旨在提高性能并降低内存占用。通过将 Node-RED 的原 NodeJS 后端替换为这个基于 Rust 的实现，可以获得更好的性能和更小的内存足迹。
+EdgeLink 是一个使用 Rust 编写的 Node-RED 后端运行时引擎，用于执行 Node-RED 设计产生的 `flows.json` 流程，旨在提高性能并降低内存占用。
 
 ## 特性
 
@@ -46,7 +46,7 @@ cargo build --release
 
 ## 反馈与技术支持
 
-我们欢迎任何反馈！如果你遇到任何技术问题或者 bug，请不要提交 [issue](https://github.com/edge-link/edgelink.rs/issues)。
+我们欢迎任何反馈！如果你遇到任何技术问题或者 bug，请提交 [issue](https://github.com/edge-link/edgelink.rs/issues)。
 
 ## 许可证
 

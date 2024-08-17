@@ -1,4 +1,4 @@
-# EdgeLink: A Node-RED Compatible Runtime in Rust
+# EdgeLink: A Node-RED Compatible Runtime Engine in Rust
 
 ![Node-RED Rust Backend](assets/banner.jpg)
 
