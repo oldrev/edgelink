@@ -31,6 +31,7 @@ serde_json_path = "0.6.3"
 
 [workspace]
 members = [
-    "./plugins/plugin_a",
+    "./edgelink",
+    "./plugins/edgelink_red_sqlite_node",
     "./plugins/plugin_b"
 ]

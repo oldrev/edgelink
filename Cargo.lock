@@ -341,6 +341,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "edgelink_red_sqlite_node"
+version = "0.1.0"
+dependencies = [
+ "edgelink",
+]
+
+[[package]]
 name = "edgelinkd"
 version = "0.1.0"
 dependencies = [
@@ -733,13 +740,6 @@ name = "pin-project-lite"
 version = "0.2.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bda66fc9667c18cb2758a2ac84d1167245054bcf85d5d1aaa6923f45801bdd02"
-
-[[package]]
-name = "plugin_a"
-version = "0.1.0"
-dependencies = [
- "edgelink",
-]
 
 [[package]]
 name = "plugin_b"
