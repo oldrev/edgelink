@@ -1,3 +1,5 @@
+use core::num;
+use std::cmp;
 use std::str::FromStr;
 use std::sync::Arc;
 
@@ -11,7 +13,7 @@ struct RangeNode {
     base: Arc<BaseFlowNode>,
 
     action: RangeAction,
-    round: Option<f64>,
+    round: bool,
     minin: f64,
     maxin: f64,
     minout: f64,
@@ -20,8 +22,42 @@ struct RangeNode {
 }
 
 impl RangeNode {
-    fn do_range(self: Arc<Self>) {
+    fn do_range(self: Arc<Self>, flow: Arc<Flow>, msg: &Msg) {
+        if let Some(value) = msg.get_trimmed_nav_property(&self.property) {
+            let mut n: f64 = match value {
+                Variant::Number(num_value) => *num_value,
+                Variant::String(s) => s.parse::<f64>().unwrap(),
+                _ => f64::NAN,
+            };
 
+            if !n.is_nan() {
+                match self.action {
+                    RangeAction::Drop => {
+                        if n < self.minin || n > self.maxin {
+                            return;
+                        }
+                    }
+
+                    RangeAction::Clamp => n = n.clamp(self.minin, self.maxin),
+
+                    RangeAction::Roll => {
+                        let divisor = self.maxin - self.minin;
+                        n = ((n - self.minin) % divisor + divisor) % divisor + self.minin;
+                    }
+
+                    _ => {}
+                };
+
+                let mut new_value = ((n - self.minin) / (self.maxin - self.minin)
+                    * (self.maxout - self.minout))
+                    + self.minout;
+                if self.round {
+                    new_value = new_value.round();
+                }
+
+                // TODO set msg value
+            }
+        }
     }
 }
 
@@ -85,7 +121,6 @@ impl FlowNodeBehavior for RangeNode {
         rx.close();
         log::debug!("DebugNode process() task has been terminated.");
     }
-
 }
 
 fn new_node(
@@ -109,8 +144,8 @@ fn new_node(
         round: _config
             .json
             .get("round")
-            .and_then(|jv| jv.as_str())
-            .and_then(|value| value.parse::<f64>().ok()),
+            .and_then(|jv| jv.as_bool())
+            .unwrap_or(false),
 
         minin: _config
             .json
