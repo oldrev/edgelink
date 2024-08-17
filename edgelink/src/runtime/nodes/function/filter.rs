@@ -1,14 +1,12 @@
 use std::collections::BTreeMap;
 use std::sync::Arc;
 use std::time::Duration;
-use tokio::sync::Mutex as TokMutex;
 
 use log;
 
 use crate::runtime::flow::Flow;
 use crate::runtime::model::*;
 use crate::runtime::nodes::*;
-use crate::EdgeLinkError;
 
 struct FilterNode {
     base: Arc<BaseFlowNode>,

@@ -163,7 +163,7 @@ impl Flow {
                     _engine: Arc::downgrade(&engine),
                     nodes: BTreeMap::new(),
                     nodes_ordering: Vec::new(),
-                    _context: Variant::empty_object(),
+                    _context: Variant::new_empty_object(),
                 }),
             }),
             stop_token: CancellationToken::new(),

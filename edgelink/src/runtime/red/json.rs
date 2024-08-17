@@ -236,7 +236,7 @@ struct RedPropertyTriple<'a> {
     pub v: crate::runtime::model::Variant,
 }
 
-// type RedPropertyTable<'a> = Vec<RedPropertyTriple<'a>>;
+type RedPropertyTable<'a> = Vec<RedPropertyTriple<'a>>;
 
 fn parse_property_triple(jv: &serde_json::Value) -> crate::Result<RedPropertyTriple> {
     let triple = jv.as_object().ok_or(EdgeLinkError::BadFlowsJson())?;

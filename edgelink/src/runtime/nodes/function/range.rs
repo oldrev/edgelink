@@ -20,6 +20,12 @@ struct RangeNode {
     property: String,
 }
 
+impl RangeNode {
+    fn do_range(self: Arc<Self>) {
+
+    }
+}
+
 #[async_trait]
 impl NodeBehavior for RangeNode {
     fn id(&self) -> ElementId {
@@ -80,6 +86,7 @@ impl FlowNodeBehavior for RangeNode {
         rx.close();
         log::debug!("DebugNode process() task has been terminated.");
     }
+
 }
 
 fn new_node(

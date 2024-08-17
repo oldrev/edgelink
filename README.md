@@ -36,6 +36,12 @@ cargo build --release
 ./target/release/edgelinkd
 ```
 
+Or:
+
+```bash
+cargo run
+```
+
 ## Configuration
 
 Adjust various settings in the configuration file, such as port number, database connection, etc. Refer to [CONFIG.md](docs/CONFIG.md) for more information.
@@ -47,6 +53,52 @@ Contributions are welcome! Please read [CONTRIBUTING.md](.github/CONTRIBUTING.md
 ## Project Status
 
 **Alpha Development Stage**: The project is currently in the alpha development stage and cannot guarantee stable operation.
+
+### The Current Status of Nodes:
+
+- Core nodes:
+    - Common nodes:
+        - [x] Junction
+        - [x] Inject
+        - [-] Debug
+        - [-] Complete
+        - [ ] Catch
+        - [ ] Status
+        - [ ] Link
+        - [ ] Comment
+        - [ ] GlobalConfig
+        - [ ] Unknown
+    - Function nodes:
+        - [ ] Function
+        - [ ] Switch
+        - [ ] Change
+        - [ ] Range (WIP)
+        - [ ] Temlate
+        - [ ] Delay
+        - [ ] Exec
+        - [ ] Rbe/Filter (WIP)
+    - Network nodes:
+        - [ ] TLS
+        - [ ] HTTP Proxy
+        - [ ] MQTT
+        - [ ] HTTP In
+        - [ ] HTTP Request
+        - [ ] WebSocket
+        - [ ] TCP In
+        - [ ] UDP
+    - Parse nodes:
+        - [ ] CSV
+        - [ ] HTML
+        - [ ] JSON
+        - [ ] XML
+        - [ ] YAML
+    - Sqeuence nodes:
+        - [ ] Split
+        - [ ] Sort
+        - [ ] Batch
+    - Storage
+        - [ ] File
+        - [ ] Watch
 
 ## Roadmap
 

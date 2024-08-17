@@ -7,6 +7,8 @@ use std::sync::Arc;
 
 use crate::runtime::model::{ElementId, Variant};
 
+use super::propex::{self, PropexSegment};
+
 #[derive(Debug)]
 pub struct Msg {
     id: u32,
@@ -15,7 +17,7 @@ pub struct Msg {
 }
 
 impl Msg {
-    pub fn with_none_payload(birth_place: ElementId) -> Arc<Self> {
+    pub fn new_default(birth_place: ElementId) -> Arc<Self> {
         let mut msg = Msg {
             id: Msg::generate_id(),
             birth_place,
@@ -25,7 +27,7 @@ impl Msg {
         Arc::new(msg)
     }
 
-    pub fn with_payload(birth_place: ElementId, payload: Variant) -> Arc<Self> {
+    pub fn new_with_payload(birth_place: ElementId, payload: Variant) -> Arc<Self> {
         let mut msg = Msg {
             id: Msg::generate_id(),
             birth_place,
@@ -54,6 +56,29 @@ impl Msg {
     pub fn generate_id() -> u32 {
         let msg_generator_clone = MSG_GENERATOR.clone();
         msg_generator_clone.generate_id()
+    }
+
+    pub fn get_property(&self, prop: &str) -> Option<&Variant> {
+        self.data.get(prop)
+    }
+
+    pub fn get_nav_property(&self, expr: &str) -> Option<&Variant> {
+        if let Some(segs) = propex::parse(expr).ok() {
+            match segs[0] {
+                // 访问 'msg' 的属性表达式第一级必须是字符串，也就是必须是
+                // `msg['aaa']` 或者 `msg.aaa`，而不能是 `msg[12]`
+                PropexSegment::StringIndex(first_prop_name) => {
+                    if let Some(first_prop) = self.get_property(first_prop_name) {
+                        first_prop.get_item_by_propex_segments(&segs[1..])
+                    } else {
+                        None
+                    }
+                }
+                _ => None,
+            }
+        } else {
+            None
+        }
     }
 }
 

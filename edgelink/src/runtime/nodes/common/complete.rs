@@ -1,16 +1,14 @@
 use std::collections::BTreeMap;
 use std::sync::Arc;
 
-use log;
 
 use crate::runtime::flow::Flow;
 use crate::runtime::model::*;
 use crate::runtime::nodes::*;
-use crate::EdgeLinkError;
 
 struct CompleteNode {
     base: Arc<BaseFlowNode>,
-    scope: BTreeMap<ElementId, Arc<dyn FlowNodeBehavior>>,
+    //scope: BTreeMap<ElementId, Arc<dyn FlowNodeBehavior>>,
 }
 
 impl CompleteNode {
@@ -45,7 +43,7 @@ fn new_node(
 ) -> crate::Result<Arc<dyn FlowNodeBehavior>> {
     let node = CompleteNode {
         base: base_node,
-        scope: BTreeMap::new(),
+        //scope: BTreeMap::new(),
     };
     Ok(Arc::new(node))
 }

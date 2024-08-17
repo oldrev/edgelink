@@ -1,6 +1,9 @@
 use std::collections::BTreeMap;
 
+use crate::runtime::model::propex;
 use crate::EdgeLinkError;
+
+use super::propex::PropexSegment;
 
 #[non_exhaustive]
 #[derive(Clone, Debug, PartialEq, PartialOrd)]
@@ -31,12 +34,12 @@ pub enum Variant {
 }
 
 impl Variant {
-    pub fn empty_object() -> Variant {
+    pub fn new_empty_object() -> Variant {
         Variant::Object(BTreeMap::new())
     }
 
     pub fn is_integer(&self) -> bool {
-        matches!(self, Variant::Integer(_))
+        matches!(self, Variant::Integer(..))
     }
 
     pub fn as_integer(&self) -> Option<i64> {
@@ -54,18 +57,18 @@ impl Variant {
     }
 
     pub fn is_bytes(&self) -> bool {
-        self.as_bytes().is_some()
+        matches!(self, Variant::Bytes(..))
     }
 
     pub fn as_bytes(&self) -> Option<&Vec<u8>> {
-        match *self {
+        match self {
             Variant::Bytes(ref bytes) => Some(bytes),
             _ => None,
         }
     }
 
     pub fn as_bytes_mut(&mut self) -> Option<&mut Vec<u8>> {
-        match *self {
+        match self {
             Variant::Bytes(ref mut bytes) => Some(bytes),
             _ => None,
         }
@@ -79,7 +82,7 @@ impl Variant {
     }
 
     pub fn is_float(&self) -> bool {
-        self.as_float().is_some()
+        matches!(self, Variant::Float(..))
     }
 
     pub fn as_float(&self) -> Option<f64> {
@@ -97,18 +100,18 @@ impl Variant {
     }
 
     pub fn is_string(&self) -> bool {
-        self.as_string().is_some()
+        matches!(self, Variant::String(..))
     }
 
     pub fn as_string(&self) -> Option<&str> {
-        match *self {
+        match self {
             Variant::String(ref s) => Some(s),
             _ => None,
         }
     }
 
     pub fn as_string_mut(&mut self) -> Option<&mut String> {
-        match *self {
+        match self {
             Variant::String(ref mut s) => Some(s),
             _ => None,
         }
@@ -122,7 +125,7 @@ impl Variant {
     }
 
     pub fn is_bool(&self) -> bool {
-        self.as_bool().is_some()
+        matches!(self, Variant::Bool(..))
     }
 
     pub fn as_bool(&self) -> Option<bool> {
@@ -144,18 +147,18 @@ impl Variant {
     }
 
     pub fn is_array(&self) -> bool {
-        self.as_array().is_some()
+        matches!(self, Variant::Array(..))
     }
 
     pub fn as_array(&self) -> Option<&Vec<Variant>> {
-        match *self {
+        match self {
             Variant::Array(ref array) => Some(array),
             _ => None,
         }
     }
 
     pub fn as_array_mut(&mut self) -> Option<&mut Vec<Variant>> {
-        match *self {
+        match self {
             Variant::Array(ref mut list) => Some(list),
             _ => None,
         }
@@ -169,18 +172,18 @@ impl Variant {
     }
 
     pub fn is_object(&self) -> bool {
-        self.as_object().is_some()
+        matches!(self, Variant::Object(..))
     }
 
     pub fn as_object(&self) -> Option<&BTreeMap<String, Variant>> {
-        match *self {
+        match self {
             Variant::Object(ref object) => Some(object),
             _ => None,
         }
     }
 
     pub fn as_object_mut(&mut self) -> Option<&mut BTreeMap<String, Variant>> {
-        match *self {
+        match self {
             Variant::Object(ref mut object) => Some(object),
             _ => None,
         }
@@ -217,6 +220,53 @@ impl Variant {
             }
             serde_json::Value::String(string) => Ok(Variant::from(string.as_bytes())),
             _ => Err(EdgeLinkError::NotSupported("Invalid byte JSON Value".to_owned()).into()),
+        }
+    }
+
+    pub fn get_item_by_propex_segment(&self, pseg: &PropexSegment) -> Option<&Variant> {
+        match pseg {
+            PropexSegment::IntegerIndex(index) => self.get_array_item(*index),
+            PropexSegment::StringIndex(prop) => self.get_object_property(prop),
+        }
+    }
+
+    pub fn get_item_by_propex_segments(&self, psegs: &[PropexSegment]) -> Option<&Variant> {
+        if psegs.len() == 1 {
+            return self.get_item_by_propex_segment(&psegs[0]);
+        } else if psegs.len() > 1 {
+            let mut prev = self;
+            for pseg in psegs {
+                if let Some(cur) = prev.get_item_by_propex_segment(pseg) {
+                    prev = cur;
+                } else {
+                    return None;
+                }
+            }
+            return Some(prev);
+        } else {
+            return None;
+        }
+    }
+
+    pub fn get_object_property(&self, prop: &str) -> Option<&Variant> {
+        match self.as_object() {
+            Some(obj) => obj.get(prop),
+            None => None,
+        }
+    }
+
+    pub fn get_array_item(&self, index: usize) -> Option<&Variant> {
+        match self.as_array() {
+            Some(arr) => arr.get(index),
+            None => None,
+        }
+    }
+
+    pub fn get_object_nav_prop(&self, expr: &str) -> Option<&Variant> {
+        if let Some(prop_segs) = propex::parse(expr).ok() {
+            self.get_item_by_propex_segments(&prop_segs)
+        } else {
+            None
         }
     }
 }
@@ -281,9 +331,9 @@ impl From<&[(String, Variant)]> for Variant {
     }
 }
 
-impl From<&[(&str, Variant)]> for Variant {
+impl<const N: usize> From<[(&str, Variant); N]> for Variant {
     #[inline]
-    fn from(value: &[(&str, Variant)]) -> Self {
+    fn from(value: [(&str, Variant); N]) -> Self {
         let map: BTreeMap<String, Variant> = value
             .iter()
             .map(|x| (x.0.to_string(), x.1.clone()))
@@ -374,4 +424,65 @@ fn variant_clone_should_be_ok() {
     assert_eq!(value1, 901);
     assert_eq!(value2, 999);
     assert_ne!(value1, value2);
+}
+
+#[test]
+fn variant_propex_readonly_accessing_should_be_ok() {
+    /*
+    let obj = Variant::Object(vec![
+        Variant::Integer(123),
+        Variant::Integer(333),
+        Variant::Array(vec![Variant::Integer(901), Variant::Integer(902)]),
+    ]);
+
+
+    */
+    let obj1 = Variant::from([
+        ("value1", Variant::Integer(123)),
+        ("value2", Variant::Float(123.0)),
+        (
+            "value3",
+            Variant::from([
+                ("aaa", Variant::Integer(333)),
+                ("bbb", Variant::Integer(444)),
+                ("ccc", Variant::Integer(555)),
+                ("ddd", Variant::Integer(999)),
+            ]),
+        ),
+    ]);
+
+    let value1 = obj1
+        .get_object_nav_prop("value1")
+        .unwrap()
+        .as_integer()
+        .unwrap();
+    assert_eq!(value1, 123);
+
+    let ccc_1 = obj1
+        .get_object_nav_prop("value3.ccc")
+        .unwrap()
+        .as_integer()
+        .unwrap();
+    assert_eq!(ccc_1, 555);
+
+    let ccc_2 = obj1
+        .get_object_nav_prop("['value3'].ccc")
+        .unwrap()
+        .as_integer()
+        .unwrap();
+    assert_eq!(ccc_2, 555);
+
+    let ccc_3 = obj1
+        .get_object_nav_prop("['value3'][\"ccc\"]")
+        .unwrap()
+        .as_integer()
+        .unwrap();
+    assert_eq!(ccc_3, 555);
+
+    let ddd_1 = obj1
+        .get_object_nav_prop("value3.ddd")
+        .unwrap()
+        .as_integer()
+        .unwrap();
+    assert_eq!(ddd_1, 999);
 }

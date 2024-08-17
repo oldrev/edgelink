@@ -7,7 +7,6 @@ use tokio_cron_scheduler::{Job, JobScheduler};
 use crate::runtime::flow::Flow;
 use crate::runtime::model::*;
 use crate::runtime::nodes::*;
-use crate::EdgeLinkError;
 
 #[derive(Debug, Clone)]
 struct InjectNodeConfig {
@@ -97,7 +96,7 @@ impl InjectNode {
         let flow_ref = Weak::upgrade(&self.base().flow).unwrap();
         let now = crate::utils::time::unix_now().unwrap();
         let payload = Variant::from(now);
-        let msg = Msg::with_payload(self.base.id, payload);
+        let msg = Msg::new_with_payload(self.base.id, payload);
         flow_ref
             .fan_out_single_port(self.base.id, 0, &[msg], stop_token.clone())
             .await?;
@@ -124,15 +123,25 @@ impl FlowNodeBehavior for InjectNode {
 
     async fn run(self: Arc<Self>, stop_token: CancellationToken) {
         if self.config.once {
-            self.once_task(stop_token.child_token()).await;
+            if let Err(e) = self.once_task(stop_token.child_token()).await {
+                log::error!("The 'once_task' failed: {}", e.to_string());
+            }
         }
 
         if self.config.repeat.is_some() {
-            self.repeat_task(stop_token.child_token()).await;
+            if let Err(e) = self.repeat_task(stop_token.child_token()).await {
+                log::error!("The 'repeat_task' failed: {}", e.to_string());
+            }
         } else if self.config.cron.is_some() {
-            self.clone().cron_task(stop_token.child_token()).await;
+            if let Err(e) = self.clone().cron_task(stop_token.child_token()).await {
+                log::error!("The CRON task failed: {}", e.to_string());
+            }
         } else {
-            log::warn!("The inject node [id='{}', name='{}'] has no trigger.", self.base.id, self.base.name);
+            log::warn!(
+                "The inject node [id='{}', name='{}'] has no trigger.",
+                self.base.id,
+                self.base.name
+            );
             stop_token.cancelled().await;
         }
     }
@@ -154,8 +163,13 @@ fn new_node(
             .json
             .get("crontab")
             .and_then(|v| v.as_str())
-            .and_then(|v| if v.is_empty() { None } else { Some(format!("0 {}", v)) }),
-
+            .and_then(|v| {
+                if v.is_empty() {
+                    None
+                } else {
+                    Some(format!("0 {}", v))
+                }
+            }),
 
         once: _config.json.get("once").unwrap().as_bool().unwrap(),
 

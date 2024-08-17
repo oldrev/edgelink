@@ -56,7 +56,7 @@ impl FlowEngine {
                 state: TokRwLock::new(FlowEngineState {
                     flows: BTreeMap::new(),
                     global_nodes: BTreeMap::new(),
-                    _context: Variant::empty_object(),
+                    _context: Variant::new_empty_object(),
                     _shutdown: false,
                 }),
             }),
