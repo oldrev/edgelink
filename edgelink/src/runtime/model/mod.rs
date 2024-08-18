@@ -5,10 +5,11 @@ use tokio::sync::mpsc;
 use crate::runtime::nodes::FlowNodeBehavior;
 
 mod msg;
+
+pub use msg::*;
 pub mod propex;
 mod variant;
 
-pub use msg::Msg;
 pub use variant::Variant;
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Copy, Clone)]
@@ -24,7 +25,7 @@ impl std::fmt::Display for ElementId {
 pub struct PortWire {
     pub target_node_id: ElementId,
     pub target_node: Weak<dyn FlowNodeBehavior>,
-    pub msg_sender: tokio::sync::mpsc::Sender<Arc<Msg>>,
+    pub msg_sender: tokio::sync::mpsc::Sender<Envelope>,
 }
 
 #[derive(Debug)]
@@ -32,5 +33,5 @@ pub struct Port {
     pub wires: Vec<PortWire>,
 }
 
-pub type MsgSender = mpsc::Sender<Arc<Msg>>;
-pub type MsgReceiver = mpsc::Receiver<Arc<Msg>>;
+pub type MsgSender = mpsc::Sender<Envelope>;
+pub type MsgReceiver = mpsc::Receiver<Envelope>;

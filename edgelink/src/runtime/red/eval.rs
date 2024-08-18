@@ -142,7 +142,8 @@ pub fn evaluate_node_property(
         }
 
         RedPropertyType::Msg => {
-            msg.unwrap().get_trimmed_nav_property(value).unwrap().clone()
+            //msg.unwrap().get_trimmed_nav_property(value).unwrap().clone()
+            todo!();
         }
 
         RedPropertyType::Flow | RedPropertyType::Global => {

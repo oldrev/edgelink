@@ -1,73 +1,69 @@
-use std::borrow::BorrowMut;
+use std::cell::RefCell;
 use std::collections::BTreeMap;
 
 use lazy_static::lazy_static;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::Arc;
 
-use tokio::sync::Mutex as TokMutex;
+use tokio::sync::Mutex;
 
 use crate::runtime::model::{ElementId, Variant};
 use crate::runtime::red::json::RedPropertyTriple;
 
 use super::propex::{self, PropexSegment};
 
+pub type Envelope = Arc<Mutex<Msg>>;
+
+pub type MsgBody = BTreeMap<String, Variant>;
+
 #[derive(Debug)]
 pub struct Msg {
-    id: u32,
-    birth_place: ElementId,
-    body: BTreeMap<String, Variant>,
+    pub id: u32,
+    pub birth_place: ElementId,
+    pub body: BTreeMap<String, Variant>,
 }
 
 impl Msg {
-    pub fn new_default(birth_place: ElementId) -> Arc<Self> {
-        let mut msg = Msg {
-            id: Msg::generate_id(),
-            birth_place,
-            body: BTreeMap::new(),
-        };
-        msg.body.insert("payload".to_string(), Variant::Null);
-        Arc::new(msg)
-    }
-
-    pub fn new_with_body(birth_place: ElementId, body: BTreeMap<String, Variant>) -> Arc<Self> {
+    pub fn new_default(birth_place: ElementId) -> Arc<Mutex<Self>> {
         let msg = Msg {
             id: Msg::generate_id(),
             birth_place,
-            body,
+            body: BTreeMap::from([("payload".to_string(), Variant::Null)]),
         };
-        Arc::new(msg)
+        Arc::new(Mutex::new(msg))
     }
 
-    pub fn new_with_payload(birth_place: ElementId, payload: Variant) -> Arc<Self> {
-        let mut msg = Msg {
+    pub fn new_with_body(
+        birth_place: ElementId,
+        body: BTreeMap<String, Variant>,
+    ) -> Arc<Mutex<Self>> {
+        let msg = Msg {
             id: Msg::generate_id(),
             birth_place,
-            body: BTreeMap::new(),
+            body: body,
         };
-        msg.body.insert("payload".to_string(), payload);
-        Arc::new(msg)
+        Arc::new(Mutex::new(msg))
     }
 
-    pub fn id(&self) -> u32 {
-        self.id
-    }
-
-    pub fn birth_place(&self) -> ElementId {
-        self.birth_place
-    }
-
-    pub fn payload(&self) -> &Variant {
-        self.body.get("payload").unwrap() // TODO FIXME
-    }
-
-    pub fn payload_mut(&mut self) -> Option<&mut Variant> {
-        self.body.borrow_mut().get_mut("payload")
+    pub fn new_with_payload(birth_place: ElementId, payload: Variant) -> Arc<Mutex<Self>> {
+        let msg = Msg {
+            id: Msg::generate_id(),
+            birth_place,
+            body: BTreeMap::from([("payload".to_string(), payload)]),
+        };
+        Arc::new(Mutex::new(msg))
     }
 
     pub fn generate_id() -> u32 {
         let msg_generator_clone = MSG_GENERATOR.clone();
         msg_generator_clone.generate_id()
+    }
+
+    pub fn put_property(&mut self, prop: String, value: Variant) {
+        self.body
+            .entry(prop)
+            .and_modify(|e| *e = value.clone())
+            .or_insert(value);
     }
 
     pub fn get_property(&self, prop: &str) -> Option<&Variant> {
@@ -81,7 +77,11 @@ impl Msg {
                 // `msg['aaa']` or `msg.aaa`, and not `msg[12]`
                 PropexSegment::StringIndex(first_prop_name) => {
                     if let Some(first_prop) = self.get_property(first_prop_name) {
-                        first_prop.get_item_by_propex_segments(&segs[1..])
+                        if segs.len() == 1 {
+                            Some(first_prop)
+                        } else {
+                            first_prop.get_item_by_propex_segments(&segs[1..])
+                        }
                     } else {
                         None
                     }
@@ -94,18 +94,12 @@ impl Msg {
     }
 
     pub fn get_trimmed_nav_property(&self, expr: &str) -> Option<&Variant> {
-        if expr.trim().starts_with("msg.") {
-            self.get_nav_property(&expr[4..])
+        let trimmed_expr = expr.trim();
+        if trimmed_expr.starts_with("msg.") {
+            self.get_nav_property(&trimmed_expr[4..])
         } else {
-            self.get_nav_property(expr)
+            self.get_nav_property(trimmed_expr)
         }
-    }
-
-    pub fn put_property(&mut self, expr: &str, value: &Variant) {
-        self.body
-            .entry(expr.to_string())
-            .and_modify(|e| *e = value.clone())
-            .or_insert(value.clone());
     }
 }
 

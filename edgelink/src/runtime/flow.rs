@@ -7,7 +7,7 @@ use tokio::sync::RwLock as TokRwLock;
 use tokio_util::sync::CancellationToken;
 
 use crate::runtime::engine::FlowEngine;
-use crate::runtime::model::{ElementId, Msg, Port, PortWire, Variant};
+use crate::runtime::model::*;
 use crate::runtime::nodes::*;
 use crate::runtime::red::json::{RedFlowConfig, RedFlowNodeConfig};
 use crate::runtime::registry::Registry;
@@ -56,13 +56,13 @@ impl Flow {
     /// 从来源节点的指定单个端口发送多个消息
     pub async fn fan_out_single_port(
         &self,
-        src_node_id: ElementId,
+        src_node_id: &ElementId,
         src_port_index: usize,
-        msgs: &[Arc<Msg>],
+        msgs: &[Envelope],
         _cancel: CancellationToken,
     ) -> crate::Result<()> {
         let state = self.shared.state.read().await;
-        let src_node = &state.nodes[&src_node_id];
+        let src_node = &state.nodes[src_node_id];
         if src_port_index >= src_node.base().ports.len() {
             return Err(
                 crate::EdgeLinkError::InvalidOperation("Invalid port index".to_string()).into(),
@@ -74,8 +74,8 @@ impl Flow {
         for wire in port.wires.iter() {
             //let dest_node = &state.nodes[dest_node_id];
             for msg in msgs.iter() {
-                let msg_to_send: Arc<Msg> = if msg_sent {
-                    Arc::new(msg.as_ref().clone())
+                let msg_to_send: Envelope = if msg_sent {
+                    Arc::new(TokMutex::new(msg.as_ref().lock().await.clone()))
                 } else {
                     msg.clone()
                 };
@@ -98,12 +98,13 @@ impl Flow {
     /// 从指定的端口扇出
     pub async fn fan_out_port(
         &self,
+        src_node_id: &ElementId,
         port_index: usize,
         msg: Arc<Msg>,
         _cancel: CancellationToken,
     ) -> crate::Result<()> {
         let state = self.shared.state.read().await;
-        let source_node = &state.nodes[&msg.birth_place()];
+        let source_node = &state.nodes[src_node_id];
         let port = source_node
             .base()
             .ports

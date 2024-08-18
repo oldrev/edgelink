@@ -12,6 +12,8 @@ use crate::runtime::model::{ElementId, Msg, MsgReceiver, MsgSender, Port};
 use crate::runtime::red::json::{RedFlowNodeConfig, RedGlobalNodeConfig};
 use crate::EdgeLinkError;
 
+use super::model::Envelope;
+
 mod common;
 mod function;
 
@@ -73,7 +75,7 @@ pub struct BaseFlowNode {
 }
 
 impl BaseFlowNode {
-    pub(crate) async fn wait_for_msg_forever(&self) -> crate::Result<Arc<Msg>> {
+    pub(crate) async fn wait_for_msg_forever(&self) -> crate::Result<Envelope> {
         let rx = &mut self.msg_rx.rx.lock().await;
         match rx.recv().await {
             Some(msg) => Ok(msg),
@@ -110,7 +112,7 @@ pub trait FlowNodeBehavior: NodeBehavior {
 
     async fn run(self: Arc<Self>, stop_token: CancellationToken);
 
-    async fn wait_for_msg(&self, stop_token: CancellationToken) -> crate::Result<Arc<Msg>> {
+    async fn wait_for_msg(&self, stop_token: CancellationToken) -> crate::Result<Envelope> {
         select! {
             _ = stop_token.cancelled() => {
                 // The token was cancelled

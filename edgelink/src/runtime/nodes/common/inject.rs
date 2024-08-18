@@ -129,7 +129,7 @@ impl InjectNode {
         let msg = Msg::new_with_body(self.base.id, msg_body);
 
         flow_ref
-            .fan_out_single_port(self.base.id, 0, &[msg], stop_token.clone())
+            .fan_out_single_port(&self.base.id, 0, &[msg], stop_token.clone())
             .await?;
         Ok(())
     }
@@ -192,11 +192,12 @@ fn new_node(
     )?;
 
     if let Some(payload_type) = _config.json.get("payloadType").and_then(|v| v.as_str()) {
+        let payload_value_expr = _config.json.get("payload").unwrap().as_str().unwrap();
         props.retain(|x| x.p != "payload");
         props.push(RedPropertyTriple {
             p: "payload".to_string(),
             vt: RedPropertyType::from(payload_type)?,
-            v: "string".to_string(),
+            v: payload_value_expr.to_string(),
         });
     }
 

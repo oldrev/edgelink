@@ -38,7 +38,7 @@ impl FlowNodeBehavior for FilterNode {
             match self.wait_for_msg(stop_token.clone()).await {
                 Ok(msg) => {
                     flow_ref
-                        .fan_out_single_port(self.base.id, 0, &[msg], stop_token.clone())
+                        .fan_out_single_port(&self.base.id, 0, &[msg], stop_token.clone())
                         .await
                         .unwrap(); //FIXME
                 }

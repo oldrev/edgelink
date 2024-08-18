@@ -1,6 +1,9 @@
 use clap::Parser;
+use std::env;
 use dirs_next::home_dir;
+use std::process;
 use std::sync::Arc;
+use tokio::runtime::Builder;
 use tokio::sync::RwLock as TokRwLock;
 use tokio::time;
 use tokio_util::sync::CancellationToken;
@@ -150,8 +153,7 @@ async fn run_main_task(sp: &di::ServiceProvider, cancel: CancellationToken) -> c
     rt.run(cancel.clone()).await
 }
 
-#[tokio::main]
-async fn main() -> Result<()> {
+fn app_main() -> edgelink::Result<()> {
     log_init();
 
     // let m = Modal {};
@@ -164,33 +166,39 @@ async fn main() -> Result<()> {
 
     let _provider = services.build_provider()?;
     let sp = Arc::new(_provider);
-    let cancel = CancellationToken::new();
 
-    let runtime_cancel_token = cancel.clone();
+    // 使用 Builder 创建一个带有自定义线程池的 Tokio 运行时
+    let runtime = Builder::new_multi_thread()
+        .worker_threads(4) // 设置线程池大小
+        .enable_all()
+        .build()
+        .unwrap();
 
-    tokio::select! {
-        _ = tokio:: signal::ctrl_c() => {
-            println!("CTRL-C is pressed, cancelling all tasks...");
-            cancel.cancel()
-        },
-        _ = run_main_task(&sp, runtime_cancel_token) =>  {
-            log::error!("Main task stopped. This should not happen!")
-        },
-    }
+    runtime.block_on(async {
+        let cancel = CancellationToken::new();
 
-    /*
-    match task.await {
-        Ok(_) => {
-            println!("Async task completed successfully.");
-            Ok(())
-        }
-        Err(err) => {
-            eprintln!("Async task failed: {}", err);
-            // 在这里可以采取其他操作
-            Err(err.into())
-        }
-    }
-    */
+        let runtime_cancel_token = cancel.clone();
 
+        tokio::spawn(async move {
+            tokio::select! {
+                _ = tokio:: signal::ctrl_c() => {
+                    println!("CTRL-C is pressed, cancelling all tasks...");
+                    cancel.cancel()
+                },
+                _ = run_main_task(&sp, runtime_cancel_token) =>  {
+                    log::error!("Main task stopped. This should not happen!")
+                },
+            }
+        })
+        .await
+        .unwrap();
+    });
     Ok(())
+}
+
+fn main() {
+    if let Err(err) = app_main() {
+        eprintln!("Application error: {}", err);
+        process::exit(-1);
+    }
 }

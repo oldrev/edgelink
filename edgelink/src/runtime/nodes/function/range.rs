@@ -1,5 +1,6 @@
 use core::num;
 use std::borrow::Borrow;
+use std::borrow::BorrowMut;
 use std::cmp;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -23,7 +24,7 @@ struct RangeNode {
 }
 
 impl RangeNode {
-    fn do_range(&self, flow: &Flow, msg: &Msg) {
+    fn do_range(&self, flow: &Flow, msg: &mut Msg) {
         if let Some(value) = msg.get_trimmed_nav_property(&self.property) {
             let mut n: f64 = match value {
                 Variant::Number(num_value) => *num_value,
@@ -56,6 +57,7 @@ impl RangeNode {
                     new_value = new_value.round();
                 }
 
+                msg.put_property(self.property.clone(), Variant::Number(new_value));
                 // TODO set msg value
             }
         }
@@ -105,10 +107,16 @@ impl FlowNodeBehavior for RangeNode {
         let flow_ref = Weak::upgrade(&self.base().flow).unwrap();
         while !stop_token.is_cancelled() {
             match self.wait_for_msg(stop_token.clone()).await {
-                Ok(msg) => {
-                    self.do_range(&flow_ref, &msg);
+                Ok(envelope) => {
+                    let mut msg_guard = envelope.lock().await;
+                    self.do_range(&flow_ref, &mut msg_guard);
                     flow_ref
-                        .fan_out_single_port(self.base.id, 0, &[msg], stop_token.clone())
+                        .fan_out_single_port(
+                            &self.base.id,
+                            0,
+                            &[envelope.clone()],
+                            stop_token.clone(),
+                        )
                         .await
                         .unwrap(); //FIXME
                 }
