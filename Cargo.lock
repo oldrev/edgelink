@@ -328,7 +328,7 @@ dependencies = [
  "inventory",
  "lazy_static",
  "log",
- "more-di 2.1.2",
+ "more-di",
  "nom",
  "regex",
  "serde",
@@ -361,7 +361,7 @@ dependencies = [
  "libloading",
  "log",
  "log4rs",
- "more-di 3.1.0",
+ "more-di",
  "serde_json_path",
  "tokio",
  "tokio-util",
@@ -640,33 +640,12 @@ dependencies = [
 
 [[package]]
 name = "more-di"
-version = "2.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "59b1bdd49dae0962f8da2855cb60794948a7af2b9849421a340e89cf7f68ef8e"
-dependencies = [
- "more-di-macros 2.1.0",
- "spin",
-]
-
-[[package]]
-name = "more-di"
 version = "3.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f263611311a2012c4b8e7191e6906ed963e906d12a3b0dc679e4077c5f2dfb89"
 dependencies = [
- "more-di-macros 3.1.0",
+ "more-di-macros",
  "spin",
-]
-
-[[package]]
-name = "more-di-macros"
-version = "2.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "df5887ea90b4eec7ab148646731cef3c5772ae804a880ce17c658b788a9be254"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 1.0.109",
 ]
 
 [[package]]
