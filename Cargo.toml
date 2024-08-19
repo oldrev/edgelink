@@ -16,7 +16,7 @@ edgelink = { path = "./edgelink" }
 async-trait = "0.1.73"
 libloading = "0.8.5"
 more-di = { version = "3.1.0", features = ["builder", "inject", "async", "lazy"] }
-tokio = "1.33.0"
+tokio = "1.39.3"
 log = "0.4.20"
 tokio-util = "0.7.9"
 log4rs = { version = "1.2.0", features = ["default", "toml_format"] }

@@ -9,7 +9,7 @@ edition = "2021"
 crate-type = ["dylib", "rlib"]
 
 [dependencies]
-tokio = { version = "1.33.0", features = ["full"] }
+tokio = { version = "1.39.3", features = ["full"] }
 async-trait = "0.1.73"
 log = "0.4.20"
 inventory = "0.3.12"
