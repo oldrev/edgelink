@@ -1,5 +1,4 @@
 use serde_json::Value as JsonValue;
-use std::sync::Arc;
 
 use crate::{
     runtime::{
@@ -74,7 +73,7 @@ pub fn parse_context_store(key: &str) -> crate::Result<ParsedContextStorePropert
  * @param  {Node} node - the node evaluating the property
  * @return {String} The parsed string
  */
-fn evaluate_env_property<'a>(value: &str, node: &dyn FlowNodeBehavior) -> crate::Result<&'a str> {
+fn evaluate_env_property<'a>(_value: &str, _node: &dyn FlowNodeBehavior) -> crate::Result<&'a str> {
     /*
     var flow = (node && hasOwnProperty.call(node, "_flow")) ? node._flow : null;
     var result;
@@ -111,15 +110,15 @@ pub fn evaluate_node_property(
     value: &str,
     _type: &RedPropertyType,
     node: &dyn FlowNodeBehavior,
-    msg: Option<&Msg>,
+    _msg: Option<&Msg>,
 ) -> crate::Result<Variant> {
     let evaluated = match _type {
         RedPropertyType::Str => Variant::String(value.to_string()),
 
-        RedPropertyType::Num => match value.parse::<f64>() {
-            Ok(fv) => Variant::Number(fv),
-            Err(_) => Variant::Number(0.0)
-        },
+        RedPropertyType::Num => {
+            let fv = value.parse::<f64>().unwrap_or(0.0);
+            Variant::Number(fv)
+        }
 
         RedPropertyType::Json => {
             let root_jv: JsonValue = serde_json::from_str(value)?;
@@ -133,8 +132,7 @@ pub fn evaluate_node_property(
             "object" => todo!(),
             "iso" => Variant::String(utils::time::iso_now()),
             _ => Variant::String(utils::time::millis_now()),
-
-        }
+        },
 
         RedPropertyType::Bin => {
             let jv: JsonValue = serde_json::from_str(value)?;
@@ -142,8 +140,12 @@ pub fn evaluate_node_property(
         }
 
         RedPropertyType::Msg => {
-            //msg.unwrap().get_trimmed_nav_property(value).unwrap().clone()
-            todo!();
+            if let Some(msg) = _msg {
+                msg.get_nav_property(value).unwrap_or(&Variant::Null).clone()
+            } else {
+                // FIXME
+                Variant::Null.clone()
+            }
         }
 
         RedPropertyType::Flow | RedPropertyType::Global => {

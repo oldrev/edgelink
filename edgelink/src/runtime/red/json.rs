@@ -1,6 +1,4 @@
-use std::any::Any;
 use std::collections::{BTreeMap, HashSet};
-use std::fmt;
 use std::{fs::File, io::Read};
 
 use serde::Deserializer;
@@ -9,7 +7,6 @@ use serde_json::Map as JsonMap;
 use serde_json::Value as JsonValue;
 use topological_sort::TopologicalSort;
 
-use crate::runtime::model::Variant;
 use crate::runtime::model::*;
 use crate::EdgeLinkError;
 

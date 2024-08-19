@@ -1,10 +1,14 @@
 use std::collections::BTreeMap;
-use regex;
 
 use crate::runtime::model::propex;
 use crate::EdgeLinkError;
 
 use super::propex::PropexSegment;
+
+pub enum VariantError {
+    WrongType,
+    OutOfRange,
+}
 
 #[non_exhaustive]
 #[derive(Clone, Debug, PartialEq, PartialOrd)]
@@ -59,6 +63,10 @@ impl Variant {
             Variant::Bytes(vec) => Ok(vec),
             other => Err(other),
         }
+    }
+
+    pub fn as_u8(&self) -> Result<u8, VariantError> {
+        
     }
 
     pub fn is_number(&self) -> bool {
@@ -236,17 +244,79 @@ impl Variant {
     }
 
     pub fn get_array_item(&self, index: usize) -> Option<&Variant> {
-        match self.as_array() {
-            Some(arr) => arr.get(index),
-            None => None,
+        match self {
+            Variant::Array(arr) => arr.get(index),
+            _ => None,
         }
     }
 
-    pub fn get_object_nav_prop(&self, expr: &str) -> Option<&Variant> {
+    pub fn get_object_nav_property(&self, expr: &str) -> Option<&Variant> {
         if let Some(prop_segs) = propex::parse(expr).ok() {
             self.get_item_by_propex_segments(&prop_segs)
         } else {
             None
+        }
+    }
+
+    pub fn set_object_property(
+        &mut self,
+        prop: String,
+        value: Variant,
+    ) -> Result<(), VariantError> {
+        match self {
+            Variant::Object(ref mut this_obj) => {
+                this_obj.insert(prop, value);
+                Ok(())
+            }
+            _ => Err(VariantError::WrongType),
+        }
+    }
+
+    pub fn set_array_item(&mut self, index: usize, value: Variant) -> Result<(), VariantError> {
+        match self {
+            Variant::Array(ref mut this_arr) => {
+                this_arr[index] = value;
+                Ok(())
+            }
+            Variant::Bytes(ref mut this_bytes) => {
+                this_bytes[index] = value;
+                Ok(())
+            }
+            _ => Err(VariantError::WrongType),
+        }
+    }
+
+    pub fn set_item_by_propex_segment(
+        &self,
+        pseg: &PropexSegment,
+        value: Variant,
+    ) -> Result<(), VariantError> {
+        match pseg {
+            PropexSegment::IntegerIndex(index) => self.get_array_item(*index),
+            PropexSegment::StringIndex(prop) => self.get_object_property(prop),
+        }
+    }
+
+    pub fn set_item_by_propex_segments(
+        &self,
+        psegs: &[PropexSegment],
+        value: Variant,
+        createMissing: bool,
+    ) -> Option<&Variant> {
+        if psegs.len() == 1 {
+            return self.get_item_by_propex_segment(&psegs[0]);
+        } else if psegs.len() > 1 {
+            let mut prev = self;
+            for pseg in psegs {
+                if let Some(cur) = prev.get_item_by_propex_segment(pseg) {
+                    prev = cur;
+                } else {
+                    return None;
+                }
+            }
+            return Some(prev);
+        } else {
+            return None;
         }
     }
 }
@@ -330,9 +400,7 @@ impl From<serde_json::Value> for Variant {
         match jv {
             serde_json::Value::Null => Variant::Null,
             serde_json::Value::Bool(boolean) => Variant::from(boolean),
-            serde_json::Value::Number(number) => {
-                Variant::Number(number.as_f64().unwrap())
-            }
+            serde_json::Value::Number(number) => Variant::Number(number.as_f64().unwrap()),
             serde_json::Value::String(string) => Variant::String(string.to_owned()),
             serde_json::Value::Array(array) => {
                 Variant::Array(array.iter().map(Variant::from).collect())
@@ -353,9 +421,7 @@ impl From<&serde_json::Value> for Variant {
         match jv {
             serde_json::Value::Null => Variant::Null,
             serde_json::Value::Bool(boolean) => Variant::from(*boolean),
-            serde_json::Value::Number(number) => {
-                Variant::Number(number.as_f64().unwrap())
-            }
+            serde_json::Value::Number(number) => Variant::Number(number.as_f64().unwrap()),
             serde_json::Value::String(string) => Variant::String(string.clone()),
             serde_json::Value::Array(array) => {
                 Variant::Array(array.iter().map(Variant::from).collect())
@@ -421,35 +487,35 @@ fn variant_propex_readonly_accessing_should_be_ok() {
     ]);
 
     let value1 = obj1
-        .get_object_nav_prop("value1")
+        .get_object_nav_property("value1")
         .unwrap()
         .as_integer()
         .unwrap();
     assert_eq!(value1, 123);
 
     let ccc_1 = obj1
-        .get_object_nav_prop("value3.ccc")
+        .get_object_nav_property("value3.ccc")
         .unwrap()
         .as_integer()
         .unwrap();
     assert_eq!(ccc_1, 555);
 
     let ccc_2 = obj1
-        .get_object_nav_prop("['value3'].ccc")
+        .get_object_nav_property("['value3'].ccc")
         .unwrap()
         .as_integer()
         .unwrap();
     assert_eq!(ccc_2, 555);
 
     let ccc_3 = obj1
-        .get_object_nav_prop("['value3'][\"ccc\"]")
+        .get_object_nav_property("['value3'][\"ccc\"]")
         .unwrap()
         .as_integer()
         .unwrap();
     assert_eq!(ccc_3, 555);
 
     let ddd_1 = obj1
-        .get_object_nav_prop("value3.ddd")
+        .get_object_nav_property("value3.ddd")
         .unwrap()
         .as_integer()
         .unwrap();

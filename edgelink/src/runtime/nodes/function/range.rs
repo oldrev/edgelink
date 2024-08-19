@@ -1,6 +1,3 @@
-use core::num;
-use std::borrow::Borrow;
-use std::borrow::BorrowMut;
 use std::cmp;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -57,7 +54,7 @@ impl RangeNode {
                     new_value = new_value.round();
                 }
 
-                msg.put_property(self.property.clone(), Variant::Number(new_value));
+                msg.set_property(self.property.clone(), Variant::Number(new_value));
                 // TODO set msg value
             }
         }

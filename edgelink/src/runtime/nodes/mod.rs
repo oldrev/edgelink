@@ -8,7 +8,7 @@ use tokio_util::sync::CancellationToken;
 
 use crate::runtime::engine::FlowEngine;
 use crate::runtime::flow::Flow;
-use crate::runtime::model::{ElementId, Msg, MsgReceiver, MsgSender, Port};
+use crate::runtime::model::{ElementId, MsgReceiver, MsgSender, Port};
 use crate::runtime::red::json::{RedFlowNodeConfig, RedGlobalNodeConfig};
 use crate::EdgeLinkError;
 
@@ -124,6 +124,20 @@ pub trait FlowNodeBehavior: NodeBehavior {
         }
     }
 }
+
+
+#[async_trait]
+pub trait SourceNodeBehavior: FlowNodeBehavior {
+}
+
+#[async_trait]
+pub trait SinkNodeBehavior: FlowNodeBehavior {
+}
+
+#[async_trait]
+pub trait FilterNodeBehavior: FlowNodeBehavior {
+}
+
 
 pub(crate) struct BuiltinNodeDescriptor {
     pub(crate) meta: MetaNode,

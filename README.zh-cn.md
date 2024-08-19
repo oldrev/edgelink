@@ -6,7 +6,8 @@
 
 ## 概述
 
-EdgeLink 是一个使用 Rust 编写的 Node-RED 后端运行时引擎，用于执行 Node-RED 设计产生的 `flows.json` 流程，旨在提高性能并降低内存占用。
+EdgeLink 是一个使用 Rust 编写的 Node-RED 后端运行时引擎，用于执行 Node-RED 设计产生的 `flows.json` 流程，旨在提高性能并降低内存占用以利于部署到
+CPU 和内存资源紧张的边缘计算设备。
 
 ## 特性
 

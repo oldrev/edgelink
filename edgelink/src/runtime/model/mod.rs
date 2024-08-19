@@ -1,4 +1,4 @@
-use std::sync::{Arc, Weak};
+use std::sync::Weak;
 
 use tokio::sync::mpsc;
 
@@ -11,6 +11,7 @@ pub mod propex;
 mod variant;
 
 pub use variant::Variant;
+pub use variant::VariantError;
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Copy, Clone)]
 pub struct ElementId(pub(crate) u64);

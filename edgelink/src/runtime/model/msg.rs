@@ -1,4 +1,3 @@
-use std::cell::RefCell;
 use std::collections::BTreeMap;
 
 use lazy_static::lazy_static;
@@ -59,13 +58,6 @@ impl Msg {
         msg_generator_clone.generate_id()
     }
 
-    pub fn put_property(&mut self, prop: String, value: Variant) {
-        self.body
-            .entry(prop)
-            .and_modify(|e| *e = value.clone())
-            .or_insert(value);
-    }
-
     pub fn get_property(&self, prop: &str) -> Option<&Variant> {
         self.body.get(prop)
     }
@@ -101,6 +93,32 @@ impl Msg {
             self.get_nav_property(trimmed_expr)
         }
     }
+
+    pub fn set_property(&mut self, prop: String, value: Variant) {
+        let _ = self.body.insert(prop, value);
+    }
+
+    /*
+    pub fn put_nav_property(&self, expr: &str, value: Variant, createMissing: bool) -> bool {
+        if let Some(segs) = propex::parse(expr).ok() {
+            if segs.is_empty() {
+                return false;
+            }
+            let &target = msg;
+        } else {
+            false
+        }
+    }
+
+    pub fn put_trimmed_nav_property(&self, expr: &str, value: Variant, createMissing: bool) -> bool {
+        let trimmed_expr = expr.trim();
+        if trimmed_expr.starts_with("msg.") {
+            self.put_nav_property(&trimmed_expr[4..], value, createMissing)
+        } else {
+            self.put_nav_property(trimmed_expr, value, createMissing)
+        }
+    }
+    */
 }
 
 impl Clone for Msg {
