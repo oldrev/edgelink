@@ -1,5 +1,4 @@
 use std::any::Any;
-use std::sync::Arc;
 use tokio::sync::Mutex;
 use tokio_util::sync::CancellationToken;
 
@@ -41,7 +40,7 @@ pub trait FlowsElement: Sync + Send {
 }
 
 pub trait ContextHolder: FlowsElement + Sync + Send {
-    fn context(&self) -> Arc<Context>;
+    fn context(&self) -> &Context;
 }
 
 #[derive(Debug)]

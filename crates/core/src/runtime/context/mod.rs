@@ -71,11 +71,27 @@ pub trait ContextStore: Send + Sync {
 }
 
 /// A context instance, allowed to bind to a flows element
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Context {
-    pub parent: Option<Weak<Context>>,
-    pub manager: Weak<ContextManager>,
+    inner: Arc<InnerContext>,
+}
+
+#[derive(Debug, Clone)]
+pub struct WeakContext {
+    inner: Weak<InnerContext>,
+}
+
+impl WeakContext {
+    pub fn upgrade(&self) -> Option<Context> {
+        Weak::upgrade(&self.inner).map(|x| Context { inner: x })
+    }
+}
+
+#[derive(Debug)]
+struct InnerContext {
+    pub parent: Option<WeakContext>,
     pub scope: String,
+    manager: Weak<ContextManager>,
 }
 
 pub type ContextStoreHandle = Arc<dyn ContextStore>;
@@ -83,7 +99,7 @@ pub type ContextStoreHandle = Arc<dyn ContextStore>;
 pub struct ContextManager {
     default_store: ContextStoreHandle,
     stores: HashMap<String, ContextStoreHandle>,
-    contexts: DashMap<String, Arc<Context>>,
+    contexts: DashMap<String, Context>,
 }
 
 pub struct ContextManagerBuilder {
@@ -93,21 +109,29 @@ pub struct ContextManagerBuilder {
 }
 
 impl Context {
+    pub fn downgrade(&self) -> WeakContext {
+        WeakContext { inner: Arc::downgrade(&self.inner) }
+    }
+
+    pub fn manager(&self) -> Option<Arc<ContextManager>> {
+        self.inner.manager.upgrade()
+    }
+
     pub async fn get_one(&self, storage: Option<&str>, key: &str, eval_env: &[PropexEnv<'_>]) -> Option<Variant> {
-        let manager = self.manager.upgrade()?;
+        let manager = self.inner.manager.upgrade()?;
         let store =
             if let Some(storage) = storage { manager.get_context_store(storage)? } else { manager.get_default_store() };
         // TODO FIXME change it to fixed length stack-allocated string
         let mut path = propex::parse(key).ok()?;
         expand_propex_segments(&mut path, eval_env).ok()?;
-        store.get_one(&self.scope, &path).await.ok()
+        store.get_one(&self.inner.scope, &path).await.ok()
     }
 
     pub async fn keys(&self, store: Option<&str>) -> Option<Vec<String>> {
-        let manager = self.manager.upgrade()?;
+        let manager = self.inner.manager.upgrade()?;
         let store =
             if let Some(storage) = store { manager.get_context_store(storage)? } else { manager.get_default_store() };
-        store.get_keys(&self.scope).await.ok()
+        store.get_keys(&self.inner.scope).await.ok()
     }
 
     pub async fn set_one(
@@ -117,7 +141,7 @@ impl Context {
         value: Option<Variant>,
         eval_env: &[PropexEnv<'_>],
     ) -> Result<()> {
-        let manager = self.manager.upgrade().expect("manager");
+        let manager = self.inner.manager.upgrade().expect("manager");
         let store = if let Some(storage) = storage {
             manager
                 .get_context_store(storage)
@@ -129,9 +153,9 @@ impl Context {
         let mut path = propex::parse(key)?;
         expand_propex_segments(&mut path, eval_env)?;
         if let Some(value) = value {
-            store.set_one(&self.scope, &path, value).await
+            store.set_one(&self.inner.scope, &path, value).await
         } else {
-            let _ = store.remove_one(&self.scope, &path).await?;
+            let _ = store.remove_one(&self.inner.scope, &path).await?;
             Ok(())
         }
     }
@@ -216,19 +240,18 @@ impl ContextManagerBuilder {
 }
 
 impl ContextManager {
-    pub fn new_context(self: &Arc<Self>, parent: &Arc<Context>, scope: String) -> Arc<Context> {
-        let c = Arc::new(Context {
-            parent: Some(Arc::downgrade(parent)),
-            manager: Arc::downgrade(self),
-            scope: scope.clone(),
-        });
+    pub fn new_context(self: &Arc<Self>, parent: &Context, scope: String) -> Context {
+        let inner =
+            InnerContext { parent: Some(parent.downgrade()), manager: Arc::downgrade(self), scope: scope.clone() };
+        let c = Context { inner: Arc::new(inner) };
         self.contexts.insert(scope, c.clone());
         c
     }
 
-    pub fn new_global_context(self: &Arc<Self>) -> Arc<Context> {
-        let c =
-            Arc::new(Context { parent: None, manager: Arc::downgrade(self), scope: GLOBAL_CONTEXT_NAME.to_string() });
+    pub fn new_global_context(self: &Arc<Self>) -> Context {
+        let inner =
+            InnerContext { parent: None, manager: Arc::downgrade(self), scope: GLOBAL_CONTEXT_NAME.to_string() };
+        let c = Context { inner: Arc::new(inner) };
         self.contexts.insert(GLOBAL_CONTEXT_NAME.to_string(), c.clone());
         c
     }

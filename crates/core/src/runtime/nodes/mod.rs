@@ -80,7 +80,7 @@ pub struct FlowNode {
     pub ports: Vec<Port>,
     pub group: Option<WeakGroup>,
     pub envs: Envs,
-    pub context: Arc<Context>,
+    pub context: Context,
 
     pub on_received: MsgEventSender,
     pub on_completed: MsgEventSender,
@@ -93,7 +93,7 @@ pub struct GlobalNode {
     pub name: String,
     pub type_str: &'static str,
     pub ordering: usize,
-    pub context: Arc<Context>,
+    pub context: Context,
     pub disabled: bool,
 }
 

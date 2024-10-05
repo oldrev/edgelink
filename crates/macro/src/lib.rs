@@ -57,8 +57,8 @@ pub fn flow_node(attr: TokenStream, item: TokenStream) -> TokenStream {
         }
 
         impl ContextHolder for #struct_name {
-            fn context(&self) -> Arc<Context> {
-                self.get_node().context.clone()
+            fn context(&self) -> &Context {
+                &self.get_node().context
             }
         }
 
@@ -129,8 +129,8 @@ pub fn global_node(attr: TokenStream, item: TokenStream) -> TokenStream {
         }
 
         impl ContextHolder for #struct_name {
-            fn context(&self) -> Arc<Context> {
-                self.get_node().context.clone()
+            fn context(&self) -> &Context {
+                &self.get_node().context
             }
         }
 

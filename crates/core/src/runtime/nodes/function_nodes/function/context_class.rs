@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use rquickjs::{class::Trace, Ctx, Function, IntoJs, Value};
 use rquickjs::{prelude::*, Exception};
 
@@ -12,14 +10,14 @@ use super::{UndefinableVariant, Variant};
 #[rquickjs::class(frozen)]
 pub(super) struct ContextClass {
     #[qjs(skip_trace)]
-    pub red_ctx: Arc<RedContext>,
+    pub red_ctx: RedContext,
 }
 
 #[allow(non_snake_case)]
 #[rquickjs::methods]
 impl ContextClass {
     #[qjs(skip)]
-    pub fn new(red_ctx: Arc<RedContext>) -> Self {
+    pub fn new(red_ctx: RedContext) -> Self {
         ContextClass { red_ctx }
     }
 

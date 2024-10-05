@@ -95,7 +95,7 @@ struct InnerFlow {
     subflow_state: Option<SubflowState>,
 
     envs: Envs,
-    context: Arc<Context>,
+    context: Context,
 }
 
 impl FlowsElement for Flow {
@@ -137,8 +137,8 @@ impl FlowsElement for Flow {
 }
 
 impl ContextHolder for Flow {
-    fn context(&self) -> Arc<Context> {
-        self.inner.context.clone()
+    fn context(&self) -> &Context {
+        &self.inner.context
     }
 }
 

@@ -56,7 +56,7 @@ struct InnerEngine {
     _args: EngineArgs,
     envs: Envs,
     context_manager: Arc<ContextManager>,
-    context: Arc<Context>,
+    context: Context,
 
     _context: Variant,
     flows: DashMap<ElementId, Flow>,
@@ -378,8 +378,8 @@ impl Engine {
         &self.inner.context_manager
     }
 
-    pub fn context(&self) -> Arc<Context> {
-        self.inner.context.clone()
+    pub fn context(&self) -> &Context {
+        &self.inner.context
     }
 
     #[cfg(any(test, feature = "pymod"))]

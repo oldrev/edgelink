@@ -345,7 +345,7 @@ impl FunctionNode {
         ctx.globals().set("node", node_class::NodeClass::new(self))?;
 
         // Register the global-scoped context
-        if let Some(global_context) = self.engine().map(|x| x.context()) {
+        if let Some(global_context) = self.engine().map(|x| x.context().clone()) {
             ctx.globals().set("__edgelinkGlobalContext", context_class::ContextClass::new(global_context))?;
         } else {
             return Err(EdgelinkError::InvalidOperation("Failed to get global context".into()))
@@ -353,14 +353,14 @@ impl FunctionNode {
         }
 
         // Register the flow-scoped context
-        if let Some(flow_context) = self.flow().map(|x| x.context()) {
-            ctx.globals().set("__edgelinkFlowContext", context_class::ContextClass::new(flow_context))?;
+        if let Some(flow_context) = self.flow().map(|x| x.context().clone()) {
+            ctx.globals().set("__edgelinkFlowContext", context_class::ContextClass::new(flow_context.clone()))?;
         } else {
             return Err(EdgelinkError::InvalidOperation("Failed to get flow context".into()).into());
         }
 
         // Register the node-scoped context
-        ctx.globals().set("__edgelinkNodeContext", context_class::ContextClass::new(self.context()))?;
+        ctx.globals().set("__edgelinkNodeContext", context_class::ContextClass::new(self.context().clone()))?;
 
         let mut eval_options = EvalOptions::default();
         eval_options.promise = true;

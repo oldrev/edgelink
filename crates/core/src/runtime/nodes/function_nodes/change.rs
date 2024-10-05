@@ -358,10 +358,10 @@ impl ChangeNode {
         self.set_property(to, tot, Some(current), msg).await
     } // apply_rule_move
 
-    fn get_context_by_property_type(&self, pt: RedPropertyType) -> crate::Result<Arc<Context>> {
+    fn get_context_by_property_type(&self, pt: RedPropertyType) -> crate::Result<Context> {
         let res = match pt {
-            RedPropertyType::Flow => self.flow().map(|x| x.context()),
-            RedPropertyType::Global => self.engine().map(|x| x.context()),
+            RedPropertyType::Flow => self.flow().map(|x| x.context().clone()),
+            RedPropertyType::Global => self.engine().map(|x| x.context().clone()),
             _ => None,
         };
         res.ok_or(EdgelinkError::InvalidOperation("Failed to get context".to_string()).into())
