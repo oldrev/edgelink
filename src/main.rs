@@ -239,7 +239,7 @@ async fn app_main(cli_args: Arc<CliArgs>) -> anyhow::Result<()> {
 async fn main() -> Result<()> {
     let args = Arc::new(CliArgs::parse());
     if let Err(ref err) = app_main(args).await {
-        eprintln!("Application error: {}", err);
+        log::error!("Application error: {}", err);
         process::exit(-1);
     }
     Ok(())
