@@ -39,7 +39,7 @@ fn evaluate_env_property(name: &str, node: Option<&dyn FlowNodeBehavior>, flow: 
 ///
 /// # Returns
 /// The evaluated result
-pub async fn evaluate_node_property(
+pub async fn evaluate_raw_node_property(
     value: &str,
     _type: RedPropertyType,
     node: Option<&dyn FlowNodeBehavior>,

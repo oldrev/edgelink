@@ -1,5 +1,7 @@
+use std::str::FromStr;
 use std::sync::Arc;
 
+use runtime::eval;
 use serde::Deserialize;
 
 use crate::runtime::flow::Flow;
@@ -83,20 +85,53 @@ enum SwitchRuleOperator {
 }
 
 impl SwitchRuleOperator {
-    fn apply(
-        &self,
-        a: &Variant,
-        b: &Variant,
-        c: &Variant,
-        d: &Variant,
-        parts: Option<&[Variant]>,
-    ) -> crate::Result<bool> {
+    fn apply(&self, a: &Variant, b: &Variant, c: &Variant, d: &Variant, parts: &[Variant]) -> crate::Result<bool> {
         match self {
-            Self::Equal => Ok(a == b),
+            Self::Equal | Self::Else => Ok(a == b),
             Self::NotEqual => Ok(a != b),
             Self::IsTrue => Ok(a.as_bool().unwrap_or(false)),
             Self::IsFalse => Ok(a.as_bool().unwrap_or(false)),
-
+            Self::IsNull => Ok(a.is_null()),
+            Self::IsNotNull => Ok(!a.is_null()),
+            Self::Between => {
+                if let (Some(a), Some(b), Some(c)) = (a.as_f64(), b.as_f64(), c.as_f64()) {
+                    Ok((a >= b && a <= c) || (a <= b && a >= c))
+                } else {
+                    Ok(false)
+                }
+            }
+            Self::IsEmpty => match a {
+                Variant::String(a) => Ok(a.is_empty()),
+                Variant::Array(a) => Ok(a.is_empty()),
+                Variant::Bytes(a) => Ok(a.is_empty()),
+                Variant::Object(a) => Ok(a.is_empty()),
+                _ => Ok(false),
+            },
+            Self::IsNotEmpty => match a {
+                Variant::String(a) => Ok(!a.is_empty()),
+                Variant::Array(a) => Ok(!a.is_empty()),
+                Variant::Bytes(a) => Ok(!a.is_empty()),
+                Variant::Object(a) => Ok(!a.is_empty()),
+                _ => Ok(false),
+            },
+            Self::Contains => match (a.as_str(), b.as_str()) {
+                (Some(a), Some(b)) => Ok(a.contains(b)),
+                _ => Ok(false),
+            },
+            Self::IsType => match b.as_str() {
+                Some("array") => Ok(a.is_array()),
+                Some("buffer") => Ok(a.is_bytes()),
+                Some("json") => {
+                    if let Ok(_) = serde_json::Value::from_str(a.as_str().unwrap_or_default()) {
+                        Ok(true)
+                    } else {
+                        Ok(false)
+                    }
+                }
+                Some("null") => Ok(a.is_null()),
+                Some("number") => Ok(a.is_number()),
+                _ => Ok(false), // TODO
+            },
             _ => Err(EdgelinkError::NotSupported("Unsupported operator".to_owned()).into()),
         }
     }
@@ -150,10 +185,16 @@ struct SwitchRule {
     operator: SwitchRuleOperator,
 
     #[serde(rename = "v")]
-    value: Variant,
+    value: String,
 
     #[serde(rename = "vt")]
     value_type: RedPropertyType,
+
+    #[serde(default, rename = "v2")]
+    value2: Option<String>,
+
+    #[serde(default, rename = "v2t")]
+    value2_type: Option<RedPropertyType>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -179,16 +220,49 @@ impl SwitchNode {
         Ok(Box::new(node))
     }
 
-    async fn dispatch_msg(&self, msg: &MsgHandle, cancel: CancellationToken) -> crate::Result<()> {
+    async fn dispatch_msg(&self, orig_msg: &MsgHandle, cancel: CancellationToken) -> crate::Result<()> {
         let mut envelopes: SmallVec<[Envelope; 4]> = SmallVec::new();
-        for (port, rule) in self.config.rules.iter().enumerate() {
-            envelopes.push(Envelope { port, msg: msg.clone() });
-            if !self.config.check_all {
-                break;
+        {
+            let msg = orig_msg.read().await;
+            let from_value = self.eval_property_value(&msg).await?;
+            for (port, rule) in self.config.rules.iter().enumerate() {
+                let v1 = self.get_v1(rule, &msg).await?;
+                let v2 = if rule.value2.is_some() { self.get_v2(rule, &msg).await? } else { Variant::Null };
+                if rule.operator.apply(&from_value, &v1, &v2, &Variant::Null, &[])? {
+                    envelopes.push(Envelope { port, msg: orig_msg.clone() });
+                    if !self.config.check_all {
+                        break;
+                    }
+                }
             }
         }
+        if envelopes.len() > 0 {
+            self.fan_out_many(envelopes, cancel).await?;
+        }
+        Ok(())
+    }
 
-        self.fan_out_many(envelopes, cancel).await
+    async fn eval_property_value(&self, msg: &Msg) -> crate::Result<Variant> {
+        eval::evaluate_raw_node_property(
+            &self.config.property,
+            self.config.property_type.to_red_type()?,
+            Some(self),
+            self.flow().as_ref(),
+            Some(msg),
+        )
+        .await
+    }
+
+    async fn get_v1(&self, rule: &SwitchRule, msg: &Msg) -> crate::Result<Variant> {
+        eval::evaluate_raw_node_property(&rule.value, rule.value_type, Some(self), None, Some(msg)).await
+    }
+
+    async fn get_v2(&self, rule: &SwitchRule, msg: &Msg) -> crate::Result<Variant> {
+        if let (Some(vt2), Some(ref v2)) = (rule.value2_type, &rule.value2) {
+            eval::evaluate_raw_node_property(v2, vt2, Some(self), None, Some(msg)).await
+        } else {
+            Err(EdgelinkError::BadArgument("rule").into())
+        }
     }
 }
 

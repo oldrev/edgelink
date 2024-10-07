@@ -106,7 +106,7 @@ impl ChangeNode {
 
     async fn get_to_value(&self, rule: &Rule, msg: &Msg) -> crate::Result<Variant> {
         if let (Some(tot), Some(to)) = (rule.tot, rule.to.as_ref()) {
-            eval::evaluate_node_property(to, tot, Some(self), None, Some(msg)).await
+            eval::evaluate_raw_node_property(to, tot, Some(self), None, Some(msg)).await
         } else {
             Err(EdgelinkError::BadFlowsJson("The `tot` and `to` in the rule cannot be None".into()).into())
         }
@@ -114,7 +114,7 @@ impl ChangeNode {
 
     async fn get_from_value(&self, rule: &Rule, msg: &Msg) -> crate::Result<Variant> {
         if let (Some(fromt), Some(from)) = (rule.fromt, rule.from.as_ref()) {
-            eval::evaluate_node_property(from, fromt, Some(self), None, Some(msg)).await
+            eval::evaluate_raw_node_property(from, fromt, Some(self), None, Some(msg)).await
         } else {
             Err(EdgelinkError::BadFlowsJson("The `fromt` and `from` in the rule cannot be None".into()).into())
         }
@@ -169,7 +169,7 @@ impl ChangeNode {
             Err(_) => return Ok(()),
         };
 
-        let current = match eval::evaluate_node_property(&rule.p, rule.pt, Some(self), None, Some(msg)).await {
+        let current = match eval::evaluate_raw_node_property(&rule.p, rule.pt, Some(self), None, Some(msg)).await {
             Ok(v) => v,
             Err(_) => return Ok(()),
         };
@@ -349,7 +349,7 @@ impl ChangeNode {
         };
 
         // let target_prop = rule.to.as_ref().unwrap().as_str();
-        let current = match eval::evaluate_node_property(&rule.p, rule.pt, Some(self), None, Some(msg)).await {
+        let current = match eval::evaluate_raw_node_property(&rule.p, rule.pt, Some(self), None, Some(msg)).await {
             Ok(v) => v,
             Err(_) => return Ok(()),
         };

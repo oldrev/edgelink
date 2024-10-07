@@ -249,9 +249,9 @@ impl Variant {
         }
     }
 
-    pub fn as_number(&self) -> Option<&serde_json::Number> {
+    pub fn as_number(&self) -> Option<serde_json::Number> {
         match self {
-            Variant::Number(number) => Some(number),
+            Variant::Number(number) => Some(number.clone()),
             _ => None,
         }
     }
