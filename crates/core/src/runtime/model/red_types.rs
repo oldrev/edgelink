@@ -62,6 +62,7 @@ impl RedPropertyType {
                 | RedPropertyType::Json
                 | RedPropertyType::Bin
                 | RedPropertyType::Bool
+                | RedPropertyType::Re
         )
     }
 }

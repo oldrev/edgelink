@@ -143,8 +143,8 @@ pub async fn evaluate_node_property_value(
         (RedPropertyType::Num, RedPropertyValue::Constant(v)) => v,
         (RedPropertyType::Bool, RedPropertyValue::Constant(v)) => v,
         (RedPropertyType::Bin, RedPropertyValue::Constant(v)) => v,
-        (RedPropertyType::Date, RedPropertyValue::Constant(v)) => v,
         (RedPropertyType::Json, RedPropertyValue::Constant(v)) => v,
+
         (RedPropertyType::Env, RedPropertyValue::Constant(v)) => v,
 
         (RedPropertyType::Date, RedPropertyValue::Runtime(value)) => match value.as_str() {
