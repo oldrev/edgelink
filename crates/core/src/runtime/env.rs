@@ -66,7 +66,7 @@ impl Envs {
             // FOO${ENV_VAR}BAR
             Some(Variant::String(replace_vars(trimmed, |env_name| match self.get_raw_env(env_name) {
                 Some(v) => v.to_string().unwrap(), // FIXME
-                _ => "".to_string(),
+                _ => "".to_owned(),
             })))
         }
     }
@@ -227,7 +227,7 @@ impl EnvStoreBuilder {
             Some(Variant::String(replace_vars(trimmed, |env_name| {
                 match self.get_existed(env_name) {
                     Some(v) => v.to_string().unwrap(), // FIXME
-                    _ => "".to_string(),
+                    _ => "".to_owned(),
                 }
             })))
         }

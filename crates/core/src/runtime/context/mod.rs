@@ -89,7 +89,7 @@ impl WeakContext {
 
 #[derive(Debug)]
 struct InnerContext {
-    pub parent: Option<WeakContext>,
+    pub _parent: Option<WeakContext>,
     pub scope: String,
     manager: Weak<ContextManager>,
 }
@@ -168,7 +168,7 @@ impl Default for ContextManager {
         let memory_store =
             (memory_metadata.factory)("memory".into(), None).expect("Create memory storage cannot go wrong.");
         let mut stores: HashMap<std::string::String, ContextStoreHandle> = HashMap::with_capacity(1);
-        stores.insert("memory".to_string(), Arc::from(memory_store));
+        stores.insert("memory".to_owned(), Arc::from(memory_store));
         Self { default_store: stores["memory"].clone(), contexts: DashMap::new(), stores }
     }
 }
@@ -190,7 +190,7 @@ impl ContextManagerBuilder {
         let memory_store =
             (memory_metadata.factory)("memory".into(), None).expect("Create memory storage cannot go wrong.");
         self.stores.clear();
-        self.stores.insert("memory".to_string(), Arc::from(memory_store));
+        self.stores.insert("memory".to_owned(), Arc::from(memory_store));
         self
     }
 
@@ -242,7 +242,7 @@ impl ContextManagerBuilder {
 impl ContextManager {
     pub fn new_context(self: &Arc<Self>, parent: &Context, scope: String) -> Context {
         let inner =
-            InnerContext { parent: Some(parent.downgrade()), manager: Arc::downgrade(self), scope: scope.clone() };
+            InnerContext { _parent: Some(parent.downgrade()), manager: Arc::downgrade(self), scope: scope.clone() };
         let c = Context { inner: Arc::new(inner) };
         self.contexts.insert(scope, c.clone());
         c
@@ -250,7 +250,7 @@ impl ContextManager {
 
     pub fn new_global_context(self: &Arc<Self>) -> Context {
         let inner =
-            InnerContext { parent: None, manager: Arc::downgrade(self), scope: GLOBAL_CONTEXT_NAME.to_string() };
+            InnerContext { _parent: None, manager: Arc::downgrade(self), scope: GLOBAL_CONTEXT_NAME.to_string() };
         let c = Context { inner: Arc::new(inner) };
         self.contexts.insert(GLOBAL_CONTEXT_NAME.to_string(), c.clone());
         c

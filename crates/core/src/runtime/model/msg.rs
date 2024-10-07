@@ -288,7 +288,7 @@ impl<'js> js::FromJs<'js> for Msg {
                                                 from: wellknown::LINK_SOURCE_PROPERTY,
                                                 to: "link_call_stack",
                                                 message: Some(
-                                                    "Failed to deserialize `_linkSource` property".to_string(),
+                                                    "Failed to deserialize `_linkSource` property".to_owned(),
                                                 ),
                                             })?;
                                     }
@@ -342,7 +342,7 @@ impl Default for MsgHandle {
         let msg = Msg {
             body: Variant::Object(BTreeMap::from([
                 (wellknown::MSG_ID_PROPERTY.to_string(), Msg::generate_id_variant()),
-                ("payload".to_string(), Variant::Null),
+                ("payload".to_owned(), Variant::Null),
             ])),
             link_call_stack: None,
         };
@@ -365,7 +365,7 @@ impl MsgHandle {
             link_call_stack: None,
             body: Variant::Object(BTreeMap::from([
                 (wellknown::MSG_ID_PROPERTY.to_string(), Msg::generate_id_variant()),
-                ("payload".to_string(), payload),
+                ("payload".to_owned(), payload),
             ])),
         };
         MsgHandle::new(msg)

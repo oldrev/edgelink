@@ -49,7 +49,7 @@ impl LinkOutNode {
                 } else {
                     log::error!("LinkOutNode: Cannot found the required `link in` node(id={})!", link_in_id);
                     return Err(
-                        EdgelinkError::BadFlowsJson("Cannot found the required `link in` node".to_string()).into()
+                        EdgelinkError::BadFlowsJson("Cannot found the required `link in` node".to_owned()).into()
                     );
                 }
             }

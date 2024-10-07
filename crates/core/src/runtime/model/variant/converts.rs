@@ -14,7 +14,7 @@ impl From<&Variant> for String {
                 let dt_now_utc: chrono::DateTime<chrono::Local> = (*d).into();
                 dt_now_utc.to_string()
             }
-            _ => "".to_string(),
+            _ => "".into(),
         }
     }
 }

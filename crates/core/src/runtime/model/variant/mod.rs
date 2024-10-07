@@ -772,11 +772,11 @@ mod tests {
     fn variant_propex_set_nav_property_with_empty_object_should_be_ok() {
         let mut obj1 = Variant::empty_object();
 
-        obj1.set_nav("address.country", Variant::String("US".to_string()), true, &[]).unwrap();
-        obj1.set_nav("address.zip", Variant::String("12345".to_string()), true, &[]).unwrap();
+        obj1.set_nav("address.country", Variant::String("US".to_owned()), true, &[]).unwrap();
+        obj1.set_nav("address.zip", Variant::String("12345".to_owned()), true, &[]).unwrap();
 
-        obj1.set_nav("array_field[0]", Variant::String("11111".to_string()), true, &[]).unwrap();
-        obj1.set_nav("array_field[1]", Variant::String("22222".to_string()), true, &[]).unwrap();
+        obj1.set_nav("array_field[0]", Variant::String("11111".to_owned()), true, &[]).unwrap();
+        obj1.set_nav("array_field[1]", Variant::String("22222".to_owned()), true, &[]).unwrap();
 
         let obj_address = obj1.get_nav("address", &[]).unwrap();
 

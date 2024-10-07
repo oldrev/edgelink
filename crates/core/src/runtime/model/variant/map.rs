@@ -73,7 +73,7 @@ impl VariantObject for VariantObjectMap {
     ) -> crate::Result<()> {
         if expr.is_empty() {
             return Err(crate::EdgelinkError::BadArgument("expr"))
-                .with_context(|| "The argument expr cannot be empty".to_string());
+                .with_context(|| "The argument expr cannot be empty".to_owned());
         }
 
         let mut segs = propex::parse(expr).map_err(|_| crate::EdgelinkError::BadArgument("expr"))?;

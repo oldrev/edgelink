@@ -158,7 +158,7 @@ fn load_config(cli_args: &CliArgs) -> anyhow::Result<Option<config::Config>> {
 
     let edgelink_home_dir = cli_args.home.clone().or(std::env::var("EDGELINK_HOME").ok()).or(Some(home_dir));
 
-    let run_env = cli_args.env.clone().or(std::env::var("EDGELINK_RUN_ENV").ok()).unwrap_or("dev".to_string());
+    let run_env = cli_args.env.clone().or(std::env::var("EDGELINK_RUN_ENV").ok()).unwrap_or("dev".to_owned());
 
     if cli_args.verbose > 0 {
         if let Some(ref x) = edgelink_home_dir {

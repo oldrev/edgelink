@@ -364,7 +364,7 @@ impl ChangeNode {
             RedPropertyType::Global => self.engine().map(|x| x.context().clone()),
             _ => None,
         };
-        res.ok_or(EdgelinkError::InvalidOperation("Failed to get context".to_string()).into())
+        res.ok_or(EdgelinkError::InvalidOperation("Failed to get context".to_owned()).into())
     }
 
     async fn set_property(
@@ -401,7 +401,7 @@ impl ChangeNode {
                     )
                     .await
                 } else {
-                    Err(EdgelinkError::BadArgument("to_value")).with_context(|| "The target value is None".to_string())
+                    Err(EdgelinkError::BadArgument("to_value")).with_context(|| "The target value is None".to_owned())
                 }
             }
 
@@ -451,7 +451,7 @@ fn handle_legacy_json(n: Value) -> crate::Result<Value> {
 
         // Check if "set" or "move" action, and add "to" field
         if rule["t"] == "set" || rule["t"] == "move" {
-            rule["to"] = n.get("to").cloned().unwrap_or(Value::String("".to_string()));
+            rule["to"] = n.get("to").cloned().unwrap_or(Value::String("".to_owned()));
         }
         // If "change" action, add "from", "to" and "re" fields
         else if rule["t"] == "change" {

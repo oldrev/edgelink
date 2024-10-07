@@ -179,9 +179,9 @@ impl FunctionNode {
                 \n{}\n
             }}
             ",
-            function_config.initialize.unwrap_or("".to_string()),
-            function_config.func.unwrap_or("return msg;".to_string()),
-            function_config.finalize.unwrap_or("".to_string()),
+            function_config.initialize.unwrap_or("".to_owned()),
+            function_config.func.unwrap_or("return msg;".to_owned()),
+            function_config.finalize.unwrap_or("".to_owned()),
         );
 
         let node = FunctionNode {

@@ -79,7 +79,7 @@ impl LinkCallNode {
                     linked_nodes.push(Arc::downgrade(&link_in));
                 } else {
                     log::error!("LinkCallNode: Cannot found the required `link in` node(id={})!", link_in_id);
-                    return Err(EdgelinkError::BadFlowsJson("Cannot found the required `link in`".to_string()).into());
+                    return Err(EdgelinkError::BadFlowsJson("Cannot found the required `link in`".to_owned()).into());
                 }
             }
         }
@@ -137,7 +137,7 @@ impl LinkCallNode {
                     target_node.inject_msg(msg.clone(), cancel.clone()).await?;
                 } else {
                     let err_msg = "Cannot found node by msg.target";
-                    return Err(EdgelinkError::InvalidOperation(err_msg.to_string()).into());
+                    return Err(EdgelinkError::InvalidOperation(err_msg.to_owned()).into());
                 }
             }
         }
@@ -147,7 +147,7 @@ impl LinkCallNode {
     fn get_dynamic_target_node(&self, msg: &Msg) -> crate::Result<Option<Arc<dyn FlowNodeBehavior>>> {
         let target_field = msg
             .get("target")
-            .ok_or(EdgelinkError::InvalidOperation("There are no `target` field in the msg!".to_string()))?;
+            .ok_or(EdgelinkError::InvalidOperation("There are no `target` field in the msg!".to_owned()))?;
 
         let result = match target_field {
             Variant::String(target_name) => {
@@ -182,10 +182,10 @@ impl LinkCallNode {
                 .get_node()
                 .flow
                 .upgrade()
-                .ok_or(EdgelinkError::InvalidOperation("The flow cannot be released".to_string()))?;
+                .ok_or(EdgelinkError::InvalidOperation("The flow cannot be released".to_owned()))?;
             if flow.is_subflow() {
                 return Err(EdgelinkError::InvalidOperation(
-                    "A `link call` cannot call a `link in` node inside a subflow".to_string(),
+                    "A `link call` cannot call a `link in` node inside a subflow".to_owned(),
                 )
                 .into());
             }

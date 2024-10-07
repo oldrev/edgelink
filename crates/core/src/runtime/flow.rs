@@ -188,7 +188,7 @@ impl Flow {
         let flow_kind = match flow_config.type_name.as_str() {
             "tab" => FlowKind::GlobalFlow,
             "subflow" => FlowKind::Subflow,
-            _ => return Err(EdgelinkError::BadFlowsJson("Unsupported flow type".to_string()).into()),
+            _ => return Err(EdgelinkError::BadFlowsJson("Unsupported flow type".to_owned()).into()),
         };
 
         let subflow_instance = flow_config.subflow_node_id.and_then(|x| engine.find_flow_node_by_id(&x));
@@ -221,7 +221,7 @@ impl Flow {
             FlowKind::Subflow => {
                 if subflow_instance.is_none() {
                     return Err(
-                        EdgelinkError::BadFlowsJson("The ID of Sub-flow instance node is None".to_string()).into()
+                        EdgelinkError::BadFlowsJson("The ID of Sub-flow instance node is None".to_owned()).into()
                     );
                 }
                 let subflow_instance = subflow_instance.as_ref().unwrap().clone();
@@ -237,7 +237,7 @@ impl Flow {
         };
         let envs = envs_builder.build();
 
-        let context = engine.get_context_manager().new_context(&engine.context(), flow_config.id.to_string());
+        let context = engine.get_context_manager().new_context(engine.context(), flow_config.id.to_string());
         let args = FlowArgs::load(options)?;
 
         let inner_flow = InnerFlow {

@@ -175,7 +175,7 @@ mod tests {
             assert_eq!(v, 123);
 
             let v: std::string::String = ctx.eval("foo.strValue").unwrap();
-            assert_eq!(v, "hello".to_string());
+            assert_eq!(v, "hello".to_owned());
 
             let v: Vec<i32> = ctx.eval("foo.arrayValue").unwrap();
             assert_eq!(v, vec![1, 2, 3]);

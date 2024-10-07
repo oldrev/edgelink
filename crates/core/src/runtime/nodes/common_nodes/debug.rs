@@ -28,7 +28,7 @@ impl DebugNode {
     fn build(_flow: &Flow, state: FlowNode, config: &RedFlowNodeConfig) -> crate::Result<Box<dyn FlowNodeBehavior>> {
         let mut debug_config: DebugNodeConfig = DebugNodeConfig::deserialize(&config.rest)?;
         if debug_config.complete.is_empty() {
-            debug_config.complete = "payload".to_string();
+            debug_config.complete = "payload".to_owned();
         }
 
         let node = DebugNode { base: state, _config: debug_config };

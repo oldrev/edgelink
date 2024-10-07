@@ -81,7 +81,7 @@ pub async fn evaluate_node_property(
                         .with_context(|| format!("Cannot get the property(s) from `msg`: {}", value))
                 }
             } else {
-                Err(EdgelinkError::BadArgument("msg")).with_context(|| ("`msg` is not existed!".to_string()))
+                Err(EdgelinkError::BadArgument("msg")).with_context(|| ("`msg` is not existed!".to_owned()))
             }
         }
 
@@ -182,7 +182,7 @@ pub fn evaluate_node_property_variant<'a>(
                         .with_context(|| format!("Cannot get the property(s) from `msg`: {}", prop.as_str()));
                 }
             } else {
-                return Err(EdgelinkError::BadArgument("msg")).with_context(|| "`msg` is required".to_string());
+                return Err(EdgelinkError::BadArgument("msg")).with_context(|| "`msg` is required".to_owned());
             }
         }
 
@@ -202,7 +202,7 @@ pub fn evaluate_node_property_variant<'a>(
         },
 
         (_, _) => {
-            return Err(EdgelinkError::BadArgument("value")).with_context(|| "cannot parse the expr".to_string());
+            return Err(EdgelinkError::BadArgument("value")).with_context(|| "cannot parse the expr".to_owned());
         }
     };
 

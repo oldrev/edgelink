@@ -125,7 +125,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_it_should_store_property() {
-        let context = MemoryContextStore::build("memory0".to_string(), None).unwrap();
+        let context = MemoryContextStore::build("memory0".to_owned(), None).unwrap();
 
         assert!(context.get_one("nodeX", &propex::parse("foo").unwrap()).await.is_err());
         assert!(context.set_one("nodeX", &propex::parse("foo").unwrap(), "test".into()).await.is_ok());
@@ -134,7 +134,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_it_should_store_property_creates_parent_properties() {
-        let context = MemoryContextStore::build("memory0".to_string(), None).unwrap();
+        let context = MemoryContextStore::build("memory0".to_owned(), None).unwrap();
 
         context.set_one("nodeX", &propex::parse("foo.bar").unwrap(), "test".into()).await.unwrap();
 
@@ -146,7 +146,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_it_should_delete_property() {
-        let context = MemoryContextStore::build("memory0".to_string(), None).unwrap();
+        let context = MemoryContextStore::build("memory0".to_owned(), None).unwrap();
 
         context.set_one("nodeX", &propex::parse("foo.abc.bar1").unwrap(), "test1".into()).await.unwrap();
 
@@ -160,7 +160,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_it_should_not_shared_context_with_other_scope() {
-        let context = MemoryContextStore::build("memory0".to_string(), None).unwrap();
+        let context = MemoryContextStore::build("memory0".to_owned(), None).unwrap();
 
         assert!(context.get_one("nodeX", &propex::parse("foo").unwrap()).await.is_err());
         assert!(context.get_one("nodeY", &propex::parse("foo").unwrap()).await.is_err());

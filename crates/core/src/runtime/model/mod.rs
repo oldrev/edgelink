@@ -93,7 +93,7 @@ impl MsgReceiverHolder {
             Some(msg) => Ok(msg),
             None => {
                 log::error!("Failed to receive message");
-                Err(EdgelinkError::InvalidOperation("No message in the bounded channel!".to_string()).into())
+                Err(EdgelinkError::InvalidOperation("No message in the bounded channel!".to_owned()).into())
             }
         }
     }
@@ -131,7 +131,7 @@ impl MsgUnboundedReceiverHolder {
             Some(msg) => Ok(msg),
             None => {
                 log::error!("Failed to receive message");
-                Err(EdgelinkError::InvalidOperation("No message in the unbounded channel!".to_string()).into())
+                Err(EdgelinkError::InvalidOperation("No message in the unbounded channel!".to_owned()).into())
             }
         }
     }

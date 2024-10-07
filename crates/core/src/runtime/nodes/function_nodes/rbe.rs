@@ -90,11 +90,11 @@ fn rbe_setopics_default() -> bool {
 }
 
 fn rbe_property_default() -> String {
-    "payload".to_string()
+    "payload".to_owned()
 }
 
 fn rbe_topi_default() -> String {
-    "topic".to_string()
+    "topic".to_owned()
 }
 
 fn deser_f64_percent_or_0<'de, D>(deserializer: D) -> Result<f64, D::Error>

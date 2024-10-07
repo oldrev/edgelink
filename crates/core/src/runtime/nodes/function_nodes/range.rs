@@ -48,7 +48,7 @@ struct RangeNodeConfig {
 }
 
 fn default_config_property() -> String {
-    "payload".to_string()
+    "payload".to_owned()
 }
 
 #[derive(Debug)]

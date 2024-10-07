@@ -20,7 +20,7 @@ pub fn load_flows_json_value(root_jv: JsonValue) -> crate::Result<ResolvedFlows>
     preprocess_merge_subflow_env(&mut preprocessed)?;
     let all_values = preprocessed
         .as_array()
-        .ok_or(EdgelinkError::BadFlowsJson("Cannot convert the value into an array".to_string()))?;
+        .ok_or(EdgelinkError::BadFlowsJson("Cannot convert the value into an array".to_owned()))?;
 
     let mut flows = HashMap::new();
     let mut groups = HashMap::new();
@@ -72,7 +72,7 @@ pub fn load_flows_json_value(root_jv: JsonValue) -> crate::Result<ResolvedFlows>
                         }
                         None => {
                             return Err(
-                                EdgelinkError::BadFlowsJson("The group must have a 'z' property".to_string()).into()
+                                EdgelinkError::BadFlowsJson("The group must have a 'z' property".to_owned()).into()
                             );
                         }
                     },
@@ -95,7 +95,7 @@ pub fn load_flows_json_value(root_jv: JsonValue) -> crate::Result<ResolvedFlows>
                 }
             }
         } else {
-            return Err(EdgelinkError::BadFlowsJson("The entry in `flows.json` must be an object".to_string()).into());
+            return Err(EdgelinkError::BadFlowsJson("The entry in `flows.json` must be an object".to_owned()).into());
         }
     }
 

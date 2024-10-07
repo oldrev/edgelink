@@ -88,7 +88,7 @@ impl InjectNode {
 
         if self.config.crontab.is_empty() {
             log::error!("Cron expression is missing");
-            return Err(EdgelinkError::BadFlowsJson("Cron expression is missing".to_string()).into());
+            return Err(EdgelinkError::BadFlowsJson("Cron expression is missing".to_owned()).into());
         }
 
         log::debug!("cron_expr='{}'", &self.config.crontab);
@@ -205,13 +205,13 @@ fn handle_legacy_json(orig: &Value) -> Value {
                     if let Value::Object(ref mut prop_map) = prop {
                         if let Some(p) = prop_map.get("p") {
                             if p == "payload" && !prop_map.contains_key("v") {
-                                prop_map.insert("v".to_string(), orig["payload"].clone());
-                                prop_map.insert("vt".to_string(), orig["payloadType"].clone());
+                                prop_map.insert("v".to_owned(), orig["payload"].clone());
+                                prop_map.insert("vt".to_owned(), orig["payloadType"].clone());
                             } else if p == "topic"
-                                && prop_map.get("vt") == Some(&Value::String("str".to_string()))
+                                && prop_map.get("vt") == Some(&Value::String("str".to_owned()))
                                 && !prop_map.contains_key("v")
                             {
-                                prop_map.insert("v".to_string(), orig["topic"].clone());
+                                prop_map.insert("v".to_owned(), orig["topic"].clone());
                             }
                         }
                     }
@@ -229,7 +229,7 @@ fn handle_legacy_json(orig: &Value) -> Value {
                 "v": orig["topic"],
                 "vt": "str"
             }));
-            map.insert("props".to_string(), Value::Array(new_props));
+            map.insert("props".to_owned(), Value::Array(new_props));
         }
     }
     n

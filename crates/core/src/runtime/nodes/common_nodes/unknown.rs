@@ -15,7 +15,7 @@ struct UnknownGlobalNode {
 
 impl UnknownGlobalNode {
     fn build(engine: &Engine, config: &RedGlobalNodeConfig) -> crate::Result<Box<dyn GlobalNodeBehavior>> {
-        let context = engine.get_context_manager().new_context(&engine.context(), config.id.to_string());
+        let context = engine.get_context_manager().new_context(engine.context(), config.id.to_string());
         let node = Self {
             base: GlobalNode {
                 id: config.id,
