@@ -336,10 +336,10 @@ fn generate_new_xored_id_value(subflow_id: ElementId, old_id: &str) -> crate::Re
     Ok(JsonValue::String((subflow_id ^ old_id).to_string()))
 }
 
-pub fn parse_red_type_value(t: &str) -> RedTypeValue {
+pub fn parse_red_type_value(t: &str) -> RedElementTypeValue {
     match t.split_once(':') {
-        Some((x, y)) => RedTypeValue { red_type: x, id: parse_red_id_str(y) },
-        None => RedTypeValue { red_type: t, id: None },
+        Some((x, y)) => RedElementTypeValue { red_type: x, id: parse_red_id_str(y) },
+        None => RedElementTypeValue { red_type: t, id: None },
     }
 }
 

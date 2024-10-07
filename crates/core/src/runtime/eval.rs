@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 use regex::Regex;
 use serde::Deserialize;
 use smallvec::SmallVec;
@@ -132,51 +130,34 @@ pub async fn evaluate_raw_node_property(
 }
 
 /// Evaluates a property variant according to its type.
-pub fn evaluate_node_property_variant<'a>(
-    value: &'a Variant,
-    type_: &'a RedPropertyType,
-    node: Option<&'a dyn FlowNodeBehavior>,
-    flow: Option<&'a Flow>,
-    msg: Option<&'a Msg>,
-) -> crate::Result<Cow<'a, Variant>> {
+pub async fn evaluate_node_property_value(
+    value: RedPropertyValue,
+    type_: &RedPropertyType,
+    flow: Option<&Flow>,
+    node: Option<&dyn FlowNodeBehavior>,
+    msg: Option<&Msg>,
+) -> crate::Result<Variant> {
     let res = match (type_, value) {
-        (RedPropertyType::Str, Variant::String(_)) => Cow::Borrowed(value),
-        (RedPropertyType::Re, Variant::Regexp(_)) => Cow::Borrowed(value),
-        (RedPropertyType::Num, Variant::Number(_)) => Cow::Borrowed(value),
-        (RedPropertyType::Bool, Variant::Bool(_)) => Cow::Borrowed(value),
-        (RedPropertyType::Bin, Variant::Bytes(_)) => Cow::Borrowed(value),
-        (RedPropertyType::Date, Variant::Date(_)) => Cow::Borrowed(value),
-        (RedPropertyType::Json, Variant::Object(_) | Variant::Array(_)) => Cow::Borrowed(value),
+        (RedPropertyType::Str, RedPropertyValue::Constant(v)) => v,
+        (RedPropertyType::Re, RedPropertyValue::Constant(v)) => v,
+        (RedPropertyType::Num, RedPropertyValue::Constant(v)) => v,
+        (RedPropertyType::Bool, RedPropertyValue::Constant(v)) => v,
+        (RedPropertyType::Bin, RedPropertyValue::Constant(v)) => v,
+        (RedPropertyType::Date, RedPropertyValue::Constant(v)) => v,
+        (RedPropertyType::Json, RedPropertyValue::Constant(v)) => v,
+        (RedPropertyType::Env, RedPropertyValue::Constant(v)) => v,
 
-        (RedPropertyType::Bin, Variant::Array(array)) => Cow::Owned(Variant::bytes_from_vec(array)?),
-
-        (RedPropertyType::Num | RedPropertyType::Json, Variant::String(s)) => {
-            let jv: serde_json::Value = serde_json::from_str(s)?;
-            Cow::Owned(Variant::deserialize(jv)?)
-        }
-
-        (RedPropertyType::Re, Variant::String(re)) => Cow::Owned(Variant::Regexp(Regex::new(re)?)),
-
-        (RedPropertyType::Date, Variant::String(s)) => match s.as_str() {
-            "object" => Cow::Owned(Variant::now()),
-            "iso" => Cow::Owned(Variant::String(utils::time::iso_now())),
-            _ => Cow::Owned(Variant::Number(utils::time::unix_now().into())),
+        (RedPropertyType::Date, RedPropertyValue::Runtime(value)) => match value.as_str() {
+            "object" => Variant::now(),
+            "iso" => Variant::String(utils::time::iso_now()),
+            _ => Variant::Number(utils::time::unix_now().into()),
         },
 
-        (RedPropertyType::Bin, Variant::String(s)) => {
-            let jv: serde_json::Value = serde_json::from_str(s.as_str())?;
-            let arr = Variant::deserialize(&jv)?;
-            let bytes = arr
-                .to_bytes()
-                .ok_or(EdgelinkError::BadArgument("value"))
-                .with_context(|| format!("Expected an array of bytes, got: {:?}", value))?;
-            Cow::Owned(Variant::from(bytes))
-        }
-
-        (RedPropertyType::Msg, Variant::String(prop)) => {
+        (RedPropertyType::Msg, RedPropertyValue::Constant(Variant::String(ref prop)))
+        | (RedPropertyType::Msg, RedPropertyValue::Runtime(ref prop)) => {
             if let Some(msg) = msg {
                 if let Some(pv) = msg.get_nav_stripped(prop.as_str()) {
-                    Cow::Owned(pv.clone())
+                    pv.clone()
                 } else {
                     return Err(EdgelinkError::BadArgument("value"))
                         .with_context(|| format!("Cannot get the property(s) from `msg`: {}", prop.as_str()));
@@ -187,14 +168,45 @@ pub fn evaluate_node_property_variant<'a>(
         }
 
         // process the context variables
-        (RedPropertyType::Flow | RedPropertyType::Global, _) => todo!(),
+        (RedPropertyType::Global, RedPropertyValue::Runtime(ref value)) => {
+            let ctx_prop = crate::runtime::context::evaluate_key(value)?;
+            let ctx = flow
+                .and_then(|f| f.engine())
+                .or(node.and_then(|n| n.engine()))
+                .map(|e| e.context().clone())
+                .ok_or_else(|| EdgelinkError::BadArgument("flow,node"))?;
 
-        (RedPropertyType::Bool, Variant::String(s)) => Cow::Owned(Variant::Bool(s.trim_ascii().parse::<bool>()?)),
+            let msg_env = msg.map(|m| SmallVec::from([PropexEnv::ExtRef("msg", m.as_variant())])).unwrap_or_default();
+            if let Some(ctx_value) = ctx.get_one(ctx_prop.store, ctx_prop.key, &msg_env).await {
+                ctx_value
+            } else {
+                return Err(EdgelinkError::BadArgument("value"))
+                    .with_context(|| format!("Cannot found the global context variable `{}`", value));
+            }
+        }
+
+        (RedPropertyType::Flow, RedPropertyValue::Runtime(ref value)) => {
+            let ctx_prop = crate::runtime::context::evaluate_key(value)?;
+            let ctx = flow
+                .cloned()
+                .or(node.and_then(|n| n.flow()))
+                .map(|e| e.context().clone())
+                .ok_or_else(|| EdgelinkError::BadArgument("flow,node"))?;
+
+            let msg_env = msg.map(|m| SmallVec::from([PropexEnv::ExtRef("msg", m.as_variant())])).unwrap_or_default();
+            if let Some(ctx_value) = ctx.get_one(ctx_prop.store, ctx_prop.key, &msg_env).await {
+                ctx_value
+            } else {
+                return Err(EdgelinkError::BadArgument("value"))
+                    .with_context(|| format!("Cannot found the flow context variable `{}`", value));
+            }
+        }
 
         (RedPropertyType::Jsonata, _) => todo!(),
 
-        (RedPropertyType::Env, Variant::String(s)) => match evaluate_env_property(s, node, flow) {
-            Some(ev) => Cow::Owned(ev),
+        (RedPropertyType::Env, RedPropertyValue::Runtime(ref s)) => match evaluate_env_property(s.as_str(), node, flow)
+        {
+            Some(ev) => ev,
             _ => {
                 return Err(EdgelinkError::BadArgument("value"))
                     .with_context(|| format!("Cannot found the environment variable: '{}'", s));
