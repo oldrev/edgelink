@@ -152,7 +152,7 @@ Refer [REDNODES-SPECS-DIFF.md](tests/REDNODES-SPECS-DIFF.md) to view the details
             - [x] `global` object
             - [x] `RED.util` object
             - [x] `env` object
-        - [ ] Switch
+        - [x] Switch
         - [x] :heavy_check_mark: Change
         - [x] :heavy_check_mark: Range
         - [ ] Template
