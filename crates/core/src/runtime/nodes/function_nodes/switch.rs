@@ -94,7 +94,10 @@ impl SwitchRuleOperator {
             Self::IsNull => Ok(a.is_null()),
             Self::IsNotNull => Ok(!a.is_null()),
             Self::Between => {
-                if let (Some(a), Some(b), Some(c)) = (a.as_f64(), b.as_f64(), c.as_f64()) {
+                if let (Some(a), Some(b), Some(c)) = (a.as_i64(), b.as_i64(), c.as_i64()) {
+                    Ok((a >= b && a <= c) || (a <= b && a >= c))
+                }
+                else if let (Some(a), Some(b), Some(c)) = (a.as_f64(), b.as_f64(), c.as_f64()) {
                     Ok((a >= b && a <= c) || (a <= b && a >= c))
                 } else {
                     Ok(false)
@@ -164,17 +167,19 @@ enum SwitchPropertyType {
     Prev,
 }
 
-impl SwitchPropertyType {
-    fn to_red_type(&self) -> crate::Result<RedPropertyType> {
-        match self {
-            Self::Msg => Ok(RedPropertyType::Msg),
-            Self::Flow => Ok(RedPropertyType::Flow),
-            Self::Global => Ok(RedPropertyType::Global),
-            Self::Str => Ok(RedPropertyType::Str),
-            Self::Num => Ok(RedPropertyType::Num),
-            Self::Jsonata => Ok(RedPropertyType::Jsonata),
-            Self::Env => Ok(RedPropertyType::Env),
-            Self::Prev => Err(EdgelinkError::BadArgument("self").into()),
+impl TryFrom<SwitchPropertyType> for RedPropertyType {
+    type Error = EdgelinkError;
+
+    fn try_from(value: SwitchPropertyType) -> Result<Self, Self::Error> {
+        match value {
+            SwitchPropertyType::Msg => Ok(RedPropertyType::Msg),
+            SwitchPropertyType::Flow => Ok(RedPropertyType::Flow),
+            SwitchPropertyType::Global => Ok(RedPropertyType::Global),
+            SwitchPropertyType::Str => Ok(RedPropertyType::Str),
+            SwitchPropertyType::Num => Ok(RedPropertyType::Num),
+            SwitchPropertyType::Jsonata => Ok(RedPropertyType::Jsonata),
+            SwitchPropertyType::Env => Ok(RedPropertyType::Env),
+            SwitchPropertyType::Prev => Err(EdgelinkError::BadArgument("self").into()),
         }
     }
 }
@@ -245,7 +250,7 @@ impl SwitchNode {
     async fn eval_property_value(&self, msg: &Msg) -> crate::Result<Variant> {
         eval::evaluate_raw_node_property(
             &self.config.property,
-            self.config.property_type.to_red_type()?,
+            self.config.property_type.try_into()?,
             Some(self),
             self.flow().as_ref(),
             Some(msg),
