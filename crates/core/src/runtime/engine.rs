@@ -316,7 +316,7 @@ impl Engine {
             while !cancel.is_cancelled() && count < expected_msgs {
                 let msg = self.inner.final_msgs_rx.recv_msg(cancel.clone()).await?;
                 count += 1;
-                let msg = msg.unwrap().await;
+                let msg = msg.unwrap();
                 received.push(msg);
             }
             cancel.cancel();

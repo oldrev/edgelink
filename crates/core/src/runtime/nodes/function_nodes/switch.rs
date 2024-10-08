@@ -96,8 +96,7 @@ impl SwitchRuleOperator {
             Self::Between => {
                 if let (Some(a), Some(b), Some(c)) = (a.as_i64(), b.as_i64(), c.as_i64()) {
                     Ok((a >= b && a <= c) || (a <= b && a >= c))
-                }
-                else if let (Some(a), Some(b), Some(c)) = (a.as_f64(), b.as_f64(), c.as_f64()) {
+                } else if let (Some(a), Some(b), Some(c)) = (a.as_f64(), b.as_f64(), c.as_f64()) {
                     Ok((a >= b && a <= c) || (a <= b && a >= c))
                 } else {
                     Ok(false)
@@ -140,9 +139,10 @@ impl SwitchRuleOperator {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Default)]
 enum SwitchPropertyType {
     #[serde(rename = "msg")]
+    #[default]
     Msg,
 
     #[serde(rename = "flow")]
@@ -206,12 +206,13 @@ struct SwitchRule {
 struct SwitchNodeConfig {
     property: String,
 
-    #[serde(rename = "propertyType")]
+    #[serde(rename = "propertyType", default)]
     property_type: SwitchPropertyType,
 
-    #[serde(rename = "checkall", deserialize_with = "deser_bool_from_string")]
+    #[serde(rename = "checkall", deserialize_with = "deser_bool_from_string", default = "default_checkall_true")]
     check_all: bool,
 
+    #[serde(default)]
     repair: bool,
 
     outputs: usize,
@@ -293,10 +294,31 @@ fn deser_bool_from_string<'de, D>(deserializer: D) -> Result<bool, D::Error>
 where
     D: serde::Deserializer<'de>,
 {
-    let s: &'de str = serde::Deserialize::deserialize(deserializer)?;
-    match s {
-        "true" => Ok(true),
-        "false" => Ok(false),
-        _ => Err(serde::de::Error::custom("expected a boolean string `true` or `false`")),
+    struct BoolVisitor;
+
+    impl<'de> serde::de::Visitor<'de> for BoolVisitor {
+        type Value = bool;
+
+        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            formatter.write_str("a boolean string `true` or `false`")
+        }
+
+        fn visit_bool<E: serde::de::Error>(self, value: bool) -> Result<Self::Value, E> {
+            Ok(value)
+        }
+
+        fn visit_str<E: serde::de::Error>(self, value: &str) -> Result<Self::Value, E> {
+            match value {
+                "true" => Ok(true),
+                "false" => Ok(false),
+                _ => Err(serde::de::Error::invalid_value(serde::de::Unexpected::Str(value), &self)),
+            }
+        }
     }
+
+    deserializer.deserialize_any(BoolVisitor)
+}
+
+fn default_checkall_true() -> bool {
+    true
 }

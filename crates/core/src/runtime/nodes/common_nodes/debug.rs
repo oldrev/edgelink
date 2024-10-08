@@ -1,6 +1,6 @@
-use serde;
-use serde::Deserialize;
 use std::sync::Arc;
+
+use serde::{self, Deserialize};
 
 use crate::runtime::flow::Flow;
 use crate::runtime::model::json::RedFlowNodeConfig;
@@ -47,12 +47,18 @@ impl FlowNodeBehavior for DebugNode {
             if self.base.active {
                 match self.recv_msg(stop_token.child_token()).await {
                     Ok(msg) => {
-                        let msg = msg.read().await;
-                        log::info!("[debug:{}] Message Received: \n{:#?}", self.name(), &msg)
+                        let msg = msg.unwrap();
+                        match serde_json::to_string_pretty(&msg) {
+                            Ok(pretty_json) => {
+                                log::info!("[debug:{}] Message Received: \n{}", self.name(), pretty_json)
+                            }
+                            Err(err) => {
+                                log::error!("[debug:{}] {:#?}", self.name(), err);
+                            }
+                        }
                     }
                     Err(ref err) => {
-                        log::error!("[debug:{}] Error: {:#?}", self.name(), err);
-                        break;
+                        log::error!("[debug:{}] {:#?}", self.name(), err);
                     }
                 }
             } else {

@@ -387,8 +387,8 @@ impl MsgHandle {
         MsgHandle::new(inner)
     }
 
-    pub async fn unwrap(self) -> Msg {
-        let inner_lock = Arc::try_unwrap(self.inner).expect("only one reference");
+    pub fn unwrap(self) -> Msg {
+        let inner_lock = Arc::try_unwrap(self.inner).expect("Lock still has multiple owners");
         inner_lock.into_inner()
     }
 }

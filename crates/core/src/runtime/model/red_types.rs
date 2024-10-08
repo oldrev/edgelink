@@ -10,7 +10,7 @@ pub struct RedElementTypeValue<'a> {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RedPropertyValue {
     Constant(Variant),
-    Runtime(String)
+    Runtime(String),
 }
 
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, serde::Deserialize, PartialOrd, Ord)]
@@ -70,7 +70,7 @@ impl RedPropertyType {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RedPropertyTriple {
     property: String,
-    
+
     type_: RedPropertyType,
 
     value: RedPropertyValue,
