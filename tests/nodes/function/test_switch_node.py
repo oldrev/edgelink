@@ -1,6 +1,4 @@
 import json
-import pytest
-import pytest_asyncio
 import asyncio
 import os
 
@@ -13,7 +11,7 @@ async def _generic_switch_test(rule, rule_with, checkall, should_receive, send_p
             "id": "1", "z": "100", "type": "switch", "name": "switchNode", "property": "payload",
             "checkall": checkall, "outputs": 1, "wires": [["2"]],
             "rules": [
-                {"t": rule, "v": rule_with, "vt": isinstance(rule_with, str) and "str" or "num"} #FIXME
+                {"t": rule, "v": rule_with}
             ],
         },
         {"id": "2", "z": "100", "type": "test-once"}
@@ -40,3 +38,23 @@ class TestSwitchNode:
     @pytest.mark.it('should check if payload equals given value')
     async def test_it_should_check_if_payload_equals_given_value(self):
         await _generic_switch_test("eq", "Hello", True, True, "Hello")
+
+    @pytest.mark.asyncio
+    @pytest.mark.it("should return nothing when the payload doesn't equal to desired string")
+    async def test_it_should_return_nothing_when_the_payload_doesnt_equal_to_desired_string(self):
+        await _generic_switch_test("eq", "Hello", True, False, "Hello!")
+
+    @pytest.mark.asyncio
+    @pytest.mark.it("should check if payload NOT equals given value")
+    async def test_it_should_check_if_payload_not_equals_given_value(self):
+        await _generic_switch_test("neq", "Hello", True, True, "HELLO")
+
+    @pytest.mark.asyncio
+    @pytest.mark.it("should return nothing when the payload does equal to desired string")
+    async def test_it_should_return_nothing_when_the_payload_does_equal_to_desired_string(self):
+        await _generic_switch_test("neq", "Hello", True, False, "Hello")
+
+    @pytest.mark.asyncio
+    @pytest.mark.it("should check if payload equals given numeric value")
+    async def test_it_should_check_if_payload_equals_given_numeric_value(self):
+        await _generic_switch_test("eq", 3, True, True, 3)
