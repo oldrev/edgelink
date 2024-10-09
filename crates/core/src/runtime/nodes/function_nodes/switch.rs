@@ -277,7 +277,7 @@ impl SwitchNode {
                         (raw_vt, RedPropertyValue::Runtime(raw_value.to_string()?))
                     }
                 }
-                (Some(raw_vt), _) => (raw_vt, RedPropertyValue::null()),
+                (Some(raw_vt), None) => (raw_vt, RedPropertyValue::null()),
                 (None, None) => return Err(EdgelinkError::BadFlowsJson("invalid rule".to_owned()).into()),
             };
 
