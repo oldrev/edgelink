@@ -58,3 +58,23 @@ class TestSwitchNode:
     @pytest.mark.it("should check if payload equals given numeric value")
     async def test_it_should_check_if_payload_equals_given_numeric_value(self):
         await _generic_switch_test("eq", 3, True, True, 3)
+
+    @pytest.mark.asyncio
+    @pytest.mark.it("should return nothing when the payload doesn\'t equal to desired numeric value")
+    async def test_it_should_return_nothing_when_the_payload_doesnt_equal_to_desired_numeric_value(self):
+        await _generic_switch_test("eq", 2, True, False, 4)
+
+    @pytest.mark.asyncio
+    @pytest.mark.it("should check if payload NOT equals given numeric value")
+    async def test_it_should_check_if_payload_not_equals_given_numeric_value(self):
+        await _generic_switch_test("neq", 55667744, True, True, -1234)
+
+    @pytest.mark.asyncio
+    @pytest.mark.it("should return nothing when the payload does equal to desired numeric value")
+    async def test_it_should_return_nothing_when_the_payload_does_equal_to_desired_numeric_value(self):
+        await _generic_switch_test("neq", 10, True, False, 10)
+
+    @pytest.mark.asyncio
+    @pytest.mark.it("should check if payload is less than given value")
+    async def test_it_should_check_if_payload_is_less_than_given_value(self):
+        await _generic_switch_test("lt", 3, True, True, 2)
