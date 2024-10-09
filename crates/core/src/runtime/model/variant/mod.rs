@@ -650,6 +650,27 @@ impl Debug for Variant {
     }
 }
 
+impl PartialOrd for Variant {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        match (self, other) {
+            (Variant::String(s1), Variant::String(s2)) => s1.partial_cmp(s2),
+            (Variant::Number(n1), Variant::Number(n2)) if n1.is_i64() && n2.is_i64() => {
+                n1.as_i64().partial_cmp(&n2.as_i64())
+            }
+            (Variant::Number(n1), Variant::Number(n2)) if n1.is_u64() && n2.is_u64() => {
+                n1.as_u64().partial_cmp(&n2.as_u64())
+            }
+            (Variant::Number(n1), Variant::Number(n2)) => n1.as_f64().partial_cmp(&n2.as_f64()),
+            (Variant::Date(a), Variant::Date(b)) => a.partial_cmp(&b),
+            (Variant::Bytes(a), Variant::Bytes(b)) => a.partial_cmp(b),
+            (Variant::Array(a), Variant::Array(b)) => a.partial_cmp(b),
+            (Variant::Object(a), Variant::Object(b)) => a.partial_cmp(b),
+
+            _ => None,
+        }
+    }
+}
+
 impl<'a> PropexEnvSliceExt<'a> for &'a [PropexEnv<'a>] {
     fn find(&self, seg: &str, this: &'a Variant) -> Option<&'a Variant> {
         for s in self.iter() {

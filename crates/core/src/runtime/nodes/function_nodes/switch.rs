@@ -89,6 +89,10 @@ impl SwitchRuleOperator {
         match self {
             Self::Equal | Self::Else => Ok(a == b),
             Self::NotEqual => Ok(a != b),
+            Self::LessThan => Ok(a < b),
+            Self::LessThanEqual => Ok(a <= b),
+            Self::GreatThan => Ok(a > b),
+            Self::GreatThanEqual => Ok(a >= b),
             Self::IsTrue => Ok(a.as_bool().unwrap_or(false)),
             Self::IsFalse => Ok(a.as_bool().unwrap_or(false)),
             Self::IsNull => Ok(a.is_null()),
@@ -196,7 +200,7 @@ struct RawSwitchRule {
     operator: SwitchRuleOperator,
 
     #[serde(rename = "v")]
-    value: Variant,
+    value: Option<Variant>,
 
     #[serde(rename = "vt")]
     value_type: Option<SwitchPropertyType>,
@@ -256,23 +260,25 @@ impl SwitchNode {
         let raw_rules = Vec::<RawSwitchRule>::deserialize(rules_json)?;
         let mut rules = Vec::with_capacity(raw_rules.len());
         for raw_rule in raw_rules.into_iter() {
-            let (vt, v) = match raw_rule.value_type {
-                None => {
-                    if raw_rule.value.is_number() {
-                        (SwitchPropertyType::Num, RedPropertyValue::Constant(raw_rule.value))
+            let (vt, v) = match (raw_rule.value_type, raw_rule.value) {
+                (None, Some(raw_value)) => {
+                    if raw_value.is_number() {
+                        (SwitchPropertyType::Num, RedPropertyValue::Constant(raw_value))
                     } else {
-                        (SwitchPropertyType::Str, RedPropertyValue::Constant(raw_rule.value))
+                        (SwitchPropertyType::Str, RedPropertyValue::Constant(raw_value))
                     }
                 }
-                Some(SwitchPropertyType::Prev) => (SwitchPropertyType::Prev, RedPropertyValue::null()),
-                Some(raw_vt) => {
+                (Some(SwitchPropertyType::Prev), _) => (SwitchPropertyType::Prev, RedPropertyValue::null()),
+                (Some(raw_vt), Some(raw_value)) => {
                     if raw_vt.is_constant() {
-                        let evaluated = RedPropertyValue::evaluate_constant(&raw_rule.value, raw_vt.try_into()?)?;
+                        let evaluated = RedPropertyValue::evaluate_constant(&raw_value, raw_vt.try_into()?)?;
                         (raw_vt, evaluated)
                     } else {
-                        (raw_vt, RedPropertyValue::Runtime(raw_rule.value.to_string()?))
+                        (raw_vt, RedPropertyValue::Runtime(raw_value.to_string()?))
                     }
                 }
+                (Some(raw_vt), _) => (raw_vt, RedPropertyValue::null()),
+                (None, None) => return Err(EdgelinkError::BadFlowsJson("invalid rule".to_owned()).into()),
             };
 
             let (v2t, v2) = if let Some(raw_v2) = raw_rule.value2 {
