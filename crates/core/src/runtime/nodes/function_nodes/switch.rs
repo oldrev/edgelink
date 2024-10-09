@@ -295,7 +295,7 @@ impl SwitchNode {
                     }
                 }
             } else {
-                (raw_rule.value2_type, None) // FIXME
+                (raw_rule.value2_type, None)
             };
 
             rules.push(SwitchRule {
