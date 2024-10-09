@@ -132,7 +132,7 @@ pub async fn evaluate_raw_node_property(
 /// Evaluates a property variant according to its type.
 pub async fn evaluate_node_property_value(
     value: RedPropertyValue,
-    type_: &RedPropertyType,
+    type_: RedPropertyType,
     flow: Option<&Flow>,
     node: Option<&dyn FlowNodeBehavior>,
     msg: Option<&Msg>,

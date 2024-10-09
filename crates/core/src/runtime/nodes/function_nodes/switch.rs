@@ -2,7 +2,7 @@ use std::str::FromStr;
 use std::sync::Arc;
 
 use runtime::eval;
-use serde::Deserialize;
+use serde::{self, Deserialize};
 
 use crate::runtime::flow::Flow;
 use crate::runtime::nodes::*;
@@ -167,6 +167,12 @@ enum SwitchPropertyType {
     Prev,
 }
 
+impl SwitchPropertyType {
+    fn is_constant(&self) -> bool {
+        matches!(self, Self::Str | Self::Num | Self::Jsonata)
+    }
+}
+
 impl TryFrom<SwitchPropertyType> for RedPropertyType {
     type Error = EdgelinkError;
 
@@ -185,21 +191,34 @@ impl TryFrom<SwitchPropertyType> for RedPropertyType {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-struct SwitchRule {
+struct RawSwitchRule {
     #[serde(rename = "t")]
     operator: SwitchRuleOperator,
 
     #[serde(rename = "v")]
-    value: String,
+    value: Variant,
 
     #[serde(rename = "vt")]
-    value_type: RedPropertyType,
+    value_type: Option<SwitchPropertyType>,
 
     #[serde(default, rename = "v2")]
-    value2: Option<String>,
+    value2: Option<Variant>,
 
     #[serde(default, rename = "v2t")]
-    value2_type: Option<RedPropertyType>,
+    value2_type: Option<SwitchPropertyType>,
+}
+
+#[derive(Debug, Clone)]
+struct SwitchRule {
+    operator: SwitchRuleOperator,
+
+    value: RedPropertyValue,
+
+    value_type: SwitchPropertyType,
+
+    value2: Option<RedPropertyValue>,
+
+    value2_type: Option<SwitchPropertyType>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -217,13 +236,77 @@ struct SwitchNodeConfig {
 
     outputs: usize,
 
+    #[serde(skip)]
     rules: Vec<SwitchRule>,
 }
 
 impl SwitchNode {
     fn build(_flow: &Flow, base: FlowNode, red_config: &RedFlowNodeConfig) -> crate::Result<Box<dyn FlowNodeBehavior>> {
-        let node = SwitchNode { base, config: SwitchNodeConfig::deserialize(&red_config.rest)? };
+        let mut node = SwitchNode { base, config: SwitchNodeConfig::deserialize(&red_config.rest)? };
+        let rules = if let Some(rules_json) = red_config.rest.get("rules") {
+            Self::evalauate_rules(rules_json)?
+        } else {
+            Vec::new()
+        };
+        node.config.rules = rules;
         Ok(Box::new(node))
+    }
+
+    fn evalauate_rules(rules_json: &serde_json::Value) -> crate::Result<Vec<SwitchRule>> {
+        let raw_rules = Vec::<RawSwitchRule>::deserialize(rules_json)?;
+        let mut rules = Vec::with_capacity(raw_rules.len());
+        for raw_rule in raw_rules.into_iter() {
+            let (vt, v) = match raw_rule.value_type {
+                None => {
+                    if raw_rule.value.is_number() {
+                        (SwitchPropertyType::Num, RedPropertyValue::Constant(raw_rule.value))
+                    } else {
+                        (SwitchPropertyType::Str, RedPropertyValue::Constant(raw_rule.value))
+                    }
+                }
+                Some(SwitchPropertyType::Prev) => (SwitchPropertyType::Prev, RedPropertyValue::null()),
+                Some(raw_vt) => {
+                    if raw_vt.is_constant() {
+                        let evaluated = RedPropertyValue::evaluate_constant(&raw_rule.value, raw_vt.try_into()?)?;
+                        (raw_vt, evaluated)
+                    } else {
+                        (raw_vt, RedPropertyValue::Runtime(raw_rule.value.to_string()?))
+                    }
+                }
+            };
+
+            let (v2t, v2) = if let Some(raw_v2) = raw_rule.value2 {
+                match raw_rule.value2_type {
+                    None => {
+                        if raw_v2.is_number() {
+                            (Some(SwitchPropertyType::Num), Some(RedPropertyValue::Constant(raw_v2)))
+                        } else {
+                            (Some(SwitchPropertyType::Str), Some(RedPropertyValue::Constant(raw_v2)))
+                        }
+                    }
+                    Some(SwitchPropertyType::Prev) => (Some(SwitchPropertyType::Prev), None),
+                    Some(raw_v2t) => {
+                        if raw_v2t.is_constant() {
+                            let evaluated = RedPropertyValue::evaluate_constant(&raw_v2, raw_v2t.try_into()?)?;
+                            (Some(raw_v2t), Some(evaluated))
+                        } else {
+                            (Some(raw_v2t), Some(RedPropertyValue::Runtime(raw_v2.to_string()?)))
+                        }
+                    }
+                }
+            } else {
+                (raw_rule.value2_type, None) // FIXME
+            };
+
+            rules.push(SwitchRule {
+                operator: raw_rule.operator,
+                value: v,
+                value_type: vt,
+                value2: v2,
+                value2_type: v2t,
+            });
+        }
+        Ok(rules)
     }
 
     async fn dispatch_msg(&self, orig_msg: &MsgHandle, cancel: CancellationToken) -> crate::Result<()> {
@@ -260,12 +343,26 @@ impl SwitchNode {
     }
 
     async fn get_v1(&self, rule: &SwitchRule, msg: &Msg) -> crate::Result<Variant> {
-        eval::evaluate_raw_node_property(&rule.value, rule.value_type, Some(self), None, Some(msg)).await
+        eval::evaluate_node_property_value(
+            rule.value.clone(),
+            rule.value_type.try_into().unwrap(),
+            self.flow().as_ref(),
+            Some(self),
+            Some(msg),
+        )
+        .await
     }
 
     async fn get_v2(&self, rule: &SwitchRule, msg: &Msg) -> crate::Result<Variant> {
-        if let (Some(vt2), Some(ref v2)) = (rule.value2_type, &rule.value2) {
-            eval::evaluate_raw_node_property(v2, vt2, Some(self), None, Some(msg)).await
+        if let (Some(vt2), Some(v2)) = (rule.value2_type, &rule.value2) {
+            eval::evaluate_node_property_value(
+                v2.clone(),
+                vt2.try_into().unwrap(),
+                self.flow().as_ref(),
+                Some(self),
+                Some(msg),
+            )
+            .await
         } else {
             Err(EdgelinkError::BadArgument("rule").into())
         }
