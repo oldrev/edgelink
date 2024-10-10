@@ -166,7 +166,7 @@ class TestSwitchNode:
         await _two_field_switch_test("btwn", "3", "5", True, True, 4)
 
     @pytest.mark.asyncio
-    @pytest.mark.it("should check if payload is between given values in 'wrong' order")
+    @pytest.mark.it('should check if payload is between given values in "wrong" order')
     async def test_it_should_check_if_payload_is_between_given_values_in_wrong_order(self):
         await _two_field_switch_test("btwn", "5", "3", True, True, 4)
 
@@ -297,7 +297,7 @@ class TestSwitchNode:
         await _singular_switch_test(False, True, True, False)
 
     @pytest.mark.asyncio
-    @pytest.mark.it("sends nothing when input is false and checking for true (false case)")
+    @pytest.mark.it("sends nothing when input is false and checking for true")
     async def test_it_sends_nothing_when_input_is_false_and_checking_for_true_false_case(self):
         await _singular_switch_test(False, True, False, True)
 
