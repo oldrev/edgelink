@@ -363,7 +363,7 @@ impl Flow {
                         }
                         Err(err) => {
                             log::error!("Failed to build node from {}: {}", node_config, err);
-                            log::debug!("Node JSON:\n{}", node_config.rest);
+                            log::debug!("Node JSON:\n{}", serde_json::to_string_pretty(&node_config.rest).expect("invalid JSON"));
                             return Err(err);
                         }
                     }

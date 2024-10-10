@@ -3,6 +3,7 @@ use std::sync::Arc;
 
 use runtime::eval;
 use serde::{self, Deserialize};
+use serde_with::rust::deserialize_ignore_any;
 
 use crate::runtime::flow::Flow;
 use crate::runtime::nodes::*;
@@ -75,13 +76,16 @@ enum SwitchRuleOperator {
     Index,
 
     #[serde(rename = "hask")]
-    Hask,
+    HasKey,
 
     #[serde(rename = "jsonata_exp")]
     JsonataExp,
 
     #[serde(rename = "else")]
     Else,
+
+    #[serde(deserialize_with = "deserialize_ignore_any")]
+    Undefined,
 }
 
 impl SwitchRuleOperator {
@@ -93,19 +97,16 @@ impl SwitchRuleOperator {
             Self::LessThanEqual => Ok(a <= b),
             Self::GreatThan => Ok(a > b),
             Self::GreatThanEqual => Ok(a >= b),
+            Self::Between => Ok((a >= b && a <= c) || (a <= b && a >= c)),
+            Self::Regex => match (a, b) {
+                (Variant::String(a), Variant::Regexp(b)) => Ok(b.is_match(a)),
+                (Variant::String(a), Variant::String(b)) => Ok(regex::Regex::new(b)?.is_match(a)),
+                _ => Ok(false),
+            },
             Self::IsTrue => Ok(a.as_bool().unwrap_or(false)),
             Self::IsFalse => Ok(a.as_bool().unwrap_or(false)),
             Self::IsNull => Ok(a.is_null()),
             Self::IsNotNull => Ok(!a.is_null()),
-            Self::Between => {
-                if let (Some(a), Some(b), Some(c)) = (a.as_i64(), b.as_i64(), c.as_i64()) {
-                    Ok((a >= b && a <= c) || (a <= b && a >= c))
-                } else if let (Some(a), Some(b), Some(c)) = (a.as_f64(), b.as_f64(), c.as_f64()) {
-                    Ok((a >= b && a <= c) || (a <= b && a >= c))
-                } else {
-                    Ok(false)
-                }
-            }
             Self::IsEmpty => match a {
                 Variant::String(a) => Ok(a.is_empty()),
                 Variant::Array(a) => Ok(a.is_empty()),
@@ -136,7 +137,14 @@ impl SwitchRuleOperator {
                 }
                 Some("null") => Ok(a.is_null()),
                 Some("number") => Ok(a.is_number()),
+                Some("boolean") => Ok(a.is_bool()),
+                Some("string") => Ok(a.is_string()),
+                Some("object") => Ok(a.is_object()),
                 _ => Ok(false), // TODO
+            },
+            Self::HasKey => match (a, b.as_str()) {
+                (Variant::Object(a), Some(b)) => Ok(a.contains_key(b)),
+                _ => Ok(false),
             },
             _ => Err(EdgelinkError::NotSupported("Unsupported operator".to_owned()).into()),
         }
@@ -278,7 +286,7 @@ impl SwitchNode {
                     }
                 }
                 (Some(raw_vt), None) => (raw_vt, RedPropertyValue::null()),
-                (None, None) => return Err(EdgelinkError::BadFlowsJson("invalid rule".to_owned()).into()),
+                (None, None) => (SwitchPropertyType::Str, RedPropertyValue::null()),
             };
 
             let (v2t, v2) = if let Some(raw_v2) = raw_rule.value2 {
