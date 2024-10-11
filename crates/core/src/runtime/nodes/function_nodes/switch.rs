@@ -91,7 +91,7 @@ enum SwitchRuleOperator {
 }
 
 impl SwitchRuleOperator {
-    fn apply(&self, a: &Variant, b: &Variant, c: &Variant, d: &Variant, parts: &[Variant]) -> crate::Result<bool> {
+    fn apply(&self, a: &Variant, b: &Variant, c: &Variant, case: bool, parts: &[Variant]) -> crate::Result<bool> {
         match self {
             Self::Equal | Self::Else => Ok(a == b),
             Self::NotEqual => Ok(a != b),
@@ -220,6 +220,9 @@ struct RawSwitchRule {
 
     #[serde(default, rename = "v2t")]
     value2_type: Option<SwitchPropertyType>,
+
+    #[serde(default, rename = "case")]
+    case: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -233,6 +236,8 @@ struct SwitchRule {
     value2: Option<RedPropertyValue>,
 
     value2_type: Option<SwitchPropertyType>,
+
+    case: bool,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -324,6 +329,7 @@ impl SwitchNode {
                 value_type: vt,
                 value2: v2,
                 value2_type: v2t,
+                case: raw_rule.case,
             });
         }
         Ok(rules)
@@ -337,7 +343,7 @@ impl SwitchNode {
             for (port, rule) in self.config.rules.iter().enumerate() {
                 let v1 = self.get_v1(rule, &msg).await?;
                 let v2 = if rule.value2.is_some() { self.get_v2(rule, &msg).await? } else { Variant::Null };
-                if rule.operator.apply(&from_value, &v1, &v2, &Variant::Null, &[])? {
+                if rule.operator.apply(&from_value, &v1, &v2, rule.case, &[])? {
                     envelopes.push(Envelope { port, msg: orig_msg.clone() });
                     if !self.config.check_all {
                         break;
