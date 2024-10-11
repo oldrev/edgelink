@@ -269,7 +269,162 @@ class TestSwitchNode:
     async def test_it_should_check_if_payload_if_of_type_undefined(self):
         await _generic_switch_test("istype", "undefined", True, True, None)
 
-    # TODO Add more
+    @pytest.mark.asyncio
+    @pytest.mark.it('should handle flow context')
+    async def test_it_should_handle_flow_context(self):
+        flows = [
+            {"id": "100", "type": "tab"},  # flow 1
+            {"id": "1", "type": "change", "z": "100", "rules": [
+                {"t": "set", "p": "foo", "pt": "flow", "to": "flowValue", "tot": "str"},
+                {"t": "set", "p": "bar", "pt": "flow", "to": "flowValue", "tot": "str"},
+            ], "reg": False, "name": "changeNode", "wires": [["2"]]},
+            {"id": "2", "z": "100", "type": "switch", "property": "foo", "propertyType": "flow",
+             "rules": [{"t": "eq", "v": "bar", "vt": "flow"}],
+                "checkall": "true", "outputs": 1, "wires": [["3"]]},
+            {"id": "3", "z": "100", "type": "test-once"}
+        ]
+        injections = [
+            {"nid": "1", "msg": {"payload": "value"}},
+        ]
+        msgs = await run_flow_with_msgs_ntimes(flows, injections, 1)
+        assert msgs[0]["payload"] == "value"
+
+    @pytest.mark.asyncio
+    @pytest.mark.it('should handle persistable flow context')
+    async def test_it_should_handle_persistable_flow_context(self):
+        flows = [
+            {"id": "100", "type": "tab"},  # flow 1
+            {"id": "1", "type": "change", "z": "100", "rules": [
+                {"t": "set", "p": "#:(memory1)::foo", "pt": "flow", "to": "flowValue", "tot": "str"},
+                {"t": "set", "p": "#:(memory1)::bar", "pt": "flow", "to": "flowValue", "tot": "str"},
+            ], "reg": False, "name": "changeNode", "wires": [["2"]]},
+            {"id": "2", "z": "100", "type": "switch", "property": "#:(memory1)::foo", "propertyType": "flow",
+             "rules": [{"t": "eq", "v": "#:(memory1)::bar", "vt": "flow"}],
+                "checkall": "true", "outputs": 1, "wires": [["3"]]},
+            {"id": "3", "z": "100", "type": "test-once"}
+        ]
+        injections = [
+            {"nid": "1", "msg": {"payload": "value"}},
+        ]
+        msgs = await run_flow_with_msgs_ntimes(flows, injections, 1)
+        assert msgs[0]["payload"] == "value"
+
+    @pytest.mark.asyncio
+    @pytest.mark.it('should handle global context')
+    async def test_it_should_handle_global_context(self):
+        flows = [
+            {"id": "100", "type": "tab"},  # flow 1
+            {"id": "1", "type": "change", "z": "100", "rules": [
+                {"t": "set", "p": "foo", "pt": "global", "to": "globalValue", "tot": "str"},
+                {"t": "set", "p": "bar", "pt": "global", "to": "globalValue", "tot": "str"},
+            ], "reg": False, "name": "changeNode", "wires": [["2"]]},
+            {"id": "2", "z": "100", "type": "switch", "property": "foo", "propertyType": "global",
+             "rules": [{"t": "eq", "v": "bar", "vt": "global"}],
+                "checkall": "true", "outputs": 1, "wires": [["3"]]},
+            {"id": "3", "z": "100", "type": "test-once"}
+        ]
+        injections = [
+            {"nid": "1", "msg": {"payload": "value"}},
+        ]
+        msgs = await run_flow_with_msgs_ntimes(flows, injections, 1)
+        assert msgs[0]["payload"] == "value"
+
+    @pytest.mark.asyncio
+    @pytest.mark.it('should handle persistable global context')
+    async def test_it_should_handle_persistable_global_context(self):
+        flows = [
+            {"id": "100", "type": "tab"},  # flow 1
+            {"id": "1", "type": "change", "z": "100", "rules": [
+                {"t": "set", "p": "#:(memory1)::foo", "pt": "global", "to": "globalValue", "tot": "str"},
+                {"t": "set", "p": "#:(memory1)::bar", "pt": "global", "to": "globalValue", "tot": "str"},
+            ], "reg": False, "name": "changeNode", "wires": [["2"]]},
+            {"id": "2", "z": "100", "type": "switch", "property": "#:(memory1)::foo", "propertyType": "global",
+             "rules": [{"t": "eq", "v": "#:(memory1)::bar", "vt": "global"}],
+                "checkall": "true", "outputs": 1, "wires": [["3"]]},
+            {"id": "3", "z": "100", "type": "test-once"}
+        ]
+        injections = [
+            {"nid": "1", "msg": {"payload": "value"}},
+        ]
+        msgs = await run_flow_with_msgs_ntimes(flows, injections, 1)
+        assert msgs[0]["payload"] == "value"
+
+    @pytest.mark.asyncio
+    @pytest.mark.it('should use a nested message property to compare value - matches')
+    async def test_it_should_use_a_nested_message_property_to_compare_value_matches(self):
+        flow = [
+            {"id": "100", "type": "tab"},
+            {"id": "1", "z": "100", "type": "switch", "name": "switchNode", "property": "payload[msg.topic]", "rules": [
+                {"t": "eq", "v": "bar"}], "checkall": True, "outputs": 1, "wires": [["2"]]},
+            {"id": "2", "z": "100", "type": "test-once"}
+        ]
+        await _custom_flow_message_switch_test(flow, True, {"topic": "foo", "payload": {"foo": "bar"}})
+
+    @pytest.mark.asyncio
+    @pytest.mark.it('should use a nested message property to compare value - no match')
+    async def test_it_should_use_a_nested_message_property_to_compare_value_no_match(self):
+        flow = [
+            {"id": "100", "type": "tab"},
+            {"id": "1", "z": "100", "type": "switch", "name": "switchNode", "property": "payload[msg.topic]", "rules": [
+                {"t": "eq", "v": "bar"}], "checkall": True, "outputs": 1, "wires": [["2"]]},
+            {"id": "2", "z": "100", "type": "test-once"}
+        ]
+        await _custom_flow_message_switch_test(flow, False, {"topic": "foo", "payload": {"foo": "none"}})
+
+    @pytest.mark.asyncio
+    @pytest.mark.it('should use a nested message property to compare nested message property - matches')
+    async def test_it_should_use_a_nested_message_property_to_compare_nested_message_property_matches(self):
+        flow = [
+            {"id": "100", "type": "tab"},
+            {"id": "1", "z": "100", "type": "switch", "name": "switchNode", "property": "payload[msg.topic]", "rules": [
+                {"t": "eq", "v": "payload[msg.topic2]", "vt": "msg"}], "checkall": True, "outputs": 1, "wires": [["2"]]},
+            {"id": "2", "z": "100", "type": "test-once"}
+        ]
+        await _custom_flow_message_switch_test(flow, True, {"topic": "foo", "topic2": "foo2", "payload": {"foo": "bar", "foo2": "bar"}})
+
+    @pytest.mark.asyncio
+    @pytest.mark.it('should use a nested message property to compare nested message property - no match')
+    async def test_it_should_use_a_nested_message_property_to_compare_nested_message_property_no_match(self):
+        flow = [
+            {"id": "100", "type": "tab"},
+            {"id": "1", "z": "100", "type": "switch", "name": "switchNode", "property": "payload[msg.topic]", "rules": [
+                {"t": "eq", "v": "payload[msg.topic2]", "vt": "msg"}], "checkall": True, "outputs": 1, "wires": [["2"]]},
+            {"id": "2", "z": "100", "type": "test-once"}
+        ]
+        await _custom_flow_message_switch_test(flow, False, {"topic": "foo", "topic2": "foo2", "payload": {"foo": "bar", "foo2": "none"}})
+
+    @pytest.mark.asyncio
+    @pytest.mark.it('should match regex with ignore-case flag set true')
+    async def test_it_should_match_regex_with_ignore_case_flag_set_true(self):
+        flow = [
+            {"id": "100", "type": "tab"},
+            {"id": "1", "z": "100", "type": "switch", "name": "switchNode", "property": "payload", "rules": [
+                {"t": "regex", "v": "onetwothree", "case": True}], "checkall": True, "outputs": 1, "wires": [["2"]]},
+            {"id": "2", "z": "100", "type": "test-once"}
+        ]
+        await _custom_flow_switch_test(flow, True, "oneTWOthree")
+
+    @pytest.mark.asyncio
+    @pytest.mark.it('should not match regex with ignore-case flag unset')
+    async def test_it_should_not_match_regex_with_ignore_case_flag_unset(self):
+        flow = [
+            {"id": "100", "type": "tab"},
+            {"id": "1", "z": "100", "type": "switch", "name": "switchNode", "property": "payload", "rules": [
+                {"t": "regex", "v": "onetwothree"}], "checkall": True, "outputs": 1, "wires": [["2"]]},
+            {"id": "2", "z": "100", "type": "test-once"}
+        ]
+        await _custom_flow_switch_test(flow, False, "oneTWOthree")
+
+    @pytest.mark.asyncio
+    @pytest.mark.it('should not match regex with ignore-case flag set false')
+    async def test_it_should_not_match_regex_with_ignore_case_flag_set_false(self):
+        flow = [
+            {"id": "100", "type": "tab"},
+            {"id": "1", "z": "100", "type": "switch", "name": "switchNode", "property": "payload", "rules": [
+                {"t": "regex", "v": "onetwothree", "case": False}], "checkall": True, "outputs": 1, "wires": [["2"]]},
+            {"id": "2", "z": "100", "type": "test-once"}
+        ]
+        await _custom_flow_switch_test(flow, False, "oneTWOthree")
 
     @pytest.mark.asyncio
     @pytest.mark.it("should return nothing when the payload doesn't match regex")
