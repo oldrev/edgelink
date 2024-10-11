@@ -4,6 +4,7 @@ use std::sync::Arc;
 use runtime::eval;
 use serde::{self, Deserialize};
 use serde_with::rust::deserialize_ignore_any;
+use tokio::sync::RwLock;
 
 use crate::runtime::flow::Flow;
 use crate::runtime::nodes::*;
@@ -14,6 +15,7 @@ use edgelink_macro::*;
 struct SwitchNode {
     base: FlowNode,
     config: SwitchNodeConfig,
+    prev_value: RwLock<Variant>,
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Deserialize)]
@@ -254,7 +256,11 @@ struct SwitchNodeConfig {
 
 impl SwitchNode {
     fn build(_flow: &Flow, base: FlowNode, red_config: &RedFlowNodeConfig) -> crate::Result<Box<dyn FlowNodeBehavior>> {
-        let mut node = SwitchNode { base, config: SwitchNodeConfig::deserialize(&red_config.rest)? };
+        let mut node = SwitchNode {
+            base,
+            config: SwitchNodeConfig::deserialize(&red_config.rest)?,
+            prev_value: RwLock::new(Variant::Null),
+        };
         let rules = if let Some(rules_json) = red_config.rest.get("rules") {
             Self::evalauate_rules(rules_json)?
         } else {
@@ -357,28 +363,35 @@ impl SwitchNode {
     }
 
     async fn get_v1(&self, rule: &SwitchRule, msg: &Msg) -> crate::Result<Variant> {
-        eval::evaluate_node_property_value(
-            rule.value.clone(),
-            rule.value_type.try_into().unwrap(),
-            self.flow().as_ref(),
-            Some(self),
-            Some(msg),
-        )
-        .await
+        match rule.value_type {
+            SwitchPropertyType::Prev => Ok(self.prev_value.read().await.clone()),
+            _ => {
+                eval::evaluate_node_property_value(
+                    rule.value.clone(),
+                    rule.value_type.try_into().unwrap(),
+                    self.flow().as_ref(),
+                    Some(self),
+                    Some(msg),
+                )
+                .await
+            }
+        }
     }
 
     async fn get_v2(&self, rule: &SwitchRule, msg: &Msg) -> crate::Result<Variant> {
-        if let (Some(vt2), Some(v2)) = (rule.value2_type, &rule.value2) {
-            eval::evaluate_node_property_value(
-                v2.clone(),
-                vt2.try_into().unwrap(),
-                self.flow().as_ref(),
-                Some(self),
-                Some(msg),
-            )
-            .await
-        } else {
-            Err(EdgelinkError::BadArgument("rule").into())
+        match (rule.value2_type, &rule.value2) {
+            (Some(SwitchPropertyType::Prev), _) => Ok(self.prev_value.read().await.clone()),
+            (Some(vt2), Some(v2)) => {
+                eval::evaluate_node_property_value(
+                    v2.clone(),
+                    vt2.try_into().unwrap(),
+                    self.flow().as_ref(),
+                    Some(self),
+                    Some(msg),
+                )
+                .await
+            }
+            _ => Err(EdgelinkError::BadArgument("rule").into()),
         }
     }
 }
