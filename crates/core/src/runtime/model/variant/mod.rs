@@ -661,7 +661,7 @@ impl PartialOrd for Variant {
                 n1.as_u64().partial_cmp(&n2.as_u64())
             }
             (Variant::Number(n1), Variant::Number(n2)) => n1.as_f64().partial_cmp(&n2.as_f64()),
-            (Variant::Date(a), Variant::Date(b)) => a.partial_cmp(&b),
+            (Variant::Date(a), Variant::Date(b)) => a.partial_cmp(b),
             (Variant::Bytes(a), Variant::Bytes(b)) => a.partial_cmp(b),
             (Variant::Array(a), Variant::Array(b)) => a.partial_cmp(b),
             (Variant::Object(a), Variant::Object(b)) => a.partial_cmp(b),

@@ -130,13 +130,7 @@ impl SwitchRuleOperator {
             Self::IsType => match b.as_str() {
                 Some("array") => Ok(a.is_array()),
                 Some("buffer") => Ok(a.is_bytes()),
-                Some("json") => {
-                    if let Ok(_) = serde_json::Value::from_str(a.as_str().unwrap_or_default()) {
-                        Ok(true)
-                    } else {
-                        Ok(false)
-                    }
-                }
+                Some("json") => Ok(serde_json::Value::from_str(a.as_str().unwrap_or_default()).is_ok()), // TODO FIXME
                 Some("null") => Ok(a.is_null()),
                 Some("number") => Ok(a.is_number()),
                 Some("boolean") => Ok(a.is_bool()),
@@ -199,7 +193,7 @@ impl TryFrom<SwitchPropertyType> for RedPropertyType {
             SwitchPropertyType::Num => Ok(RedPropertyType::Num),
             SwitchPropertyType::Jsonata => Ok(RedPropertyType::Jsonata),
             SwitchPropertyType::Env => Ok(RedPropertyType::Env),
-            SwitchPropertyType::Prev => Err(EdgelinkError::BadArgument("self").into()),
+            SwitchPropertyType::Prev => Err(EdgelinkError::BadArgument("self")),
         }
     }
 }
@@ -351,7 +345,7 @@ impl SwitchNode {
                 }
             }
         }
-        if envelopes.len() > 0 {
+        if !envelopes.is_empty() {
             self.fan_out_many(envelopes, cancel).await?;
         }
         Ok(())
