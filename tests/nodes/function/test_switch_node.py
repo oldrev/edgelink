@@ -525,7 +525,7 @@ class TestSwitchNode:
     @pytest.mark.asyncio
     @pytest.mark.it("should check if payload is not empty (buffer)")
     async def test_it_should_check_if_payload_is_not_empty_buffer(self):
-        await _singular_switch_test("nempty", True, False, bytearray())
+        await _singular_switch_test("nempty", True, False, [])
 
     @pytest.mark.asyncio
     @pytest.mark.it("should check if payload is not empty (object)")
@@ -545,7 +545,7 @@ class TestSwitchNode:
     @pytest.mark.asyncio
     @pytest.mark.it("should check if payload is not empty (non-empty buffer)")
     async def test_it_should_check_if_payload_is_not_empty_non_empty_buffer(self):
-        await _singular_switch_test("nempty", True, True, bytearray(1))
+        await _singular_switch_test("nempty", True, True, [1])
 
     @pytest.mark.asyncio
     @pytest.mark.it("should check if payload is not empty (non-empty object)")
