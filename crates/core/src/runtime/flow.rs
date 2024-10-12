@@ -1,4 +1,5 @@
 use std::cmp::Ordering;
+use std::str::FromStr;
 use std::sync::{Arc, Weak};
 
 use common_nodes::catch::{CatchNode, CatchNodeScope};
@@ -65,10 +66,22 @@ impl WeakFlow {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FlowKind {
     GlobalFlow,
     Subflow,
+}
+
+impl std::str::FromStr for FlowKind {
+    type Err = EdgelinkError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "tab" => Ok(FlowKind::GlobalFlow),
+            "subflow" => Ok(FlowKind::Subflow),
+            _ => Err(EdgelinkError::BadArgument("s")),
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -185,11 +198,7 @@ impl Flow {
         reg: &RegistryHandle,
         options: Option<&config::Config>,
     ) -> crate::Result<Flow> {
-        let flow_kind = match flow_config.type_name.as_str() {
-            "tab" => FlowKind::GlobalFlow,
-            "subflow" => FlowKind::Subflow,
-            _ => return Err(EdgelinkError::BadFlowsJson("Unsupported flow type".to_owned()).into()),
-        };
+        let flow_kind = FlowKind::from_str(flow_config.type_name.as_str())?;
 
         let subflow_instance = flow_config.subflow_node_id.and_then(|x| engine.find_flow_node_by_id(&x));
 
