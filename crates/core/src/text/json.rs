@@ -15,3 +15,28 @@ pub fn option_value_equals_str(jv: &Option<&Value>, target_string: &str) -> bool
         _ => false,
     }
 }
+
+pub trait JsonValueExt {
+    fn get_str(&self, key: &str) -> Option<&str>;
+    fn get_str_or<'a>(&'a self, key: &str, default: &'a str) -> &'a str;
+}
+
+impl JsonValueExt for Value {
+    fn get_str(&self, key: &str) -> Option<&str> {
+        self.get(key).and_then(|x| x.as_str())
+    }
+
+    fn get_str_or<'a>(&'a self, key: &str, default: &'a str) -> &'a str {
+        self.get(key).and_then(|x| x.as_str()).unwrap_or(default)
+    }
+}
+
+impl JsonValueExt for serde_json::Map<String, Value> {
+    fn get_str(&self, key: &str) -> Option<&str> {
+        self.get(key).and_then(|x| x.as_str())
+    }
+
+    fn get_str_or<'a>(&'a self, key: &str, default: &'a str) -> &'a str {
+        self.get(key).and_then(|x| x.as_str()).unwrap_or(default)
+    }
+}

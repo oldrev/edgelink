@@ -10,7 +10,7 @@ use serde_json::Map as JsonMap;
 use serde_json::Value as JsonValue;
 
 use crate::runtime::model::ElementId;
-use crate::text::json::{option_value_equals_str, EMPTY_ARRAY};
+use crate::text::json::{option_value_equals_str, JsonValueExt, EMPTY_ARRAY};
 use crate::EdgelinkError;
 
 use super::*;
@@ -33,10 +33,9 @@ pub fn load_flows_json_value(root_jv: JsonValue) -> crate::Result<ResolvedFlows>
 
     for jobject in all_values.iter() {
         if let Some(obj) = jobject.as_object() {
-            if let (Some(ele_id), Some(type_value)) = (
-                obj.get("id").and_then(parse_red_id_value),
-                obj.get("type").and_then(|x| x.as_str()).map(|x| parse_red_type_value(x)),
-            ) {
+            if let (Some(ele_id), Some(type_value)) =
+                (obj.get("id").and_then(parse_red_id_value), obj.get_str("type").map(|x| parse_red_type_value(x)))
+            {
                 match type_value.red_type {
                     "tab" => {
                         let deps = obj.get_flow_dependencies(all_values);
@@ -122,8 +121,8 @@ pub fn load_flows_json_value(root_jv: JsonValue) -> crate::Result<ResolvedFlows>
             log::debug!(
                 "SORTED_NODES: node.id='{}', node.name='{}', node.type='{}'",
                 node_id,
-                node.get("name").and_then(|x| x.as_str()).unwrap_or(""),
-                node.get("type").and_then(|x| x.as_str()).unwrap_or("")
+                node.get_str_or("name", ""),
+                node.get_str_or("type", "")
             );
             sorted_flow_nodes.push(node);
         } else {
@@ -138,8 +137,7 @@ pub fn load_flows_json_value(root_jv: JsonValue) -> crate::Result<ResolvedFlows>
 
         flow_config.subflow_node_id = if flow_config.type_name == "subflow" {
             let key_type = format!("subflow:{}", flow_config.id);
-            let node =
-                all_values.iter().find(|x| x.get("type").and_then(|y| y.as_str()).is_some_and(|y| y == key_type));
+            let node = all_values.iter().find(|x| x.get_str("type").is_some_and(|y| y == key_type));
             node.and_then(|x| x.get("id")).and_then(parse_red_id_value)
         } else {
             None
@@ -179,22 +177,18 @@ fn preprocess_subflows(jv_root: JsonValue) -> crate::Result<JsonValue> {
 
     // Find out all of subflow related elements
     for jv in elements.iter() {
-        if let Some(("subflow", subflow_id)) = jv.get("type").and_then(|x| x.as_str()).and_then(|x| x.split_once(':')) {
-            let subflow = elements
-                .iter()
-                .find(|x| x.get("id").and_then(|y| y.as_str()).is_some_and(|y| y == subflow_id))
-                .ok_or(EdgelinkError::BadFlowsJson(format!(
+        if let Some(("subflow", subflow_id)) = jv.get_str("type").and_then(|x| x.split_once(':')) {
+            let subflow = elements.iter().find(|x| x.get_str("id").is_some_and(|y| y == subflow_id)).ok_or(
+                EdgelinkError::BadFlowsJson(format!(
                     "The cannot found the subflow for subflow instance node(id='{}', type='{}', name='{}')",
                     subflow_id,
-                    jv.get("type").and_then(|x| x.as_str()).unwrap_or(""),
-                    jv.get("name").and_then(|x| x.as_str()).unwrap_or("")
-                )))?;
+                    jv.get_str_or("type", ""),
+                    jv.get_str_or("name", "")
+                )),
+            )?;
 
             // All elements belongs to this flow
-            let children = elements
-                .iter()
-                .filter(|x| x.get("z").and_then(|y| y.as_str()).is_some_and(|y| y == subflow_id))
-                .collect();
+            let children = elements.iter().filter(|x| x.get_str("z").is_some_and(|y| y == subflow_id)).collect();
 
             let pack = SubflowPack { subflow_id, instance: jv, subflow, children };
 
@@ -397,16 +391,13 @@ impl RedFlowJsonObject for JsonMap<String, JsonValue> {
     }
 
     fn get_subflow_dependencies(&self, elements: &[JsonValue]) -> HashSet<ElementId> {
-        let subflow_id = self.get("id").and_then(|x| x.as_str()).expect("Must have `id`");
+        let subflow_id = self.get_str("id").expect("Must have `id`");
 
         elements
             .iter()
             .filter_map(|x| x.as_object())
             .filter(|o| {
-                o.get("type")
-                    .and_then(|x| x.as_str())
-                    .and_then(|x| x.split_once(':'))
-                    .is_some_and(|x| x.0 == "subflow" && x.1 == subflow_id)
+                o.get_str("type").and_then(|x| x.split_once(':')).is_some_and(|x| x.0 == "subflow" && x.1 == subflow_id)
             })
             .filter_map(|o| o.get("z"))
             .filter_map(parse_red_id_value)
@@ -445,7 +436,7 @@ impl RedFlowNodeJsonObject for JsonMap<String, JsonValue> {
 
         // Add links
         if let Some(links) = self.get("links").and_then(|x| x.as_array()) {
-            let red_type = self.get("type").and_then(|x| x.as_str());
+            let red_type = self.get_str("type");
             if red_type == Some("link out") || red_type == Some("link call") {
                 let iter = links.iter().filter_map(parse_red_id_value);
                 result.extend(iter);
@@ -733,15 +724,13 @@ fn preprocess_merge_subflow_env(flows: &mut JsonValue) -> crate::Result<()> {
     let elements = flows.as_array_mut().ok_or(EdgelinkError::BadArgument("flows"))?;
     let subflows: HashMap<String, JsonValue> = elements
         .iter()
-        .filter(|x| x.get("type").and_then(|y| y.as_str()).map(|y| y == "subflow").unwrap_or(false))
+        .filter(|x| x.get_str("type").map(|y| y == "subflow").unwrap_or(false))
         .filter(|x| x.get("env").is_some())
-        .map(|e| (e.get("id").and_then(|x| x.as_str()).unwrap().to_string(), e.get("env").cloned().unwrap()))
+        .map(|e| (e.get_str("id").unwrap().to_string(), e.get("env").cloned().unwrap()))
         .collect();
 
     for element in elements.iter_mut() {
-        if let Some(("subflow", subflow_id)) =
-            element.get("type").and_then(|x| x.as_str()).and_then(|x| x.split_once(':'))
-        {
+        if let Some(("subflow", subflow_id)) = element.get_str("type").and_then(|x| x.split_once(':')) {
             if let Some(subflow_env) = subflows.get(subflow_id) {
                 let instance_env = if let Some(instance_env) = element.get_mut("env") {
                     instance_env
@@ -761,15 +750,11 @@ fn merge_env(target_envs: &mut JsonValue, ref_envs: &JsonValue) -> crate::Result
         target_envs.as_array_mut().ok_or(EdgelinkError::BadArgument("target_envs"))?;
     let ref_vec: &Vec<JsonValue> = ref_envs.as_array().ok_or(EdgelinkError::BadArgument("ref_envs"))?;
 
-    let target_names: HashSet<String> = target_vec
-        .iter()
-        .filter_map(|item| item.get("name"))
-        .filter_map(|name| name.as_str())
-        .map(|name| name.to_string())
-        .collect();
+    let target_names: HashSet<String> =
+        target_vec.iter().filter_map(|item| item.get_str("name")).map(|name| name.to_string()).collect();
 
     for item in ref_vec.iter() {
-        if let Some(name) = item.get("name").and_then(|name| name.as_str()) {
+        if let Some(name) = item.get_str("name") {
             if !target_names.contains(name) {
                 target_vec.push(item.clone());
             }
