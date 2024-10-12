@@ -7,6 +7,7 @@ use std::sync::Arc;
 use serde::de;
 use serde::ser::SerializeMap;
 use tokio::sync::RwLock;
+use wellknown::{MSG_PARTS_ID_PROPERTY, MSG_PARTS_INDEX_PROPERTY, MSG_PARTS_PROPERTY};
 
 #[cfg(feature = "js")]
 mod js {
@@ -18,6 +19,9 @@ use crate::runtime::model::*;
 
 pub mod wellknown {
     pub const MSG_ID_PROPERTY: &str = "_msgid";
+    pub const MSG_PARTS_PROPERTY: &str = "parts";
+    pub const MSG_PARTS_ID_PROPERTY: &str = "id";
+    pub const MSG_PARTS_INDEX_PROPERTY: &str = "index";
     pub const LINK_SOURCE_PROPERTY: &str = "_linkSource";
 }
 
@@ -90,6 +94,22 @@ impl Msg {
 
     pub fn as_variant_object_mut(&mut self) -> &mut VariantObjectMap {
         self.body.as_object_mut().unwrap()
+    }
+
+    pub fn parts(&self) -> Option<&VariantObjectMap> {
+        self.body.as_object().and_then(|x| x.get(MSG_PARTS_PROPERTY)).and_then(|x| x.as_object())
+    }
+
+    pub fn parts_mut(&mut self) -> Option<&mut VariantObjectMap> {
+        self.body.as_object_mut().and_then(|x| x.get_mut(MSG_PARTS_PROPERTY)).and_then(|x| x.as_object_mut())
+    }
+
+    pub fn has_parts(&self) -> bool {
+        if let Some(parts) = self.parts() {
+            parts.contains_key(MSG_PARTS_ID_PROPERTY) && parts.contains_key(MSG_PARTS_INDEX_PROPERTY)
+        } else {
+            false
+        }
     }
 
     pub fn contains(&self, prop: &str) -> bool {
