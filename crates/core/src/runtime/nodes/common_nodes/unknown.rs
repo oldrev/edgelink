@@ -14,7 +14,11 @@ struct UnknownGlobalNode {
 }
 
 impl UnknownGlobalNode {
-    fn build(engine: &Engine, config: &RedGlobalNodeConfig) -> crate::Result<Box<dyn GlobalNodeBehavior>> {
+    fn build(
+        engine: &Engine,
+        config: &RedGlobalNodeConfig,
+        _options: Option<&config::Config>,
+    ) -> crate::Result<Box<dyn GlobalNodeBehavior>> {
         let context = engine.get_context_manager().new_context(engine.context(), config.id.to_string());
         let node = Self {
             base: GlobalNode {
@@ -42,7 +46,12 @@ struct UnknownFlowNode {
 }
 
 impl UnknownFlowNode {
-    fn build(_flow: &Flow, base: FlowNode, _config: &RedFlowNodeConfig) -> crate::Result<Box<dyn FlowNodeBehavior>> {
+    fn build(
+        _flow: &Flow,
+        base: FlowNode,
+        _config: &RedFlowNodeConfig,
+        _options: Option<&config::Config>,
+    ) -> crate::Result<Box<dyn FlowNodeBehavior>> {
         let node = UnknownFlowNode { base };
         Ok(Box::new(node))
     }

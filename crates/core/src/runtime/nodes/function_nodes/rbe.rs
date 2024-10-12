@@ -155,6 +155,7 @@ impl RbeNode {
         _flow: &Flow,
         base_node: FlowNode,
         config: &RedFlowNodeConfig,
+        _options: Option<&config::Config>,
     ) -> crate::Result<Box<dyn FlowNodeBehavior>> {
         let mut rbe_config = RbeNodeConfig::deserialize(&config.rest)?;
         rbe_config.is_percent =

@@ -54,6 +54,7 @@ impl InjectNode {
         _flow: &Flow,
         base_node: FlowNode,
         _config: &RedFlowNodeConfig,
+        _options: Option<&config::Config>,
     ) -> crate::Result<Box<dyn FlowNodeBehavior>> {
         let json = handle_legacy_json(&_config.rest);
         let mut inject_node_config = InjectNodeConfig::deserialize(&json)?;

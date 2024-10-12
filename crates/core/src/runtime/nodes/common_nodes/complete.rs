@@ -12,7 +12,12 @@ struct CompleteNode {
 }
 
 impl CompleteNode {
-    fn build(_flow: &Flow, state: FlowNode, _config: &RedFlowNodeConfig) -> crate::Result<Box<dyn FlowNodeBehavior>> {
+    fn build(
+        _flow: &Flow,
+        state: FlowNode,
+        _config: &RedFlowNodeConfig,
+        _options: Option<&config::Config>,
+    ) -> crate::Result<Box<dyn FlowNodeBehavior>> {
         let node = CompleteNode { base: state };
         Ok(Box::new(node))
     }

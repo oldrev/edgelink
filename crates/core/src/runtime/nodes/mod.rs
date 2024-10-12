@@ -48,9 +48,11 @@ impl fmt::Display for NodeKind {
     }
 }
 
-type GlobalNodeFactoryFn = fn(&Engine, &RedGlobalNodeConfig) -> crate::Result<Box<dyn GlobalNodeBehavior>>;
+type GlobalNodeFactoryFn =
+    fn(&Engine, &RedGlobalNodeConfig, Option<&config::Config>) -> crate::Result<Box<dyn GlobalNodeBehavior>>;
 
-type FlowNodeFactoryFn = fn(&Flow, FlowNode, &RedFlowNodeConfig) -> crate::Result<Box<dyn FlowNodeBehavior>>;
+type FlowNodeFactoryFn =
+    fn(&Flow, FlowNode, &RedFlowNodeConfig, Option<&config::Config>) -> crate::Result<Box<dyn FlowNodeBehavior>>;
 
 #[derive(Debug, Clone, Copy)]
 pub enum NodeFactory {

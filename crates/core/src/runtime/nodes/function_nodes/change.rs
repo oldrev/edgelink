@@ -97,7 +97,12 @@ impl FlowNodeBehavior for ChangeNode {
 }
 
 impl ChangeNode {
-    fn build(_flow: &Flow, state: FlowNode, config: &RedFlowNodeConfig) -> crate::Result<Box<dyn FlowNodeBehavior>> {
+    fn build(
+        _flow: &Flow,
+        state: FlowNode,
+        config: &RedFlowNodeConfig,
+        _options: Option<&config::Config>,
+    ) -> crate::Result<Box<dyn FlowNodeBehavior>> {
         let json = handle_legacy_json(config.rest.clone())?;
         let change_config = ChangeNodeConfig::deserialize(&json)?;
         let node = ChangeNode { base: state, config: change_config };

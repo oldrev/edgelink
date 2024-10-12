@@ -38,7 +38,12 @@ struct CatchNodeConfig {
 }
 
 impl CatchNode {
-    fn build(_flow: &Flow, state: FlowNode, _config: &RedFlowNodeConfig) -> crate::Result<Box<dyn FlowNodeBehavior>> {
+    fn build(
+        _flow: &Flow,
+        state: FlowNode,
+        _config: &RedFlowNodeConfig,
+        _options: Option<&config::Config>,
+    ) -> crate::Result<Box<dyn FlowNodeBehavior>> {
         let catch_config = CatchNodeConfig::deserialize(&_config.rest)?;
         let node = CatchNode { base: state, scope: catch_config.scope, uncaught: catch_config.uncaught };
         Ok(Box::new(node))

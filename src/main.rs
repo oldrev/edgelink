@@ -41,7 +41,7 @@ struct App {
 }
 
 impl App {
-    pub fn default(elargs: Arc<CliArgs>, app_config: Option<&config::Config>) -> edgelink_core::Result<Self> {
+    pub fn default(elargs: Arc<CliArgs>, app_config: Option<config::Config>) -> edgelink_core::Result<Self> {
         log::info!("Discovering all nodes...");
         // edgelink_core::runtime::registry::collect_nodes();
         log::info!("Loading node registry...");
@@ -226,7 +226,7 @@ async fn app_main(cli_args: Arc<CliArgs>) -> anyhow::Result<()> {
     log::info!("Starting EdgeLink run-time engine...");
     log::info!("Press CTRL+C to terminate.");
 
-    let app = Arc::new(App::default(cli_args, cfg.as_ref())?);
+    let app = Arc::new(App::default(cli_args, cfg)?);
     let app_result = app.run(cancel.child_token()).await;
 
     tokio::time::timeout(tokio::time::Duration::from_secs(10), cancel.cancelled()).await?;

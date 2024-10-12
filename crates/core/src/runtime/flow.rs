@@ -280,7 +280,7 @@ impl Flow {
         let flow = Flow { inner: Arc::new(inner_flow) };
 
         flow.populate_groups(&flow_config)?;
-        flow.populate_nodes(&flow_config, reg.as_ref(), engine)?;
+        flow.populate_nodes(&flow_config, reg.as_ref(), engine, options)?;
 
         if let Some(subflow_state) = &flow.inner.subflow_state {
             subflow_state.populate_in_nodes(&flow, &flow_config)?;
@@ -313,7 +313,13 @@ impl Flow {
         Ok(())
     }
 
-    fn populate_nodes(&self, flow_config: &RedFlowConfig, reg: &dyn Registry, engine: &Engine) -> crate::Result<()> {
+    fn populate_nodes(
+        &self,
+        flow_config: &RedFlowConfig,
+        reg: &dyn Registry,
+        engine: &Engine,
+        options: Option<&config::Config>,
+    ) -> crate::Result<()> {
         // Adding nodes
         for node_config in flow_config.nodes.iter() {
             let meta_node = if let Some(meta_node) = reg.get(&node_config.type_name) {
@@ -365,7 +371,7 @@ impl Flow {
                         }
                     }
 
-                    match factory(self, node_state, node_config) {
+                    match factory(self, node_state, node_config, options) {
                         Ok(node) => {
                             log::debug!("------ The node {} has been built.", node);
                             node

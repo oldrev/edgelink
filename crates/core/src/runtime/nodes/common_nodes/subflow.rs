@@ -13,7 +13,12 @@ struct SubflowNode {
 }
 
 impl SubflowNode {
-    fn build(_flow: &Flow, state: FlowNode, config: &RedFlowNodeConfig) -> crate::Result<Box<dyn FlowNodeBehavior>> {
+    fn build(
+        _flow: &Flow,
+        state: FlowNode,
+        config: &RedFlowNodeConfig,
+        _options: Option<&config::Config>,
+    ) -> crate::Result<Box<dyn FlowNodeBehavior>> {
         let subflow_id = config
             .type_name
             .split_once(':')

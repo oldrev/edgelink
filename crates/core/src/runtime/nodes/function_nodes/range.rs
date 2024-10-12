@@ -63,6 +63,7 @@ impl RangeNode {
         _flow: &Flow,
         base_node: FlowNode,
         config: &RedFlowNodeConfig,
+        _options: Option<&config::Config>,
     ) -> crate::Result<Box<dyn FlowNodeBehavior>> {
         let range_config = RangeNodeConfig::deserialize(&config.rest)?;
         let node = RangeNode { base: base_node, config: range_config };

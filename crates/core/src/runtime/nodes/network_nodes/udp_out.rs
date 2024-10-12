@@ -51,7 +51,12 @@ struct UdpOutNode {
 }
 
 impl UdpOutNode {
-    fn build(_flow: &Flow, state: FlowNode, config: &RedFlowNodeConfig) -> crate::Result<Box<dyn FlowNodeBehavior>> {
+    fn build(
+        _flow: &Flow,
+        state: FlowNode,
+        config: &RedFlowNodeConfig,
+        _options: Option<&config::Config>,
+    ) -> crate::Result<Box<dyn FlowNodeBehavior>> {
         let udp_config = UdpOutNodeConfig::deserialize(&config.rest)?;
 
         let node = UdpOutNode { base: state, config: udp_config };

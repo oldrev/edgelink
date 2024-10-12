@@ -10,7 +10,12 @@ struct JunctionNode {
 }
 
 impl JunctionNode {
-    fn build(_flow: &Flow, state: FlowNode, _config: &RedFlowNodeConfig) -> crate::Result<Box<dyn FlowNodeBehavior>> {
+    fn build(
+        _flow: &Flow,
+        state: FlowNode,
+        _config: &RedFlowNodeConfig,
+        _options: Option<&config::Config>,
+    ) -> crate::Result<Box<dyn FlowNodeBehavior>> {
         let node = JunctionNode { base: state };
         Ok(Box::new(node))
     }

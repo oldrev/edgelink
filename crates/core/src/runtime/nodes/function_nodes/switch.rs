@@ -257,7 +257,12 @@ struct SwitchNodeConfig {
 }
 
 impl SwitchNode {
-    fn build(_flow: &Flow, base: FlowNode, red_config: &RedFlowNodeConfig) -> crate::Result<Box<dyn FlowNodeBehavior>> {
+    fn build(
+        _flow: &Flow,
+        base: FlowNode,
+        red_config: &RedFlowNodeConfig,
+        _options: Option<&config::Config>,
+    ) -> crate::Result<Box<dyn FlowNodeBehavior>> {
         let mut node = SwitchNode {
             base,
             config: SwitchNodeConfig::deserialize(&red_config.rest)?,

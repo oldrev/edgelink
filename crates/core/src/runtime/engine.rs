@@ -78,7 +78,7 @@ impl Engine {
     pub fn with_json(
         reg: &RegistryHandle,
         json: serde_json::Value,
-        elcfg: Option<&config::Config>,
+        elcfg: Option<config::Config>,
     ) -> crate::Result<Engine> {
         let json_values = json::deser::load_flows_json_value(json).map_err(|e| {
             log::error!("Failed to load NodeRED JSON value: {}", e);
@@ -88,7 +88,7 @@ impl Engine {
         let envs = EnvStoreBuilder::default().with_process_env().build();
 
         let mut ctx_builder = ContextManagerBuilder::new();
-        if let Some(cfg) = elcfg {
+        if let Some(ref cfg) = elcfg {
             let _ = ctx_builder.with_config(cfg)?; // Load the section in the configuration
         } else {
             let _ = ctx_builder.load_default();
@@ -110,7 +110,7 @@ impl Engine {
                 flows: DashMap::new(),
                 _context: Variant::empty_object(),
                 envs,
-                _args: EngineArgs::load(elcfg)?,
+                _args: EngineArgs::load(elcfg.as_ref())?,
                 context_manager,
                 context,
 
@@ -122,9 +122,9 @@ impl Engine {
             }),
         };
 
-        engine.clone().load_flows(json_values.flows, reg, elcfg)?;
+        engine.clone().load_flows(json_values.flows, reg, elcfg.as_ref())?;
 
-        engine.clone().load_global_nodes(json_values.global_nodes, reg.clone())?;
+        engine.clone().load_global_nodes(json_values.global_nodes, reg.clone(), elcfg.as_ref())?;
 
         Ok(engine)
     }
@@ -132,7 +132,7 @@ impl Engine {
     pub fn with_flows_file(
         reg: &RegistryHandle,
         flows_json_path: &str,
-        elcfg: Option<&config::Config>,
+        elcfg: Option<config::Config>,
     ) -> crate::Result<Engine> {
         let mut file = std::fs::File::open(flows_json_path)?;
         let mut json_str = String::new();
@@ -143,7 +143,7 @@ impl Engine {
     pub fn with_json_string(
         reg: &RegistryHandle,
         json_str: String,
-        elcfg: Option<&config::Config>,
+        elcfg: Option<config::Config>,
     ) -> crate::Result<Engine> {
         let json: serde_json::Value = serde_json::from_str(&json_str)?;
         Self::with_json(reg, json, elcfg)
@@ -188,7 +188,12 @@ impl Engine {
         Ok(())
     }
 
-    fn load_global_nodes(&self, node_configs: Vec<RedGlobalNodeConfig>, reg: RegistryHandle) -> crate::Result<()> {
+    fn load_global_nodes(
+        &self,
+        node_configs: Vec<RedGlobalNodeConfig>,
+        reg: RegistryHandle,
+        settings: Option<&config::Config>,
+    ) -> crate::Result<()> {
         for global_config in node_configs.into_iter() {
             let node_type_name = global_config.type_name.as_str();
             let meta_node = if let Some(meta_node) = reg.get(node_type_name) {
@@ -204,7 +209,7 @@ impl Engine {
             };
 
             let global_node = match meta_node.factory {
-                NodeFactory::Global(factory) => factory(self, &global_config)?,
+                NodeFactory::Global(factory) => factory(self, &global_config, settings)?,
                 _ => {
                     return Err(EdgelinkError::NotSupported(format!(
                         "Must be a global node: Node(id={0}, type='{1}')",

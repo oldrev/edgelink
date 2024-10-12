@@ -66,7 +66,12 @@ pub(crate) struct LinkCallNode {
 }
 
 impl LinkCallNode {
-    fn build(flow: &Flow, state: FlowNode, config: &RedFlowNodeConfig) -> crate::Result<Box<dyn FlowNodeBehavior>> {
+    fn build(
+        flow: &Flow,
+        state: FlowNode,
+        config: &RedFlowNodeConfig,
+        _options: Option<&config::Config>,
+    ) -> crate::Result<Box<dyn FlowNodeBehavior>> {
         let link_call_config = LinkCallNodeConfig::deserialize(&config.rest)?;
         let engine = flow.engine().expect("The engine must be created!");
 

@@ -551,6 +551,7 @@ name = "edgelink-nodes-dummy"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "config",
  "edgelink-core",
  "edgelink-macro",
  "inventory",

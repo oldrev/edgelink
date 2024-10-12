@@ -11,7 +11,12 @@ struct LinkInNode {
 }
 
 impl LinkInNode {
-    fn build(_flow: &Flow, state: FlowNode, _config: &RedFlowNodeConfig) -> crate::Result<Box<dyn FlowNodeBehavior>> {
+    fn build(
+        _flow: &Flow,
+        state: FlowNode,
+        _config: &RedFlowNodeConfig,
+        _options: Option<&config::Config>,
+    ) -> crate::Result<Box<dyn FlowNodeBehavior>> {
         let node = LinkInNode { base: state };
         Ok(Box::new(node))
     }

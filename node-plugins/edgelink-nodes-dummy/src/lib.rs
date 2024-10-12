@@ -17,7 +17,12 @@ struct DummyNode {
 }
 
 impl DummyNode {
-    fn build(_flow: &Flow, state: FlowNode, _config: &RedFlowNodeConfig) -> Result<Box<dyn FlowNodeBehavior>> {
+    fn build(
+        _flow: &Flow,
+        state: FlowNode,
+        _config: &RedFlowNodeConfig,
+        _options: Option<&config::Config>,
+    ) -> Result<Box<dyn FlowNodeBehavior>> {
         let node = DummyNode { base: state };
         Ok(Box::new(node))
     }

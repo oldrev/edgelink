@@ -35,7 +35,12 @@ struct LinkOutNode {
 }
 
 impl LinkOutNode {
-    fn build(flow: &Flow, state: FlowNode, _config: &RedFlowNodeConfig) -> crate::Result<Box<dyn FlowNodeBehavior>> {
+    fn build(
+        flow: &Flow,
+        state: FlowNode,
+        _config: &RedFlowNodeConfig,
+        _options: Option<&config::Config>,
+    ) -> crate::Result<Box<dyn FlowNodeBehavior>> {
         let link_out_config = LinkOutNodeConfig::deserialize(&_config.rest)?;
         let engine = flow.engine().expect("The engine must be created!");
 
