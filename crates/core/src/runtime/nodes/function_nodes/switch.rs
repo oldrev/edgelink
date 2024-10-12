@@ -102,7 +102,10 @@ impl SwitchRuleOperator {
             Self::Between => Ok((a >= b && a <= c) || (a <= b && a >= c)),
             Self::Regex => match (a, b) {
                 (Variant::String(a), Variant::Regexp(b)) => Ok(b.is_match(a)),
-                (Variant::String(a), Variant::String(b)) => Ok(regex::Regex::new(b)?.is_match(a)),
+                (Variant::String(a), Variant::String(b)) => {
+                    let re = regex::RegexBuilder::new(b).case_insensitive(case).build()?;
+                    Ok(re.is_match(a))
+                }
                 _ => Ok(false),
             },
             Self::IsTrue => Ok(a.as_bool().unwrap_or(false)),
@@ -216,7 +219,7 @@ struct RawSwitchRule {
     value2_type: Option<SwitchPropertyType>,
 
     #[serde(default, rename = "case")]
-    case: bool,
+    regex_case: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -317,13 +320,22 @@ impl SwitchNode {
                 (raw_rule.value2_type, None)
             };
 
+            let v = match v {
+                RedPropertyValue::Constant(Variant::Regexp(old_re)) if raw_rule.regex_case => {
+                    let old_re = old_re.to_string();
+                    let re = regex::RegexBuilder::new(&old_re).case_insensitive(true).build()?;
+                    RedPropertyValue::Constant(Variant::Regexp(re))
+                }
+                _ => v,
+            };
+
             rules.push(SwitchRule {
                 operator: raw_rule.operator,
                 value: v,
                 value_type: vt,
                 value2: v2,
                 value2_type: v2t,
-                case: raw_rule.case,
+                case: raw_rule.regex_case,
             });
         }
         Ok(rules)
