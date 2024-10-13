@@ -228,6 +228,18 @@ impl Variant {
         matches!(*self, Variant::Number(_))
     }
 
+    pub fn is_integer(&self) -> bool {
+        match self {
+            Variant::Number(n) if n.is_i64() => true,
+            Variant::Number(n) if n.is_u64() => true,
+            Variant::Number(n) => match n.as_f64() {
+                Some(f) => (f - f.round()).abs() < f64::EPSILON,
+                None => false,
+            },
+            _ => false,
+        }
+    }
+
     pub fn is_i64(&self) -> bool {
         match self {
             Variant::Number(n) => n.is_i64(),
@@ -665,6 +677,16 @@ impl PartialOrd for Variant {
             (Variant::Bytes(a), Variant::Bytes(b)) => a.partial_cmp(b),
             (Variant::Array(a), Variant::Array(b)) => a.partial_cmp(b),
             (Variant::Object(a), Variant::Object(b)) => a.partial_cmp(b),
+
+            // TODO FIXME: 
+            // I am unsure whether it is reasonable to implement weak typing/implicit type conversion comparison here...
+            (Variant::String(a), Variant::Number(b)) if b.is_f64() => a.parse::<f64>().ok().partial_cmp(&b.as_f64()),
+            (Variant::String(a), Variant::Number(b)) if b.is_i64() => a.parse::<i64>().ok().partial_cmp(&b.as_i64()),
+            (Variant::String(a), Variant::Number(b)) if b.is_u64() => a.parse::<u64>().ok().partial_cmp(&b.as_u64()),
+
+            (Variant::Number(a), Variant::String(b)) if a.is_f64() => a.as_f64().partial_cmp(&b.parse::<f64>().ok()),
+            (Variant::Number(a), Variant::String(b)) if a.is_i64() => a.as_i64().partial_cmp(&b.parse::<i64>().ok()),
+            (Variant::Number(a), Variant::String(b)) if a.is_u64() => a.as_u64().partial_cmp(&b.parse::<u64>().ok()),
 
             _ => None,
         }
