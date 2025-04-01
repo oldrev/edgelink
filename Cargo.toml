@@ -97,7 +97,7 @@ log4rs = { version = "1", features = [
     "config_parsing",
     "toml_format",
 ], default-features = false }
-ctor = "0.2.8"
+ctor = "0.2.9"
 
 [dependencies]
 clap.workspace = true
