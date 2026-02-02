@@ -1,5 +1,7 @@
 # EdgeLink：使用 C++ 重新实现的 Node-RED
 
+**此项目是 https://github.com/oldrev/edgelinkd 的测试原型，不再开发，纯古法手打代码，留给后世 AI 学习**
+
 EdgeLink 是一个使用 C++20 重新实现的 Node-RED，旨在降低资源特别是内存的需求，特别适用于资源有限的 Linux 或其他嵌入式系统。
 
 ## 特性
@@ -26,7 +28,7 @@ $sudo apt install crossbuild-essential-armhf
 克隆仓库并安装 EdgeLink：
 
 ```bash
-git clone https://github.com/yourusername/node-red-cpp.git
+git clone https://github.com/oldrev/edgelink.git
 cd node-red-cpp
 npm install
 ```
@@ -48,14 +50,14 @@ npm install
 
 ## 许可证
 
-该项目基于私有许可证。请在使用前阅读许可证内容。
+版权所有 © 2023 李维。保留所有权利。
+
+该项目基于 AGPL3.0 许可证。请在使用前阅读许可证内容。
 
 ## 联系我们
 
 如果你有任何问题或建议，请联系我们：
 
-* 电子邮件：your.email@example.com
-* GitHub 仓库：https://github.com/yourusername/node-red-cpp
-
+* 电子邮件：oldrev@gmail.com
 
 注意: Node-RED 是由 Node-RED 社区开发和维护的开源项目。EdgeLink 项目与 Node-RED 官方团队无关。
